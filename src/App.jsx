@@ -116,10 +116,10 @@ const Icon = ({name,size=18}) => {
 };
 
 // ── AVATAR ───────────────────────────────────────────────────────────────────
-function Avatar({player, size=32, style={}}) {
+function Avatar({player={}, size=32, style={}}) {
   const color = getAvatar(player);
   return (
-    <div style={{width:size,height:size,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.4,fontWeight:800,color:"white",flexShrink:0,...style}}>
+    <div style={{width:size,height:size,borderRadius:"50%",background:color||"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.4,fontWeight:800,color:"white",flexShrink:0,...style}}>
       {player?.name?.[0]||"?"}
     </div>
   );
@@ -149,7 +149,7 @@ export default function App() {
 
   const loadPlayers  = useCallback(async()=>{const{data}=await supabase.from("players").select("*").order("id");if(data)setPlayers(data);},[]);
   const loadGameInfo = useCallback(async()=>{const{data}=await supabase.from("game_info").select("*").eq("id",1).single();if(data)setGameInfo(data);},[]);
-  const loadHistory  = useCallback(async()=>{const{data}=await supabase.from("game_history").select("*").order("date",{ascending:false});if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(g.collected||0)-RENT,0));}},[]);
+  const loadHistory  = useCallback(async()=>{const{data}=await supabase.from("game_history").select("*").order("date",{ascending:false});if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-RENT,0));}},[]);
   const loadDebts    = useCallback(async()=>{const{data}=await supabase.from("debts").select("*").order("created_at");if(data)setDebts(data);},[]);
   const loadMessages = useCallback(async()=>{const{data}=await supabase.from("chat_messages").select("*").order("created_at").limit(100);if(data)setMessages(data);},[]);
   const loadMvp      = useCallback(async()=>{const{data}=await supabase.from("mvp_votes").select("*");if(data)setMvpVotes(data);},[]);
@@ -399,7 +399,7 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
 }
 
 // ── TEAMS DISPLAY ────────────────────────────────────────────────────────────
-function TeamsDisplay({teams,players,onVoteWinner,winnerTeam,setWinnerTeam}) {
+function TeamsDisplay({teams=[],players=[],onVoteWinner,winnerTeam,setWinnerTeam}) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       {teams.map((team,ti)=>{
@@ -414,7 +414,7 @@ function TeamsDisplay({teams,players,onVoteWinner,winnerTeam,setWinnerTeam}) {
             </div>
             <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
               {main.map(p=>{
-                const pl=players?.find(pl=>pl.id===p.id)||p;
+                const pl=(players||[]).find(pl=>pl.id===p.id)||p;
                 return (
                   <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:"white",borderRadius:20,padding:"3px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${color.border}`}}>
                     <Avatar player={pl} size={18}/>
@@ -432,7 +432,7 @@ function TeamsDisplay({teams,players,onVoteWinner,winnerTeam,setWinnerTeam}) {
 }
 
 // ── MVP VOTE ─────────────────────────────────────────────────────────────────
-function MvpVote({confirmed,mvpVotes,currentUserId,gameDate,onVote}) {
+function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
   const myVote=mvpVotes.find(v=>v.voter_id===currentUserId&&v.game_date===gameDate);
   const counts={};
   mvpVotes.filter(v=>v.game_date===gameDate).forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
@@ -502,13 +502,13 @@ function PiggyBankCard({piggybank,history}) {
 }
 
 // ── CONFIRMED LIST ───────────────────────────────────────────────────────────
-function ConfirmedList({confirmed,onTogglePaid,isAdmin,debts=[],players=[]}) {
+function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[]}) {
   if(!confirmed.length) return <p className="empty-msg">Ninguém confirmou ainda</p>;
   return (
     <div className="player-list">
       {confirmed.map((p,i)=>{
         const debt=debts.filter(d=>d.player_id===p.id).reduce((s,d)=>s+Number(d.amount),0);
-        const pl=players.find(pl=>pl.id===p.id)||p;
+        const pl=(players||[]).find(pl=>pl.id===p.id)||p;
         return (
           <div key={p.id} className={`list-row ${p.is_guest?"row-guest":""}`}>
             <span className="list-num">{i+1}</span>
@@ -529,10 +529,10 @@ function ConfirmedList({confirmed,onTogglePaid,isAdmin,debts=[],players=[]}) {
 }
 
 // ── STATS VIEW ───────────────────────────────────────────────────────────────
-function StatsView({members,history,debts,mvpVotes,piggybank,player,darkMode,onBack}) {
+function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,player,darkMode,onBack}) {
   const dm=darkMode;
   // ranking by total_games
-  const ranked=[...members].filter(p=>!p.is_guest).sort((a,b)=>(b.total_games||0)-(a.total_games||0));
+  const ranked=[...(members||[])].filter(p=>!p.is_guest).sort((a,b)=>(b.total_games||0)-(a.total_games||0));
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});
   const myDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
@@ -595,7 +595,7 @@ function StatsView({members,history,debts,mvpVotes,piggybank,player,darkMode,onB
 }
 
 // ── CHAT VIEW ────────────────────────────────────────────────────────────────
-function ChatView({messages,players,player,darkMode,onSendMessage,onBack}) {
+function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack}) {
   const [text,setText]=useState("");
   const bottomRef=useRef(null);
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[messages]);
@@ -802,7 +802,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 
         {/* Dívidas */}
         {debts.length>0&&(()=>{
-          const dp=members.map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
+          const dp=(members||[]).map(m=>({...m,total:(debts||[]).filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
           if(!dp.length) return null;
           return (
             <div style={{marginTop:16}}>
@@ -847,7 +847,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   const totalPaid=confirmed.filter(p=>p.paid).length;
   const totalUnpaid=confirmed.filter(p=>!p.paid).length;
-  const debtsByPlayer=members.map(m=>({...m,debts:debts.filter(d=>d.player_id===m.id),total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
+  const debtsByPlayer=(members||[]).map(m=>({...m,debts:(debts||[]).filter(d=>d.player_id===m.id),total:(debts||[]).filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
   const dm=darkMode;
 
   return (
@@ -889,8 +889,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
         {adminTab==="jogo"&&<>
           <p className="section-label">✅ CONFIRMADOS ({confirmed.length})</p>
           <ConfirmedList confirmed={confirmed} onTogglePaid={onTogglePaid} isAdmin debts={debts} players={players}/>
-          {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
-          {notYet.length>0&&<><p className="section-label" style={{marginTop:12}}>❓ SEM RESPOSTA ({notYet.length})</p><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={players.find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+          {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+          {notYet.length>0&&<><p className="section-label" style={{marginTop:12}}>❓ SEM RESPOSTA ({notYet.length})</p><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p>
           <div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
 
@@ -941,7 +941,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             <div key={m.id} style={{background:"#fff7ed",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <Avatar player={players.find(p=>p.id===m.id)||m} size={30}/>
+                  <Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/>
                   <span style={{fontWeight:800,fontSize:14,color:"#14532d"}}>{m.name}</span>
                 </div>
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>

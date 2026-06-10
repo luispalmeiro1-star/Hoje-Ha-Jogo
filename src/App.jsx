@@ -195,35 +195,43 @@ export default function App() {
     if(p.status==="in"||p.status==="wait"){ns="out";na=null;}
     else if(confirmed.length<MAX_PLAYERS){ns="in";na=Date.now();}
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
+    // Update local state immediately
+    setPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
     await supabase.from("players").update({status:ns,confirmed_at:na,paid:false}).eq("id",playerId);
   };
   const addGuest = async(guestName,invitedById)=>{
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
     if(!inviter||confirmed.length>=MAX_PLAYERS){showToast("Jogo cheio!","err");return;}
+    const newGuest={id:Date.now(),name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now()};
+    setPlayers(prev=>[...prev,newGuest]);
     await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now()});
     showToast(`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{await supabase.from("players").delete().eq("id",id);showToast("Convidado removido");};
-  const togglePaid     = async(id)=>{const p=players.find(pl=>pl.id===id);await supabase.from("players").update({paid:!p.paid}).eq("id",id);showToast("Pagamento atualizado ✓");};
-  const removePlayer   = async(id)=>{await supabase.from("players").delete().eq("id",id);showToast("Jogador removido");};
+  const removeGuest    = async(id)=>{setPlayers(prev=>prev.filter(p=>p.id!==id));await supabase.from("players").delete().eq("id",id);showToast("Convidado removido");};
+  const togglePaid     = async(id)=>{const p=players.find(pl=>pl.id===id);setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl));await supabase.from("players").update({paid:!p.paid}).eq("id",id);showToast("Pagamento atualizado ✓");};
+  const removePlayer   = async(id)=>{setPlayers(prev=>prev.filter(p=>p.id!==id));await supabase.from("players").delete().eq("id",id);showToast("Jogador removido");};
   const changePassword = async(id,pw)=>{await supabase.from("players").update({password:pw}).eq("id",id);};
   const addPlayer      = async(name,password)=>{
     if(!name.trim()||!password.trim()) return;
-    await supabase.from("players").insert({name:name.trim(),is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)]});
+    const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+    setPlayers(prev=>[...prev,{id:Date.now(),name:name.trim(),is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,position:"Polivalente",total_games:0,total_paid:0}]);
+    await supabase.from("players").insert({name:name.trim(),is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color});
     showToast(`${name} adicionado! 🎉`);
   };
-  const updateGameInfo = async(patch)=>{await supabase.from("game_info").update(patch).eq("id",1);showToast("Jogo atualizado ✓");};
+  const updateGameInfo = async(patch)=>{setGameInfo(prev=>({...prev,...patch}));await supabase.from("game_info").update(patch).eq("id",1);showToast("Jogo atualizado ✓");};
   const updateProfile  = async(id,newName,newPassword,newColor)=>{
     const updates={};
     if(newName?.trim()) updates.name=newName.trim();
     if(newPassword?.trim()) updates.password=newPassword.trim();
     if(newColor) updates.avatar_color=newColor;
     if(Object.keys(updates).length===0) return;
+    setPlayers(prev=>prev.map(p=>p.id===id?{...p,...updates}:p));
     await supabase.from("players").update(updates).eq("id",id);
     showToast("Perfil atualizado ✓");
   };
   const updatePosition = async(id, pos) => {
+    setPlayers(prev=>prev.map(p=>p.id===id?{...p,position:pos}:p));
     await supabase.from("players").update({position: pos}).eq("id", id);
     showToast("Posição atualizada ✓");
   };
@@ -260,9 +268,15 @@ export default function App() {
   const payDebt  = async(debtId)=>{await supabase.from("debts").delete().eq("id",debtId);showToast("Dívida paga ✓");};
   const sendMessage = async(text,playerId,playerName)=>{
     if(!text.trim()) return;
+    const tempMsg={id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()};
+    setMessages(prev=>[...prev,tempMsg]);
     await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim()});
   };
   const voteForMvp = async(voterId,votedForId)=>{
+    setMvpVotes(prev=>{
+      const filtered=prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date));
+      return [...filtered,{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date}];
+    });
     await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date},{onConflict:"voter_id,game_date"});
     showToast("Voto registado ✓");
   };

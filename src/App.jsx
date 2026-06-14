@@ -364,6 +364,68 @@ export default function App() {
   );
 }
 
+// ── ROTATING HIGHLIGHTS ──────────────────────────────────────────────────────
+function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo}) {
+  const [idx, setIdx] = useState(0);
+
+  const highlights = [];
+
+  // MVP atual (jogo mais recente)
+  if(history.length > 0 && history[0].mvp_name) {
+    highlights.push({icon:"⭐", text:`${history[0].mvp_name} foi o MVP do último jogo!`});
+  }
+
+  // Equipa vencedora último jogo
+  if(history.length > 0 && history[0].winner_team) {
+    highlights.push({icon:"🏆", text:`Equipa ${history[0].winner_team} venceu o último jogo!`});
+  }
+
+  // Jogador com mais jogos (streak)
+  const topPlayer = [...members].sort((a,b)=>(b.total_games||0)-(a.total_games||0))[0];
+  if(topPlayer && topPlayer.total_games > 0) {
+    highlights.push({icon:"👑", text:`${topPlayer.name} lidera com ${topPlayer.total_games} jogos!`});
+  }
+
+  // Faltam X para lotação
+  const faltam = 15 - confirmed.length;
+  if(faltam > 0 && faltam <= 5 && confirmed.length >= 8) {
+    highlights.push({icon:"🎯", text:`Faltam apenas ${faltam} jogador${faltam!==1?"es":""} para lotação máxima!`});
+  }
+
+  // MVP mais votado hoje
+  const votesHoje = mvpVotes.filter(v=>v.game_date===gameInfo.date);
+  if(votesHoje.length > 0) {
+    const counts={};
+    votesHoje.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
+    const topId = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+    const topMvp = members.find(p=>p.id===Number(topId));
+    if(topMvp) highlights.push({icon:"⭐", text:`${topMvp.name} está a liderar a votação MVP desta semana!`});
+  }
+
+  useEffect(()=>{
+    if(highlights.length <= 1) return;
+    const t = setInterval(()=>setIdx(i=>(i+1)%highlights.length), 4000);
+    return ()=>clearInterval(t);
+  }, [highlights.length]);
+
+  if(highlights.length === 0) return null;
+  const h = highlights[idx % highlights.length];
+
+  return (
+    <div style={{background:"linear-gradient(135deg,#166534,#15803d)",borderRadius:14,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:12,minHeight:52,transition:"all 0.3s"}}>
+      <span style={{fontSize:22,flexShrink:0}}>{h.icon}</span>
+      <span style={{fontSize:13,fontWeight:700,color:"white",flex:1}}>{h.text}</span>
+      {highlights.length > 1 && (
+        <div style={{display:"flex",gap:4,flexShrink:0}}>
+          {highlights.map((_,i)=>(
+            <div key={i} style={{width:6,height:6,borderRadius:"50%",background:i===idx%highlights.length?"white":"rgba(255,255,255,0.3)"}}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── DASHBOARD CARDS ──────────────────────────────────────────────────────────
 function GroupStatusCard({confirmed, notYet, members, players=[]}) {
   const grs = confirmed.filter(p => {
@@ -921,6 +983,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           {isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>}
         </button>
 
+        <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo}/>
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
 
         {/* Position selector */}
@@ -1058,6 +1121,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           </div>
         </div>
 
+        <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo}/>
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
 
         <div className="tabs">

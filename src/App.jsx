@@ -364,6 +364,40 @@ export default function App() {
   );
 }
 
+// ── DASHBOARD CARDS ──────────────────────────────────────────────────────────
+function GroupStatusCard({confirmed, notYet, members, players=[]}) {
+  const grs = confirmed.filter(p => {
+    const pl = players.find(pl => pl.id === p.id);
+    return pl?.position === "GR";
+  });
+  const hasEnoughGRs = grs.length >= 2;
+  const isFull = confirmed.length >= 15;
+  const almostFull = confirmed.length >= 12 && confirmed.length < 15;
+  const teamsReady = confirmed.length >= 10 && hasEnoughGRs;
+
+  let messages = [];
+
+  if (isFull) messages.push({ icon: "🎉", text: "Jogo completo! Estamos todos!", color: "#16a34a", bg: "#dcfce7" });
+  else if (almostFull) messages.push({ icon: "🔥", text: `Lotação quase completa — só faltam ${15 - confirmed.length}!`, color: "#d97706", bg: "#fef3c7" });
+  if (!hasEnoughGRs && confirmed.length >= 6) messages.push({ icon: "⚠️", text: `Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length !== 1 ? "s" : ""}`, color: "#dc2626", bg: "#fee2e2" });
+  if (teamsReady && !isFull) messages.push({ icon: "✅", text: "Equipas prontas para jogar!", color: "#16a34a", bg: "#dcfce7" });
+  if (notYet.length > 0) messages.push({ icon: "📢", text: `${notYet.length} jogador${notYet.length !== 1 ? "es" : ""} ainda não respondeu${notYet.length !== 1 ? "ram" : ""}`, color: "#6b7280", bg: "#f1f5f9" });
+  if (confirmed.length < 6) messages.push({ icon: "😴", text: "Ainda poucos confirmados — partilha com o grupo!", color: "#7c3aed", bg: "#ede9fe" });
+
+  if (messages.length === 0) return null;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
+      {messages.map((m, i) => (
+        <div key={i} style={{background:m.bg,borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,border:`1px solid ${m.color}22`}}>
+          <span style={{fontSize:18}}>{m.icon}</span>
+          <span style={{fontSize:13,fontWeight:700,color:m.color}}>{m.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── EXPANDABLE LIST ──────────────────────────────────────────────────────────
 function ExpandableList({confirmed}) {
   const [open, setOpen] = useState(false);
@@ -887,6 +921,8 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           {isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>}
         </button>
 
+        <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
+
         {/* Position selector */}
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
@@ -1021,6 +1057,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             <span className="money-label">Mealheiro</span>
           </div>
         </div>
+
+        <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
 
         <div className="tabs">
           {[["jogo","⚽"],["equipas","🎲"],["dividas","💸"],["jogadores","👥"],["gerir","⚙️"]].map(([k,l])=>(

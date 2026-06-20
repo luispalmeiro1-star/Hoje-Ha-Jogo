@@ -211,6 +211,18 @@ export default function App() {
 
   useEffect(()=>{localStorage.setItem("kickoff_dark",darkMode?"1":"0");},[darkMode]);
 
+  // Restore session once players are loaded
+  useEffect(()=>{
+    if(loading||currentUser||players.length===0) return;
+    try{
+      const saved=JSON.parse(localStorage.getItem("hhb_session"));
+      if(saved?.playerId){
+        const p=players.find(pl=>pl.id===saved.playerId);
+        if(p){setCurrentUser(p);setView(p.is_admin?"admin":"player");}
+      }
+    }catch(e){}
+  },[loading,players]);
+
   const members   = players.filter(p=>!p.is_guest);
   const guests    = players.filter(p=>p.is_guest);
   const confirmed = sortedConfirmed(players);
@@ -219,12 +231,15 @@ export default function App() {
   const spotsLeft = Math.max(0,MAX_PLAYERS-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
-  const handleLogin = async(playerId,password)=>{
-    const p=players.find(p=>p.id===playerId);
+  const handleLogin = async(username,password)=>{
+    const p=players.find(p=>p.username?.toLowerCase()===username.trim().toLowerCase());
     if(!p||p.password!==password) return false;
-    setCurrentUser(p); setView(p.is_admin?"admin":"player"); return true;
+    setCurrentUser(p); setView(p.is_admin?"admin":"player");
+    localStorage.setItem("hhb_session", JSON.stringify({playerId:p.id}));
+    return true;
   };
   const handleLogout = ()=>{setCurrentUser(null);setView("login");setViewingDate(null);};
+  const switchAccount = ()=>{localStorage.removeItem("hhb_session");setCurrentUser(null);setView("login");setViewingDate(null);};
 
   const reassignAllTeams = async(updatedPlayers) => {
     const newConfirmed = updatedPlayers.filter(pl=>pl.status==="in");
@@ -267,11 +282,13 @@ export default function App() {
   const togglePaid     = async(id)=>{const p=players.find(pl=>pl.id===id);setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl));await supabase.from("players").update({paid:!p.paid}).eq("id",id);showToast("Pagamento atualizado ✓");};
   const removePlayer   = async(id)=>{setPlayers(prev=>prev.filter(p=>p.id!==id));await supabase.from("players").delete().eq("id",id);showToast("Jogador removido");};
   const changePassword = async(id,pw)=>{await supabase.from("players").update({password:pw}).eq("id",id);};
-  const addPlayer      = async(name,password)=>{
-    if(!name.trim()||!password.trim()) return;
+  const addPlayer      = async(name,username,password)=>{
+    if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    setPlayers(prev=>[...prev,{id:Date.now(),name:name.trim(),is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,position:"Polivalente",total_games:0,total_paid:0}]);
-    await supabase.from("players").insert({name:name.trim(),is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color});
+    const cleanUsername=username.trim().toLowerCase().replace(/\s+/g,"");
+    if(players.find(p=>p.username?.toLowerCase()===cleanUsername)){showToast("Esse utilizador já existe!","err");return;}
+    setPlayers(prev=>[...prev,{id:Date.now(),name:name.trim(),username:cleanUsername,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,position:"Polivalente",total_games:0,total_paid:0}]);
+    await supabase.from("players").insert({name:name.trim(),username:cleanUsername,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color});
     showToast(`${name} adicionado! 🎉`);
   };
   const updateGameInfo = async(patch)=>{setGameInfo(prev=>({...prev,...patch}));await supabase.from("game_info").update(patch).eq("id",1);showToast("Jogo atualizado ✓");};
@@ -394,11 +411,11 @@ export default function App() {
       <style>{getCss(dm)}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="login"   && <LoginView   {...shared} onLogin={handleLogin} showToast={showToast}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color)=>updateProfile(liveUser.id,name,pw,color)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={(pos)=>updatePosition(liveUser.id,pos)} onLogout={handleLogout} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color)=>updateProfile(liveUser.id,name,pw,color)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onLogout={handleLogout} showToast={showToast} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color)=>updateProfile(liveUser.id,name,pw,color)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={(pos)=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color)=>updateProfile(liveUser.id,name,pw,color)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} onUpdateProfile={(name,pw,color)=>updateProfile(liveUser.id,name,pw,color)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout}/>}
+      {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} onUpdateProfile={(name,pw,color)=>updateProfile(liveUser.id,name,pw,color)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount}/>}
     </div>
   );
 }
@@ -739,35 +756,35 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
 
 // ── LOGIN ────────────────────────────────────────────────────────────────────
 function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,onLogin,showToast}) {
-  const [selected,setSelected]=useState(null);
+  const [username,setUsername]=useState("");
   const [password,setPassword]=useState("");
   const [showPw,setShowPw]=useState(false);
-  const handleSubmit=()=>{if(!selected)return;if(!onLogin(selected.id,password)){showToast("Password incorreta!","err");setPassword("");}};
+  const [loading,setLoading]=useState(false);
+  const handleSubmit=async()=>{
+    if(!username.trim()||!password.trim()) return;
+    setLoading(true);
+    const ok=await onLogin(username,password);
+    setLoading(false);
+    if(!ok){showToast("Utilizador ou password incorretos!","err");setPassword("");}
+  };
   return (
     <div className="screen">
       <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode}}/>
       <div className="body">
         {!isViewingHistory&&<>
-          <p className="section-label">QUEM ÉS TU?</p>
-          <div className="player-grid">
-            {members.map(p=>(
-              <button key={p.id} className={`player-card ${selected?.id===p.id?"selected":""}`} onClick={()=>{setSelected(p);setPassword("");}}>
-                <Avatar player={p} size={36}/>
-                <span className="player-card-name">{p.name}</span>
-                <span style={{fontSize:11}}>{p.status==="in"?"✅":p.status==="wait"?"⏳":"—"}</span>
-              </button>
-            ))}
-          </div>
-          {selected&&(
-            <div className="pw-box">
-              <p className="pw-label">Password de <strong>{selected.name}</strong></p>
-              <div className="pw-row">
-                <input className="pw-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoFocus/>
-                <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={16}/></button>
-              </div>
-              <button className="btn-primary" onClick={handleSubmit}>ENTRAR →</button>
+          <div className="pw-box" style={{marginTop:20}}>
+            <p className="pw-label" style={{textAlign:"center",marginBottom:4}}>Inicia sessão para continuar</p>
+            <label className="field-label">Utilizador</label>
+            <input className="pw-input" placeholder="O teu utilizador..." value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
+            <label className="field-label" style={{marginTop:4}}>Password</label>
+            <div className="pw-row">
+              <input className="pw-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+              <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={16}/></button>
             </div>
-          )}
+            <button className="btn-primary" style={{justifyContent:"center",marginTop:4}} onClick={handleSubmit} disabled={loading}>
+              {loading?"A entrar...":"ENTRAR →"}
+            </button>
+          </div>
         </>}
         {isViewingHistory&&<div style={{textAlign:"center",paddingTop:20}}><p style={{color:"#6b7280",fontSize:13}}>A ver histórico — <button style={{background:"none",border:"none",color:"#16a34a",fontWeight:700,cursor:"pointer"}} onClick={()=>setViewingDate(null)}>voltar ao atual</button></p></div>}
       </div>
@@ -1066,7 +1083,7 @@ function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack})
 }
 
 // ── PROFILE VIEW ─────────────────────────────────────────────────────────────
-function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout}) {
+function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAccount}) {
   const [newName,setNewName]=useState(player.name);
   const [newPw,setNewPw]=useState("");
   const [newPwC,setNewPwC]=useState("");
@@ -1110,6 +1127,10 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout}) {
           }}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
           <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
         </div>
+
+        <button onClick={onSwitchAccount} style={{width:"100%",marginTop:14,padding:"11px",borderRadius:10,border:"2px solid #fee2e2",background:"transparent",color:"#dc2626",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <Icon name="logout" size={14}/> TROCAR DE CONTA
+        </button>
       </div>
     </div>
   );
@@ -1258,6 +1279,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
 function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdateProfile,onAddDebt,onPayDebt,onClearHistory,onSendMessage,onVoteMvp,onLogout,showToast,setView}) {
   const [newName,setNewName]=useState("");
+  const [newUsername,setNewUsername]=useState("");
   const [newPass,setNewPass]=useState("");
   const [editPassId,setEditPassId]=useState(null);
   const [editPassVal,setEditPassVal]=useState("");
@@ -1418,7 +1440,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
                 <Avatar player={players.find(pl=>pl.id===p.id)||p} size={30} style={{marginTop:2}}/>
                 <div className="list-info" style={{flex:1}}>
                   <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
-                  <span className="guest-sub">{p.status==="in"?"✅ Confirmado":p.status==="wait"?"⏳ Espera":"❌ Fora"} · {p.total_games||0} jogos</span>
+                  <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":"❌"} · {p.total_games||0} jogos</span>
                 </div>
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":"❌ Fora"}</button>
                 {!p.is_admin&&<button className="icon-danger" onClick={()=>onRemovePlayer(p.id)}><Icon name="trash" size={13}/></button>}
@@ -1455,13 +1477,14 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           </div>
           <p className="section-label" style={{marginTop:16}}><Icon name="plus" size={11}/> ADICIONAR MEMBRO</p>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <input className="text-input" placeholder="Nome..." value={newName} onChange={e=>setNewName(e.target.value)}/>
+            <input className="text-input" placeholder="Nome (ex: João Silva)..." value={newName} onChange={e=>setNewName(e.target.value)}/>
+            <input className="text-input" placeholder="Utilizador (ex: joao_s)..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
             <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
-            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newPass);setNewName("");setNewPass("");}}>
+            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass);setNewName("");setNewUsername("");setNewPass("");}}>
               <Icon name="plus" size={14}/> Adicionar membro
             </button>
           </div>
-          <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 Partilha a password pelo WhatsApp.</p>
+          <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 Partilha o utilizador e a password pelo WhatsApp.</p>
 
           <p className="section-label" style={{marginTop:20}}>⚠️ ZONA DE PERIGO</p>
           {!showClearConfirm ? (

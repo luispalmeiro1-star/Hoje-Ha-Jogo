@@ -231,8 +231,9 @@ export default function App() {
   const spotsLeft = Math.max(0,MAX_PLAYERS-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
-  const handleLogin = async(username,password)=>{
-    const p=players.find(p=>p.username?.toLowerCase()===username.trim().toLowerCase());
+  const handleLogin = async(identifier,password)=>{
+    const clean=identifier.trim().toLowerCase();
+    const p=players.find(p=>p.username?.toLowerCase()===clean || p.phone?.replace(/\s+/g,"")===identifier.trim().replace(/\s+/g,""));
     if(!p||p.password!==password) return false;
     setCurrentUser(p); setView(p.is_admin?"admin":"player");
     localStorage.setItem("hhb_session", JSON.stringify({playerId:p.id}));
@@ -282,13 +283,13 @@ export default function App() {
   const togglePaid     = async(id)=>{const p=players.find(pl=>pl.id===id);setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl));await supabase.from("players").update({paid:!p.paid}).eq("id",id);showToast("Pagamento atualizado ✓");};
   const removePlayer   = async(id)=>{setPlayers(prev=>prev.filter(p=>p.id!==id));await supabase.from("players").delete().eq("id",id);showToast("Jogador removido");};
   const changePassword = async(id,pw)=>{await supabase.from("players").update({password:pw}).eq("id",id);};
-  const addPlayer      = async(name,username,password)=>{
+  const addPlayer      = async(name,username,password,phone)=>{
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const cleanUsername=username.trim().toLowerCase().replace(/\s+/g,"");
     if(players.find(p=>p.username?.toLowerCase()===cleanUsername)){showToast("Esse utilizador já existe!","err");return;}
-    setPlayers(prev=>[...prev,{id:Date.now(),name:name.trim(),username:cleanUsername,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,position:"Polivalente",total_games:0,total_paid:0}]);
-    await supabase.from("players").insert({name:name.trim(),username:cleanUsername,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color});
+    setPlayers(prev=>[...prev,{id:Date.now(),name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,position:"Polivalente",total_games:0,total_paid:0}]);
+    await supabase.from("players").insert({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color});
     showToast(`${name} adicionado! 🎉`);
   };
   const updateGameInfo = async(patch)=>{setGameInfo(prev=>({...prev,...patch}));await supabase.from("game_info").update(patch).eq("id",1);showToast("Jogo atualizado ✓");};
@@ -760,12 +761,18 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
   const [password,setPassword]=useState("");
   const [showPw,setShowPw]=useState(false);
   const [loading,setLoading]=useState(false);
+  const [showSuggestions,setShowSuggestions]=useState(false);
+
+  const suggestions = username.trim().length>0
+    ? members.filter(p=>p.username?.toLowerCase().startsWith(username.trim().toLowerCase())).slice(0,5)
+    : [];
+
   const handleSubmit=async()=>{
     if(!username.trim()||!password.trim()) return;
     setLoading(true);
     const ok=await onLogin(username,password);
     setLoading(false);
-    if(!ok){showToast("Utilizador ou password incorretos!","err");setPassword("");}
+    if(!ok){showToast("Utilizador, telemóvel ou password incorretos!","err");setPassword("");}
   };
   return (
     <div className="screen">
@@ -774,8 +781,28 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
         {!isViewingHistory&&<>
           <div className="pw-box" style={{marginTop:20}}>
             <p className="pw-label" style={{textAlign:"center",marginBottom:4}}>Inicia sessão para continuar</p>
-            <label className="field-label">Utilizador</label>
-            <input className="pw-input" placeholder="O teu utilizador..." value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
+            <label className="field-label">Utilizador ou telemóvel</label>
+            <div style={{position:"relative"}}>
+              <input className="pw-input" placeholder="O teu utilizador ou nº..." value={username}
+                onChange={e=>{setUsername(e.target.value);setShowSuggestions(true);}}
+                onFocus={()=>setShowSuggestions(true)}
+                onBlur={()=>setTimeout(()=>setShowSuggestions(false),150)}
+                onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
+              {showSuggestions&&suggestions.length>0&&(
+                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"white",border:"2px solid #d1fae5",borderRadius:10,marginTop:4,zIndex:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,0.12)"}}>
+                  {suggestions.map(p=>(
+                    <button key={p.id} onClick={()=>{setUsername(p.username);setShowSuggestions(false);}}
+                      style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"white",border:"none",borderBottom:"1px solid #f0fdf4",cursor:"pointer",textAlign:"left"}}>
+                      <Avatar player={p} size={26}/>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#14532d"}}>{p.name}</div>
+                        <div style={{fontSize:11,color:"#6b7280"}}>@{p.username}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <label className="field-label" style={{marginTop:4}}>Password</label>
             <div className="pw-row">
               <input className="pw-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
@@ -1280,6 +1307,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdateProfile,onAddDebt,onPayDebt,onClearHistory,onSendMessage,onVoteMvp,onLogout,showToast,setView}) {
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
+  const [newPhone,setNewPhone]=useState("");
   const [newPass,setNewPass]=useState("");
   const [editPassId,setEditPassId]=useState(null);
   const [editPassVal,setEditPassVal]=useState("");
@@ -1479,12 +1507,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             <input className="text-input" placeholder="Nome (ex: João Silva)..." value={newName} onChange={e=>setNewName(e.target.value)}/>
             <input className="text-input" placeholder="Utilizador (ex: joao_s)..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
+            <input className="text-input" placeholder="Telemóvel (opcional)..." value={newPhone} onChange={e=>setNewPhone(e.target.value)}/>
             <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
-            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass);setNewName("");setNewUsername("");setNewPass("");}}>
+            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}>
               <Icon name="plus" size={14}/> Adicionar membro
             </button>
           </div>
-          <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 Partilha o utilizador e a password pelo WhatsApp.</p>
+          <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
 
           <p className="section-label" style={{marginTop:20}}>⚠️ ZONA DE PERIGO</p>
           {!showClearConfirm ? (

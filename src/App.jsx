@@ -427,16 +427,16 @@ function DebtRow({debt, onPayDebt}) {
   const [amount, setAmount] = useState("");
 
   return (
-    <div style={{background:"white",borderRadius:8,padding:"8px 10px",marginBottom:5,border:"1px solid #fed7aa"}}>
+    <div style={{background:"#1a1410",borderRadius:8,padding:"8px 10px",marginBottom:5,border:"1px solid #92400e"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:12,color:"#6b7280"}}>{debt.description} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
         <div style={{display:"flex",gap:6}}>
-          <div style={{background:"#fee2e2",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"#dc2626"}}>💸 Em dívida</div>
+          <div style={{background:"rgba(239,68,68,0.15)",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"#f87171"}}>💸 Em dívida</div>
           <button style={{background:"#16a34a",border:"none",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
         </div>
       </div>
       {!showPartial ? (
-        <button onClick={()=>setShowPartial(true)} style={{background:"none",border:"none",color:"#92400e",fontSize:10,fontWeight:600,cursor:"pointer",marginTop:4,padding:0}}>
+        <button onClick={()=>setShowPartial(true)} style={{background:"none",border:"none",color:"#fbbf24",fontSize:10,fontWeight:600,cursor:"pointer",marginTop:4,padding:0}}>
           Pagamento parcial?
         </button>
       ) : (
@@ -473,7 +473,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
               <span style={{fontSize:12,fontWeight:800,color:i===0?"#d97706":i===1?"#94a3b8":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{medal}</span>
               <Avatar player={p} size={28}/>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:dm?"white":"#14532d"}}>{p.name}{isMe?" (tu)":""}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}{isMe?" (tu)":""}</div>
                 <div style={{fontSize:10,color:"#6b7280",display:"flex",gap:8,marginTop:2}}>
                   <span>⚽ {p.total_games||0}</span>
                   {mvps>0&&<span>⭐ {mvps}</span>}
@@ -487,7 +487,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
             </div>
 
             {/* Progress bar always visible */}
-            <div style={{height:3,background:dm?"#222":"#f0fdf4",margin:"0 12px 8px 50px",borderRadius:99,overflow:"hidden"}}>
+            <div style={{height:3,background:"#1a2218",margin:"0 12px 8px 50px",borderRadius:99,overflow:"hidden"}}>
               <div style={{width:`${pctBar}%`,height:"100%",background:"linear-gradient(90deg,#16a34a,#4ade80)",borderRadius:99}}/>
             </div>
 
@@ -502,9 +502,9 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
                   {label:"⭐ MVPs", value:`${mvps} vez${mvps!==1?"es":"ez"}`},
                   {label:"📈 Presença", value:`${pPct}%`},
                 ].map((s,si)=>(
-                  <div key={si} style={{background:dm?"#0a1a0a":"#f0fdf4",borderRadius:8,padding:"8px 10px"}}>
+                  <div key={si} style={{background:"#0a1a0a",borderRadius:8,padding:"8px 10px"}}>
                     <div style={{fontSize:10,color:"#6b7280",marginBottom:2}}>{s.label}</div>
-                    <div style={{fontSize:13,fontWeight:800,color:dm?"white":"#14532d"}}>{s.value}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:"white"}}>{s.value}</div>
                   </div>
                 ))}
               </div>
@@ -541,10 +541,10 @@ function HallOfFameMVP({history=[], members=[]}) {
       {/* Top 3 destaques */}
       <div style={{display:"flex",gap:8,marginBottom:10}}>
         {lastMvp&&(
-          <div style={{flex:1,background:"#fef3c7",borderRadius:12,padding:"10px 12px",border:"1px solid #d97706"}}>
+          <div style={{flex:1,background:"rgba(217,119,6,0.15)",borderRadius:12,padding:"10px 12px",border:"1px solid #d97706"}}>
             <div style={{fontSize:9,fontWeight:800,color:"#d97706",letterSpacing:1,marginBottom:4}}>👑 MVP ATUAL</div>
-            <div style={{fontSize:14,fontWeight:800,color:"#92400e"}}>{lastMvp.mvp_name}</div>
-            <div style={{fontSize:10,color:"#b45309"}}>{lastMvp.date}</div>
+            <div style={{fontSize:14,fontWeight:800,color:"#fbbf24"}}>{lastMvp.mvp_name}</div>
+            <div style={{fontSize:10,color:"#fcd34d"}}>{lastMvp.date}</div>
           </div>
         )}
         {mvpAno&&(
@@ -557,7 +557,7 @@ function HallOfFameMVP({history=[], members=[]}) {
       </div>
 
       {/* Ranking completo */}
-      <div style={{background:"white",borderRadius:14,border:"1px solid #d1fae5",overflow:"hidden"}}>
+      <div style={{background:"#16241c",borderRadius:14,border:"1px solid #23362a",overflow:"hidden"}}>
         {ranked.map(([name,count],i)=>{
           const pl=members.find(m=>m.name===name);
           const max=ranked[0][1];
@@ -566,7 +566,7 @@ function HallOfFameMVP({history=[], members=[]}) {
               <span style={{fontSize:14,width:20,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`}</span>
               {pl?<Avatar player={pl} size={28}/>:<div style={{width:28,height:28,borderRadius:"50%",background:"#d1fae5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#16a34a"}}>{name[0]}</div>}
               <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#14532d"}}>{name}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"white"}}>{name}</div>
                 <div style={{height:4,background:"#f0fdf4",borderRadius:99,marginTop:4,overflow:"hidden"}}>
                   <div style={{width:`${(count/max)*100}%`,height:"100%",background:"linear-gradient(90deg,#d97706,#fbbf24)",borderRadius:99}}/>
                 </div>
@@ -789,13 +789,13 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
                 onBlur={()=>setTimeout(()=>setShowSuggestions(false),150)}
                 onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
               {showSuggestions&&suggestions.length>0&&(
-                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"white",border:"2px solid #d1fae5",borderRadius:10,marginTop:4,zIndex:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,0.12)"}}>
+                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#16241c",border:"2px solid #23362a",borderRadius:10,marginTop:4,zIndex:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>
                   {suggestions.map(p=>(
                     <button key={p.id} onClick={()=>{setUsername(p.username);setShowSuggestions(false);}}
-                      style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"white",border:"none",borderBottom:"1px solid #f0fdf4",cursor:"pointer",textAlign:"left"}}>
+                      style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"#16241c",border:"none",borderBottom:"1px solid #23362a",cursor:"pointer",textAlign:"left"}}>
                       <Avatar player={p} size={26}/>
                       <div>
-                        <div style={{fontSize:13,fontWeight:700,color:"#14532d"}}>{p.name}</div>
+                        <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
                         <div style={{fontSize:11,color:"#6b7280"}}>@{p.username}</div>
                       </div>
                     </button>
@@ -870,7 +870,7 @@ function AutoTeamsDisplay({confirmed, players=[]}) {
           <div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:1,marginBottom:6}}>SUPLENTES</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
             {subs.map(p=>(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:"white",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#64748b",border:"1px solid #e2e8f0"}}>
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#9ca3af",border:"1px solid #2a332a"}}>
                 <Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>
                 {p.name}
               </div>
@@ -929,9 +929,9 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
           const votes=counts[p.id]||0;
           const isVoted=myVote?.voted_for_id===p.id;
           return (
-            <button key={p.id} onClick={()=>onVote(p.id)} style={{display:"flex",alignItems:"center",gap:10,background:isVoted?"#fef3c7":"white",border:`2px solid ${isVoted?"#d97706":"#d1fae5"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",textAlign:"left",width:"100%"}}>
+            <button key={p.id} onClick={()=>onVote(p.id)} style={{display:"flex",alignItems:"center",gap:10,background:isVoted?"rgba(217,119,6,0.15)":"#16241c",border:`2px solid ${isVoted?"#d97706":"#23362a"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",textAlign:"left",width:"100%"}}>
               <Avatar player={p} size={28}/>
-              <span style={{flex:1,fontSize:13,fontWeight:700,color:"#14532d"}}>{p.name}</span>
+              <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{p.name}</span>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <div style={{width:60,height:6,background:"#f0fdf4",borderRadius:99,overflow:"hidden"}}>
                   <div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/>
@@ -1036,10 +1036,10 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,playe
         </div>
       </div>
       <div className="body">
-        <div style={{background:dm?"#1a2e1a":"white",border:"2px solid #16a34a",borderRadius:16,padding:16,marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
+        <div style={{background:"#16241c",border:"2px solid #16a34a",borderRadius:16,padding:16,marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
           <Avatar player={player} size={56}/>
           <div style={{flex:1}}>
-            <div style={{fontSize:16,fontWeight:800,color:dm?"white":"#14532d"}}>{player.name}</div>
+            <div style={{fontSize:16,fontWeight:800,color:"white"}}>{player.name}</div>
             <div style={{fontSize:11,color:"#6b7280",marginTop:2}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 Guarda-Redes":"⚽ Polivalente"}</div>
             {myDebt>0&&<div style={{fontSize:11,color:"#dc2626",fontWeight:700,marginTop:4}}>⚠️ {myDebt}€ em dívida</div>}
           </div>
@@ -1047,7 +1047,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,playe
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
           {stats.map((s,i)=>(
-            <div key={i} style={{background:dm?"#1a2e1a":"white",border:`1px solid ${dm?"#333":"#d1fae5"}`,borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
+            <div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
               <div style={{fontSize:16,marginBottom:4}}>{s.icon}</div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:s.color,lineHeight:1}}>{s.value}</div>
               <div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:3}}>{s.label}</div>
@@ -1081,7 +1081,7 @@ function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack})
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>CHAT DO GRUPO</span>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",background:dm?"#0a0f0a":"#f0fdf4",display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",background:"#0a0f0a",display:"flex",flexDirection:"column",gap:8}}>
         {messages.length===0&&<p className="empty-msg">Sem mensagens ainda. Diz algo! 💬</p>}
         {messages.map(msg=>{
           const isMe=msg.player_id===player.id;
@@ -1091,7 +1091,7 @@ function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack})
               {!isMe&&<Avatar player={pl} size={28}/>}
               <div style={{maxWidth:"75%"}}>
                 {!isMe&&<div style={{fontSize:10,color:"#6b7280",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
-                <div style={{background:isMe?"#16a34a":(dm?"#1a2e1a":"white"),color:isMe?"white":(dm?"white":"#14532d"),borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":`1px solid ${dm?"#333":"#d1fae5"}`}}>
+                <div style={{background:isMe?"#16a34a":"#16241c",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23362a"}}>
                   {msg.message}
                 </div>
                 <div style={{fontSize:9,color:"#9ca3af",marginTop:2,textAlign:isMe?"right":"left"}}>{formatTime(new Date(msg.created_at).getTime())}</div>
@@ -1101,7 +1101,7 @@ function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack})
         })}
         <div ref={bottomRef}/>
       </div>
-      <div style={{padding:"10px 16px",background:dm?"#111":"white",borderTop:`1px solid ${dm?"#333":"#d1fae5"}`,display:"flex",gap:8,flexShrink:0}}>
+      <div style={{padding:"10px 16px",background:"#13201a",borderTop:"1px solid #23362a",display:"flex",gap:8,flexShrink:0}}>
         <input className="text-input" style={{flex:1}} placeholder="Escreve uma mensagem..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onSendMessage(text),setText(""))}/>
         <button className="btn-add" onClick={()=>{onSendMessage(text);setText("");}}><Icon name="send" size={16}/></button>
       </div>
@@ -1137,7 +1137,7 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAc
           </div>
         </div>
 
-        <div style={{background:dm?"#1a2e1a":"white",border:"2px solid #d1fae5",borderRadius:14,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{background:"#16241c",border:"2px solid #23362a",borderRadius:14,padding:16,display:"flex",flexDirection:"column",gap:10}}>
           <label className="field-label">Nome</label>
           <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
           <label className="field-label">Nova password</label>
@@ -1155,7 +1155,7 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAc
           <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
         </div>
 
-        <button onClick={onSwitchAccount} style={{width:"100%",marginTop:14,padding:"11px",borderRadius:10,border:"2px solid #fee2e2",background:"transparent",color:"#dc2626",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+        <button onClick={onSwitchAccount} style={{width:"100%",marginTop:14,padding:"11px",borderRadius:10,border:"2px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           <Icon name="logout" size={14}/> TROCAR DE CONTA
         </button>
       </div>
@@ -1197,11 +1197,11 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         </div>
 
         {totalDebt>0&&(
-          <div style={{background:"#fef3c7",border:"2px solid #d97706",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:"rgba(217,119,6,0.15)",border:"2px solid #d97706",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
             <Icon name="warn" size={18}/>
             <div>
-              <div style={{fontSize:13,fontWeight:800,color:"#92400e"}}>Tens {totalDebt}€ em dívida</div>
-              <div style={{fontSize:11,color:"#b45309"}}>{myDebts.map(d=>d.description).join(" · ")}</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div>
+              <div style={{fontSize:11,color:"#fcd34d"}}>{myDebts.map(d=>d.description).join(" · ")}</div>
             </div>
           </div>
         )}
@@ -1286,9 +1286,9 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
               <p className="section-label"><Icon name="warn" size={12}/> DÍVIDAS EM ABERTO</p>
               <div style={{display:"flex",flexDirection:"column",gap:5}}>
                 {dp.map(m=>(
-                  <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:m.id===player.id?"#fff7ed":"white",border:`1px solid ${m.id===player.id?"#f97316":"#d1fae5"}`,borderRadius:10,padding:"9px 14px"}}>
+                  <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:m.id===player.id?"rgba(249,115,22,0.12)":"#16241c",border:`1px solid ${m.id===player.id?"#f97316":"#23362a"}`,borderRadius:10,padding:"9px 14px"}}>
                     <Avatar player={m} size={28}/>
-                    <span style={{flex:1,fontSize:13,fontWeight:700,color:"#14532d"}}>{m.name}{m.id===player.id?" (tu)":""}</span>
+                    <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}{m.id===player.id?" (tu)":""}</span>
                     <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#dc2626"}}>{m.total}€</span>
                   </div>
                 ))}
@@ -1387,7 +1387,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
           {!showReset
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
-            :<div style={{background:"#fee2e2",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
+            :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
               <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
               <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Vai guardar no histórico, registar dívidas dos que não pagaram e limpar presenças.</p>
               <div style={{display:"flex",gap:8}}>
@@ -1411,12 +1411,12 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
                 {["A","B","C"].slice(0,confirmed.length>=15?3:2).map(t=>(
-                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#d1fae5"}`,background:winnerTeam===t?"#fef3c7":"white",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#92400e":"#6b7280"}}>
+                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23362a"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#9ca3af"}}>
                     {winnerTeam===t?"🏆":""} Equipa {t}
                   </button>
                 ))}
               </div>
-              {winnerTeam&&<div style={{background:"#fef3c7",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#92400e",textAlign:"center"}}>🏆 Equipa {winnerTeam} venceu!</div>}
+              {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 Equipa {winnerTeam} venceu!</div>}
             </>}
           <p className="section-label" style={{marginTop:14}}><Icon name="guest" size={12}/> ADICIONAR CONVIDADO</p>
           {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:(
@@ -1432,11 +1432,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           <p className="section-label"><Icon name="euro" size={12}/> DÍVIDAS</p>
           {debtsByPlayer.length===0&&<p className="empty-msg">🎉 Sem dívidas em aberto!</p>}
           {debtsByPlayer.map(m=>(
-            <div key={m.id} style={{background:"#fff7ed",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
+            <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/>
-                  <span style={{fontWeight:800,fontSize:14,color:"#14532d"}}>{m.name}</span>
+                  <span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span>
                 </div>
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
               </div>
@@ -1444,7 +1444,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             </div>
           ))}
           <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
-          <div style={{background:"white",border:"1px solid #d1fae5",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
             <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)} style={{color:debtPlayer?"#14532d":"#9ca3af"}}>
               <option value="">Seleciona jogador...</option>
               {members.filter(m=>!m.is_admin).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
@@ -1519,8 +1519,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           {!showClearConfirm ? (
             <button className="btn-danger-full" onClick={()=>setShowClearConfirm(true)}>🗑️ Limpar histórico e dívidas (reiniciar mealheiro)</button>
           ) : (
-            <div style={{background:"#fee2e2",border:"2px solid #dc2626",borderRadius:12,padding:14}}>
-              <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:8}}>Tens a certeza?</p>
+            <div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14}}>
+              <p style={{fontSize:13,fontWeight:700,color:"#f87171",marginBottom:8}}>Tens a certeza?</p>
               <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Isto apaga todo o histórico de jogos e dívidas. O mealheiro volta a 0€. Não afeta jogadores nem estatísticas pessoais.</p>
               <div style={{display:"flex",gap:8}}>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onClearHistory();setShowClearConfirm(false);}}>✓ Confirmar</button>

@@ -220,12 +220,6 @@ export default function App() {
         const p=players.find(pl=>pl.id===saved.playerId);
         if(p){
           setCurrentUser(p);setView(p.is_admin?"admin":"player");
-          try{
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            window.OneSignalDeferred.push(async function(OneSignal) {
-              await OneSignal.login(String(p.id));
-            });
-          }catch(e){}
         }
       }
     }catch(e){}
@@ -243,10 +237,14 @@ export default function App() {
     try{
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.login(String(playerId));
-        if(OneSignal.Notifications.permission !== true){
-          await OneSignal.Notifications.requestPermission();
-        }
+        try{
+          if(OneSignal.Notifications.permission !== true){
+            await OneSignal.Notifications.requestPermission();
+          }
+          if(OneSignal.Notifications.permission === true){
+            await OneSignal.User.addTag("player_id", String(playerId));
+          }
+        }catch(err){ console.log("OneSignal error:", err); }
       });
     }catch(e){}
   };

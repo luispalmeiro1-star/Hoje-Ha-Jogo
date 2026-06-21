@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-
+ 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      filename: 'sw.js',
       manifest: {
         name: 'KickOff',
         short_name: 'KickOff',
@@ -19,7 +20,11 @@ export default defineConfig({
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
         ]
+      },
+      workbox: {
+        importScripts: ['OneSignalSDKWorker.js']
       }
     })
   ]
 })
+ 

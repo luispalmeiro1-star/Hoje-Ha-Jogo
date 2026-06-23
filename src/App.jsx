@@ -7,9 +7,9 @@ const COST = 3;
 const RENT = 22;
 const AVATAR_COLORS = ["#16a34a","#2563eb","#7c3aed","#dc2626","#d97706","#0891b2","#be185d","#065f46"];
 const TEAM_COLORS = [
-  { bg: "#dcfce7", border: "#16a34a", text: "#14532d", name: "EQUIPA A" },
-  { bg: "#dbeafe", border: "#2563eb", text: "#1e3a8a", name: "EQUIPA B" },
-  { bg: "#fef3c7", border: "#d97706", text: "#92400e", name: "EQUIPA C" },
+  { bg: "rgba(22,163,74,0.15)", border: "#16a34a", text: "#4ade80", name: "EQUIPA A" },
+  { bg: "rgba(37,99,235,0.15)", border: "#2563eb", text: "#60a5fa", name: "EQUIPA B" },
+  { bg: "rgba(217,119,6,0.15)", border: "#d97706", text: "#fbbf24", name: "EQUIPA C" },
 ];
 
 function nextWednesday() {
@@ -851,6 +851,75 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
   );
 }
 
+// ── EXPANDABLE CARD ──────────────────────────────────────────────────────────
+function ExpandableCard({title, children, defaultOpen=false}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{background:"#16241c",border:"1px solid #23362a",borderRadius:14,marginBottom:10,overflow:"hidden"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:"transparent",border:"none",cursor:"pointer",color:"white",fontFamily:"'DM Sans',sans-serif"}}>
+        <span style={{fontSize:12,fontWeight:800,letterSpacing:1,color:"#8ba593"}}>{title}</span>
+        <span style={{fontSize:14,color:"#4ade80",transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+      </button>
+      {open&&<div style={{padding:"0 14px 14px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── TEAMS REVEAL (Phase 7 - animated) ────────────────────────────────────────
+function TeamsReveal({confirmed, players=[]}) {
+  const [phase, setPhase] = useState("idle"); // idle | animating | revealed
+  const [displayNames, setDisplayNames] = useState([]);
+  const intervalRef = useRef(null);
+
+  const allNames = confirmed.map(p=>p.name);
+
+  const startReveal = () => {
+    setPhase("animating");
+    let ticks = 0;
+    const maxTicks = 20;
+    intervalRef.current = setInterval(()=>{
+      // Show random names shuffling
+      const shuffled = [...allNames].sort(()=>Math.random()-0.5);
+      setDisplayNames(shuffled.slice(0,4));
+      ticks++;
+      if(ticks >= maxTicks){
+        clearInterval(intervalRef.current);
+        setPhase("revealed");
+      }
+    }, 100);
+  };
+
+  useEffect(()=>()=>clearInterval(intervalRef.current),[]);
+
+  if(phase==="idle") return (
+    <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid #16a34a",background:"rgba(22,163,74,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+      🎲 REVELAR EQUIPAS
+    </button>
+  );
+
+  if(phase==="animating") return (
+    <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"2px solid #16a34a"}}>
+      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+        {displayNames.map((name,i)=>(
+          <span key={i} style={{background:"rgba(22,163,74,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #16a34a"}}>
+            {name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <AutoTeamsDisplay confirmed={confirmed} players={players}/>
+      <button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23362a",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+        🔄 Sortear novamente
+      </button>
+    </div>
+  );
+}
+
 // ── AUTO TEAMS DISPLAY ───────────────────────────────────────────────────────
 function AutoTeamsDisplay({confirmed, players=[]}) {
   if(!confirmed.length) return null;
@@ -888,7 +957,7 @@ function AutoTeamsDisplay({confirmed, players=[]}) {
             </div>
             <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
               {team.map(p => (
-                <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:p.position==="GR"?"#eff6ff":"white",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${p.position==="GR"?"#2563eb":color.border}`}}>
+                <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:p.position==="GR"?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${p.position==="GR"?"#60a5fa":color.border}`}}>
                   <Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>
                   {p.name}{p.position==="GR"&&<span style={{fontSize:11}}>🧤</span>}
                 </div>
@@ -898,7 +967,7 @@ function AutoTeamsDisplay({confirmed, players=[]}) {
         );
       })}
       {subs.length > 0 && (
-        <div style={{background:"#f8fafc",border:"1px dashed #94a3b8",borderRadius:12,padding:"10px 12px"}}>
+        <div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #4b5563",borderRadius:12,padding:"10px 12px"}}>
           <div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:1,marginBottom:6}}>SUPLENTES</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
             {subs.map(p=>(
@@ -1273,33 +1342,42 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         {/* Position selector */}
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
-          <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#d1fae5"}`,background:(player.position||"Polivalente")==="Polivalente"?"#dcfce7":"white",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#14532d":"#6b7280"}}>
+          <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#23362a"}`,background:(player.position||"Polivalente")==="Polivalente"?"rgba(22,163,74,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#4ade80":"#6b7280"}}>
             ⚽ Polivalente
           </button>
-          <button onClick={()=>onUpdatePosition("GR")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${player.position==="GR"?"#2563eb":"#d1fae5"}`,background:player.position==="GR"?"#dbeafe":"white",fontWeight:800,fontSize:13,cursor:"pointer",color:player.position==="GR"?"#1e3a8a":"#6b7280"}}>
+          <button onClick={()=>onUpdatePosition("GR")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${player.position==="GR"?"#2563eb":"#23362a"}`,background:player.position==="GR"?"rgba(37,99,235,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:player.position==="GR"?"#60a5fa":"#6b7280"}}>
             🧤 Guarda-Redes
           </button>
         </div>
 
-        {/* MVP vote */}
-        {confirmed.length>=MIN_PLAYERS&&(
-          <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>
-        )}
-
-        {/* Equipas automáticas */}
-        {confirmed.length>=MIN_PLAYERS&&(
-          <div className="card-section" style={{marginBottom:14}}>
-            <p className="section-label"><Icon name="people" size={12}/> EQUIPAS</p>
-            <div style={{background:"#f0fdf4",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#166534",fontWeight:600}}>
+        {/* Equipas automáticas - sempre visível, só mostra após admin sortear */}
+        {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id); return pl?.team&&pl.team!=="SUB";})&&(
+          <div style={{marginBottom:14}}>
+            <div style={{background:"rgba(22,163,74,0.1)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,fontSize:12,color:"#4ade80",fontWeight:700,textAlign:"center"}}>
               {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}
             </div>
             <AutoTeamsDisplay confirmed={confirmed} players={players}/>
           </div>
         )}
 
-        {/* Convidados */}
-        <div className="card-section" style={{marginBottom:14}}>
-          <p className="section-label"><Icon name="guest" size={12}/> CONVIDAR ALGUÉM</p>
+        {/* MVP vote - expansível */}
+        {confirmed.length>=MIN_PLAYERS&&(
+          <ExpandableCard title="⭐ MVP DA SEMANA" defaultOpen={false}>
+            <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>
+          </ExpandableCard>
+        )}
+
+        {/* Lista do jogo - expansível */}
+        <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`} defaultOpen={false}>
+          <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
+          {waiting.length>0&&<>
+            <p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p>
+            <div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div>
+          </>}
+        </ExpandableCard>
+
+        {/* Convidados - expansível */}
+        <ExpandableCard title="👤 CONVIDAR ALGUÉM" defaultOpen={false}>
           {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:(
             <>
               {confirmed.length<MIN_PLAYERS&&<div className="guest-hint">⚠️ Membros têm prioridade.</div>}
@@ -1316,15 +1394,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
               ))}
             </>
           )}
-        </div>
-
-        <p className="section-label"><Icon name="people" size={12}/> LISTA DO JOGO</p>
-        <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
-
-        {waiting.length>0&&<>
-          <p className="section-label" style={{marginTop:14}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p>
-          <div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div>
-        </>}
+        </ExpandableCard>
 
         <PiggyBankCard piggybank={piggybank} history={history} cost={gameInfo.cost_per_player||COST}/>
 
@@ -1457,7 +1527,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               <div style={{background:"#f0fdf4",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#166534",fontWeight:600}}>
                 {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}
               </div>
-              <AutoTeamsDisplay confirmed={confirmed} players={players}/>
+              <TeamsReveal confirmed={confirmed} players={players}/>
               {/* Equipa vencedora */}
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>

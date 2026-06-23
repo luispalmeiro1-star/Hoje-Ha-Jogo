@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
- 
+
 export default defineConfig({
   plugins: [
     react(),
@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       filename: 'sw.js',
       manifest: {
-        name: 'KickOff',
-        short_name: 'KickOff',
+        name: 'Hoje Há Jogo',
+        short_name: 'Hoje Há Jogo',
         description: 'Gestão do futsal semanal',
         theme_color: '#166534',
         background_color: '#0d1a0e',
@@ -27,4 +27,3 @@ export default defineConfig({
     })
   ]
 })
- 

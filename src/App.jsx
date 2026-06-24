@@ -1309,8 +1309,8 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <div className="topbar">
           <span className="topbar-name">Olá, <strong>{player.name}</strong></span>
           <div style={{display:"flex",gap:4}}>
-            <button className="icon-ghost" onClick={()=>setView("stats")}><Icon name="chart" size={16}/></button>
-            <button className="icon-ghost" onClick={()=>setView("profile")}><Icon name="user" size={16}/></button>
+            <button className="icon-ghost" style={{gap:4,fontSize:11,fontWeight:700}} onClick={()=>setView("stats")}><Icon name="chart" size={14}/> Stats</button>
+            <button className="icon-ghost" style={{gap:4,fontSize:11,fontWeight:700}} onClick={()=>setView("profile")}><Icon name="user" size={14}/> Perfil</button>
             <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
           </div>
         </div>
@@ -1467,8 +1467,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
         <div className="topbar">
           <span className="topbar-name"><Icon name="shield" size={13}/> <strong>{currentUser.name}</strong> · Admin</span>
           <div style={{display:"flex",gap:4}}>
-            <button className="icon-ghost" onClick={()=>setView("stats")}><Icon name="chart" size={16}/></button>
-            <button className="icon-ghost" onClick={()=>setView("profile")}><Icon name="user" size={16}/></button>
+            <button className="icon-ghost" style={{gap:4,fontSize:11,fontWeight:700}} onClick={()=>setView("stats")}><Icon name="chart" size={14}/> Stats</button>
+            <button className="icon-ghost" style={{gap:4,fontSize:11,fontWeight:700}} onClick={()=>setView("profile")}><Icon name="user" size={14}/> Perfil</button>
             <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
           </div>
         </div>

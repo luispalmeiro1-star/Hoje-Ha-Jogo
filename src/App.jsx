@@ -172,7 +172,7 @@ export default function App() {
   const [mvpVotes, setMvpVotes]       = useState([]);
   const [piggybank, setPiggybank]     = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
-  const [view, setView]               = useState("login"); // login | player | admin | profile | stats | chat | debts
+  const [view, setView]               = useState("landing"); // landing | login | criar-grupo | entrar-convite | player | admin | profile | stats | chat | debts
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
@@ -222,9 +222,13 @@ export default function App() {
         const p=players.find(pl=>pl.id===saved.playerId);
         if(p){
           setCurrentUser(p);setView(p.is_admin?"admin":"player");
+        } else {
+          setView("landing");
         }
+      } else {
+        setView("landing");
       }
-    }catch(e){}
+    }catch(e){setView("landing");}
   },[loading,players]);
 
   const members   = players.filter(p=>!p.is_guest);
@@ -445,7 +449,10 @@ export default function App() {
     <div style={{background:dm?"#0a0f0a":"#0d1a0e",minHeight:"100vh"}}>
       <style>{getCss(dm)}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
-      {view==="login"   && <LoginView   {...shared} onLogin={handleLogin} showToast={showToast}/>}
+      {view==="landing"  && <LandingView  setView={setView} darkMode={darkMode}/>}
+      {view==="login"    && <LoginView   {...shared} onLogin={handleLogin} showToast={showToast} setView={setView}/>}
+      {view==="criar-grupo" && <CriarGrupoView setView={setView} showToast={showToast} darkMode={darkMode}/>}
+      {view==="entrar-convite" && <EntrarConviteView setView={setView} onLogin={handleLogin} showToast={showToast} darkMode={darkMode}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={(pos)=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/> }
@@ -800,7 +807,265 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
 }
 
 // ── LOGIN ────────────────────────────────────────────────────────────────────
-function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,onLogin,showToast}) {
+
+// ── LANDING VIEW ─────────────────────────────────────────────────────────────
+function LandingView({setView, darkMode}) {
+  return (
+    <div className="screen" style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <div style={{textAlign:"center",marginBottom:40}}>
+        <div style={{fontSize:22,fontWeight:500,color:"white",letterSpacing:1}}>HOJE HÁ</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,color:"#d4af37",letterSpacing:3,lineHeight:1}}>JOGO</div>
+        <div style={{fontSize:12,color:"#4b5563",marginTop:8}}>Gestão de futsal semanal</div>
+      </div>
+
+      <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:10}}>
+        <button onClick={()=>setView("criar-grupo")} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+          <div style={{width:44,height:44,background:"rgba(212,175,55,0.15)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Icon name="plus" size={22} color="#d4af37"/>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>Criar grupo</div>
+            <div style={{color:"#4b5563",fontSize:12}}>Sou o organizador</div>
+          </div>
+          <Icon name="right" size={16} color="#333"/>
+        </button>
+
+        <button onClick={()=>setView("entrar-convite")} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+          <div style={{width:44,height:44,background:"rgba(255,255,255,0.05)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Icon name="key" size={22} color="white"/>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>Entrar com convite</div>
+            <div style={{color:"#4b5563",fontSize:12}}>Tenho um código de convite</div>
+          </div>
+          <Icon name="right" size={16} color="#333"/>
+        </button>
+
+        <button onClick={()=>setView("login")} style={{width:"100%",background:"transparent",border:"none",borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+          <div style={{width:44,height:44,background:"rgba(255,255,255,0.05)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Icon name="user" size={22} color="white"/>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>Já tenho conta</div>
+            <div style={{color:"#4b5563",fontSize:12}}>Iniciar sessão</div>
+          </div>
+          <Icon name="right" size={16} color="#333"/>
+        </button>
+      </div>
+
+      <div style={{position:"absolute",bottom:24,color:"#222",fontSize:11}}>hojehajogo.pt</div>
+    </div>
+  );
+}
+
+// ── CRIAR GRUPO VIEW ──────────────────────────────────────────────────────────
+function CriarGrupoView({setView, showToast, darkMode}) {
+  const [step, setStep] = useState(1);
+  const [groupName, setGroupName] = useState("");
+  const [location, setLocation] = useState("");
+  const [time, setTime] = useState("22:30");
+  const [cost, setCost] = useState("3");
+  const [adminName, setAdminName] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminPhone, setAdminPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+
+  const generateCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "HHJ-";
+    for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
+    return code;
+  };
+
+  const handleCreate = async() => {
+    if(!groupName.trim()||!adminName.trim()||!adminUsername.trim()||!adminPassword.trim()){
+      showToast("Preenche todos os campos obrigatórios","err"); return;
+    }
+    setLoading(true);
+    try {
+      const code = generateCode();
+      // Create group
+      const {data:group, error:ge} = await supabase.from("groups").insert({
+        name:groupName.trim(), location:location.trim(), time, cost_per_player:Number(cost), invite_code:code
+      }).select().single();
+      if(ge) throw ge;
+
+      // Create admin player
+      const {error:pe} = await supabase.from("players").insert({
+        name:adminName.trim(), username:adminUsername.trim().toLowerCase(),
+        password:adminPassword, phone:adminPhone||null,
+        is_admin:true, status:"out", paid:false, is_guest:false,
+        group_id:group.id
+      });
+      if(pe) throw pe;
+
+      // Create game_info for this group
+      const nextWed = ()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
+      await supabase.from("game_info").insert({
+        location:location.trim()||"A definir", date:nextWed(), time, app_name:groupName.trim(),
+        cost_per_player:Number(cost), group_id:group.id
+      });
+
+      setInviteCode(code);
+      setStep(3);
+    } catch(e) {
+      showToast("Erro ao criar grupo: "+e.message,"err");
+    }
+    setLoading(false);
+  };
+
+  if(step===3) return (
+    <div className="screen" style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+        <div style={{color:"white",fontSize:20,fontWeight:700,marginBottom:8}}>Grupo criado!</div>
+        <div style={{color:"#6b7280",fontSize:13}}>Partilha o código com os teus jogadores</div>
+      </div>
+      <div style={{background:"#111",border:"2px solid #d4af37",borderRadius:16,padding:"24px",textAlign:"center",marginBottom:24,width:"100%",maxWidth:320}}>
+        <div style={{color:"#6b7280",fontSize:12,marginBottom:8}}>CÓDIGO DE CONVITE</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,color:"#d4af37",letterSpacing:6}}>{inviteCode}</div>
+        <div style={{color:"#4b5563",fontSize:12,marginTop:8}}>{groupName}</div>
+      </div>
+      <button onClick={()=>navigator.share?navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo "${groupName}"! Código: ${inviteCode}`,url:"https://hojehajogo.pt"}):navigator.clipboard.writeText(inviteCode).then(()=>showToast("Código copiado ✓"))} style={{width:"100%",maxWidth:320,padding:"14px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0a0a",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:12}}>
+        📤 Partilhar código
+      </button>
+      <button onClick={()=>window.location.reload()} style={{background:"transparent",border:"none",color:"#6b7280",fontSize:13,cursor:"pointer"}}>
+        Entrar na app →
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="screen" style={{background:"#0a0a0a",minHeight:"100vh"}}>
+      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}>
+          <Icon name="left" size={18}/>
+        </button>
+        <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar grupo</span>
+        <span style={{color:"#4b5563",fontSize:12,marginLeft:"auto"}}>{step}/2</span>
+      </div>
+
+      <div style={{padding:"24px 20px"}}>
+        {step===1&&<>
+          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Informações do grupo</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>NOME DO GRUPO *</label>
+          <input className="text-input" value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Ex: Futebolada da Quinta" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>LOCAL HABITUAL</label>
+          <input className="text-input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Ex: Pavilhão Municipal" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>HORA HABITUAL</label>
+          <input className="text-input" type="time" value={time} onChange={e=>setTime(e.target.value)} style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CUSTO POR JOGADOR (€)</label>
+          <input className="text-input" type="number" step="0.5" min="0" value={cost} onChange={e=>setCost(e.target.value)} style={{marginBottom:24}}/>
+          <button className="btn-big btn-green" onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}setStep(2);}}>
+            Continuar →
+          </button>
+        </>}
+
+        {step===2&&<>
+          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
+          <input className="text-input" value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
+          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(e.target.value)} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
+          <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
+          <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+          <button className="btn-big btn-green" onClick={handleCreate} disabled={loading}>
+            {loading?"A criar...":"🚀 Criar grupo"}
+          </button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+// ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
+function EntrarConviteView({setView, onLogin, showToast, darkMode}) {
+  const [code, setCode] = useState("");
+  const [group, setGroup] = useState(null);
+  const [step, setStep] = useState(1);
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const checkCode = async() => {
+    if(!code.trim()){showToast("Insere o código de convite","err");return;}
+    setLoading(true);
+    const {data} = await supabase.from("groups").select("*").eq("invite_code",code.trim().toUpperCase()).single();
+    setLoading(false);
+    if(!data){showToast("Código inválido ou expirado","err");return;}
+    setGroup(data);
+    setStep(2);
+  };
+
+  const handleRegister = async() => {
+    if(!name.trim()||!username.trim()||!password.trim()){
+      showToast("Preenche todos os campos obrigatórios","err");return;
+    }
+    setLoading(true);
+    // Check username not taken in this group
+    const {data:existing} = await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).eq("group_id",group.id);
+    if(existing&&existing.length>0){showToast("Username já existe neste grupo","err");setLoading(false);return;}
+
+    const {error} = await supabase.from("players").insert({
+      name:name.trim(), username:username.trim().toLowerCase(),
+      password, phone:phone||null,
+      is_admin:false, status:"out", paid:false, is_guest:false,
+      group_id:group.id
+    });
+    setLoading(false);
+    if(error){showToast("Erro ao criar conta","err");return;}
+    showToast("Conta criada! A entrar...");
+    setTimeout(()=>window.location.reload(),1000);
+  };
+
+  return (
+    <div className="screen" style={{background:"#0a0a0a",minHeight:"100vh"}}>
+      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}>
+          <Icon name="left" size={18}/>
+        </button>
+        <span style={{color:"white",fontWeight:700,fontSize:16}}>Entrar com convite</span>
+      </div>
+
+      <div style={{padding:"24px 20px"}}>
+        {step===1&&<>
+          <p style={{color:"#6b7280",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CÓDIGO DE CONVITE</label>
+          <input className="text-input" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
+          <button className="btn-big btn-green" onClick={checkCode} disabled={loading}>
+            {loading?"A verificar...":"Verificar código →"}
+          </button>
+        </>}
+
+        {step===2&&group&&<>
+          <div style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:12,padding:"14px",marginBottom:24,textAlign:"center"}}>
+            <div style={{color:"#d4af37",fontSize:12,marginBottom:4}}>VAS ENTRAR NO GRUPO</div>
+            <div style={{color:"white",fontSize:18,fontWeight:700}}>{group.name}</div>
+          </div>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
+          <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
+          <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
+          <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
+          <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+          <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>
+            {loading?"A criar conta...":"✅ Criar conta e entrar"}
+          </button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,onLogin,showToast,setView}) {
   const [username,setUsername]=useState("");
   const [password,setPassword]=useState("");
   const [showPw,setShowPw]=useState(false);
@@ -823,15 +1088,15 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
       <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode}} isLoggedIn={false}/>
       <div className="body">
         {!isViewingHistory&&<>
-          <div className="pw-box" style={{marginTop:20}}>
+          <form className="pw-box" style={{marginTop:20}} onSubmit={e=>{e.preventDefault();handleSubmit();}}>
             <p className="pw-label" style={{textAlign:"center",marginBottom:4}}>Inicia sessão para continuar</p>
             <label className="field-label">Utilizador ou telemóvel</label>
             <div style={{position:"relative"}}>
-              <input className="pw-input" placeholder="O teu utilizador ou nº..." value={username}
+              <input className="pw-input" name="username" autoComplete="username" placeholder="O teu utilizador ou nº..." value={username}
                 onChange={e=>{setUsername(e.target.value);setShowSuggestions(true);}}
                 onFocus={()=>setShowSuggestions(true)}
                 onBlur={()=>setTimeout(()=>setShowSuggestions(false),150)}
-                onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
+                autoCapitalize="none" autoFocus/>
               {showSuggestions&&suggestions.length>0&&(
                 <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#16241c",border:"2px solid #23362a",borderRadius:10,marginTop:4,zIndex:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>
                   {suggestions.map(p=>(
@@ -849,13 +1114,13 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
             </div>
             <label className="field-label" style={{marginTop:4}}>Password</label>
             <div className="pw-row">
-              <input className="pw-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
-              <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={16}/></button>
+              <input className="pw-input" name="password" autoComplete="current-password" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)}/>
+              <button type="button" className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={16}/></button>
             </div>
-            <button className="btn-primary" style={{justifyContent:"center",marginTop:4}} onClick={handleSubmit} disabled={loading}>
+            <button type="submit" className="btn-primary" style={{justifyContent:"center",marginTop:4}} disabled={loading}>
               {loading?"A entrar...":"ENTRAR →"}
             </button>
-          </div>
+          </form>
         </>}
         {isViewingHistory&&<div style={{textAlign:"center",paddingTop:20}}><p style={{color:"#6b7280",fontSize:13}}>A ver histórico — <button style={{background:"none",border:"none",color:"#16a34a",fontWeight:700,cursor:"pointer"}} onClick={()=>setViewingDate(null)}>voltar ao atual</button></p></div>}
       </div>

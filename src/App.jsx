@@ -527,64 +527,109 @@ function ExpandableList({confirmed}) {
   );
 }
 
-// ── FIELD HEADER — sem botão modo noturno ─────────────────────────────────────
+// ── GAME HEADER — design limpo e profissional ────────────────────────────────
 function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true}) {
   const pct=Math.round((confirmed.length/MAX_PLAYERS)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
+  const now=new Date();
+  const [gy,gm,gd]=(gameInfo.date||"2099-01-01").split("-").map(Number);
+  const [gh,gmin]=(gameInfo.time||"22:30").split(":").map(Number);
+  const gameStart=new Date(gy,gm-1,gd,gh,gmin);
+  const gameEnd=new Date(gameStart.getTime()+3.5*60*60*1000);
+  const isLive=now>=gameStart&&now<gameEnd;
+  const isOver=now>=gameEnd;
   return (
-    <div className="field-header">
-      <div className="field-lines"><div className="fl fl-cc"/><div className="fl fl-cl"/><div className="fl fl-lb"/><div className="fl fl-rb"/></div>
-      <div className="field-content">
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-          <div className="field-badge"><span style={{fontSize:16}}>⚽</span><span className="field-badge-name">{gameInfo.app_name||"Hoje Há Jogo"}</span></div>
-          <div style={{display:"flex",gap:4,alignItems:"center"}}>
-            <button className="field-nav-btn" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={13}/></button>
-            {isViewingHistory&&<button className="field-nav-btn" style={{fontSize:10,padding:"3px 8px",fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
-            {canFwd&&<button className="field-nav-btn" onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={13}/></button>}
-            {extraRight}
+    <div style={{background:"#111",borderBottom:"1px solid #1f1f1f",padding:"16px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:3}}>GRUPO</div>
+          <div style={{fontSize:20,fontWeight:800,color:"white",letterSpacing:0.5}}>{gameInfo.app_name||"Hoje Há Jogo"}</div>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <button style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/></button>
+          {isViewingHistory&&<button style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:10,padding:"5px 10px",cursor:"pointer",color:"#d4af37",fontSize:10,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
+          {canFwd&&<button style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
+          {extraRight}
+        </div>
+      </div>
+      {isViewingHistory?(
+        <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",border:"1px solid #1a1a1a"}}>
+          <div style={{fontSize:11,color:"#6b7280",fontWeight:700,letterSpacing:1,marginBottom:10,textTransform:"capitalize"}}>{formatDisplayDate(effectiveDate)}</div>
+          {historyGame?(
+            <div>
+              <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:10}}>
+                <div><div style={{fontSize:28,fontWeight:800,color:"#4ade80",lineHeight:1}}>{historyGame.players_count}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>JOGADORES</div></div>
+                <div><div style={{fontSize:28,fontWeight:800,color:"#fbbf24",lineHeight:1}}>{historyGame.collected}€</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>RECEBIDO</div></div>
+                {historyGame.winner_team&&<div><div style={{fontSize:28,fontWeight:800,color:"#60a5fa",lineHeight:1}}>Equipa {historyGame.winner_team}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>VENCEDOR</div></div>}
+                {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>MVP</div></div>}
+              </div>
+              {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#1a1a1a",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
+              )}
+            </div>
+          ):<div style={{fontSize:13,color:"#4b5563"}}>Sem registo para esta semana</div>}
+        </div>
+      ):isLive?(
+        <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",border:"1px solid #16a34a33",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{background:"#16241c",border:"1px solid #16a34a55",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:"#16a34a"}}/>
+              <span style={{fontSize:11,color:"#4ade80",fontWeight:800,letterSpacing:1}}>A JOGAR</span>
+            </div>
+            <div style={{fontSize:13,color:"#9ca3af",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
+            <div style={{display:"flex",gap:8,marginTop:4}}>
+              <span style={{fontSize:12,color:"#6b7280"}}>{gameInfo.time}</span>
+              {gameInfo.location&&<><span style={{color:"#2a2a2a"}}>·</span><span style={{fontSize:12,color:"#6b7280"}}>{gameInfo.location}</span></>}
+            </div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1,marginBottom:4}}>JOGADORES</div>
+            <div style={{fontSize:40,fontWeight:900,color:"#4ade80",lineHeight:1}}>{confirmed.length}</div>
           </div>
         </div>
-        {isViewingHistory?(
-          <div style={{background:"rgba(0,0,0,0.3)",borderRadius:10,padding:"10px 12px",marginBottom:4}}>
-            <div style={{fontSize:11,color:"#bbf7d0",fontWeight:700,marginBottom:6}}>📅 {formatDisplayDate(effectiveDate).toUpperCase()}</div>
-            {historyGame?(
-              <div>
-                <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:8}}>
-                  <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#4ade80"}}>{historyGame.players_count}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",letterSpacing:1}}>JOGADORES</div></div>
-                  <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#fbbf24"}}>{historyGame.collected}€</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",letterSpacing:1}}>RECEBIDO</div></div>
-                  {historyGame.winner_team&&<div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#60a5fa"}}>{historyGame.winner_team}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",letterSpacing:1}}>VENCEDOR</div></div>}
-                  {historyGame.mvp_name&&<div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f472b6"}}>{historyGame.mvp_name}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",letterSpacing:1}}>MVP ⭐</div></div>}
-                </div>
-                {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
-                  <div style={{display:"flex",flexWrap:"wrap",gap:3}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"rgba(255,255,255,0.1)",borderRadius:20,padding:"2px 8px",fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600}}>{a.player_name}</span>)}</div>
-                )}
-              </div>
-            ):<div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>Sem registo para esta semana</div>}
+      ):isOver?(
+        <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",border:"1px solid #1a1a1a"}}>
+          <div style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+            <span style={{fontSize:11,color:"#6b7280",fontWeight:800,letterSpacing:1}}>JOGO TERMINADO</span>
           </div>
-        ):(
-          <>
-            <div className="field-date">{formatDisplayDate(gameInfo.date)}</div>
-            <div className="field-timeloc">
-              <span className="field-chip"><Icon name="clock" size={10}/> {gameInfo.time}</span>
-              <span className="field-chip"><Icon name="pin" size={10}/> {gameInfo.location}</span>
+          <div style={{fontSize:13,color:"#9ca3af",textTransform:"capitalize",marginBottom:4}}>{formatDisplayDate(gameInfo.date)}</div>
+          <div style={{fontSize:12,color:"#4b5563"}}>A aguardar fecho automático...</div>
+        </div>
+      ):(
+        <>
+          <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #1a1a1a"}}>
+            <div>
+              <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>PRÓXIMO JOGO</div>
+              <div style={{fontSize:13,color:"#9ca3af",fontWeight:600,marginBottom:4,textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
+              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                <span style={{fontSize:12,color:"#6b7280"}}>{gameInfo.time}</span>
+                {gameInfo.location&&<><span style={{color:"#2a2a2a"}}>·</span><span style={{fontSize:12,color:"#6b7280",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gameInfo.location}</span></>}
+              </div>
             </div>
-            <div style={{marginBottom:6}}><span className="field-cd">{cdStr}</span></div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-              <div className="score-block"><span className="score-num green">{confirmed.length}</span><span className="score-label">CONF.</span></div>
-              <div className="score-sep">/</div>
-              <div className="score-block"><span className="score-num white">{MAX_PLAYERS}</span><span className="score-label">MÁXIMO</span></div>
-              {notYet&&notYet.length>0&&<><div className="score-sep" style={{fontSize:16}}>·</div><div className="score-block"><span className="score-num" style={{fontSize:30,color:"#fbbf24"}}>{notYet.length}</span><span className="score-label">SEM RESP.</span></div></>}
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>FALTAM</div>
+              <div style={{fontSize:32,fontWeight:900,color:"#d4af37",lineHeight:1}}>{cdStr}</div>
             </div>
-            <div className="pct-bar"><div className="pct-fill" style={{width:`${pct}%`}}/></div>
-            <div className="pct-row" style={{marginBottom:confirmed.length>0?6:0}}>
-              <span className="pct-label green">✓ {confirmed.length}</span>
-              {notYet&&notYet.length>0&&<span className="pct-label muted">? {notYet.length}</span>}
-              {waiting.length>0&&<span className="pct-label yellow">⏳ {waiting.length}</span>}
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:11,color:"#4b5563",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
+              <span style={{fontSize:11,color:"#4b5563",fontWeight:700}}>{confirmed.length} / {MAX_PLAYERS}</span>
             </div>
-            {confirmed.length>0&&isLoggedIn&&<ExpandableList confirmed={confirmed}/>}
-          </>
-        )}
-      </div>
+            <div style={{height:6,background:"#1a1a1a",borderRadius:99,overflow:"hidden"}}>
+              <div style={{width:`${pct}%`,height:"100%",background:"#16a34a",borderRadius:99,transition:"width 0.6s"}}/>
+            </div>
+          </div>
+          {isLoggedIn&&(
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {confirmed.length>0&&<div style={{background:"#16241c",border:"1px solid #16a34a33",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#16a34a",flexShrink:0}}/><span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>{confirmed.length} confirmados</span></div>}
+              {notYet&&notYet.length>0&&<div style={{background:"#1a1a0a",border:"1px solid #d4af3733",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#d4af37",flexShrink:0}}/><span style={{fontSize:11,color:"#fbbf24",fontWeight:700}}>{notYet.length} sem resposta</span></div>}
+              {waiting.length>0&&<div style={{background:"#1a1010",border:"1px solid #dc262633",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dc2626",flexShrink:0}}/><span style={{fontSize:11,color:"#f87171",fontWeight:700}}>{waiting.length} em espera</span></div>}
+              {confirmed.length>0&&<ExpandableList confirmed={confirmed}/>}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

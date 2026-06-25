@@ -1139,7 +1139,7 @@ function EntrarConviteView({setView, showToast}) {
 }
 
 // ── BOTTOM NAV ───────────────────────────────────────────────────────────────
-function BottomNav({view, setView, isAdmin, hasDebts, unreadChat}) {
+function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
   const items = isAdmin
     ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"equipas_tab",icon:"🎲",label:"Equipas"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"em-breve",icon:"🌍",label:"Em Breve"},{key:"profile",icon:"👤",label:"Perfil"}]
     : [{key:"player",icon:"⚽",label:"Jogo"},{key:"chat",icon:"💬",label:"Chat"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"em-breve",icon:"🌍",label:"Em Breve"},{key:"profile",icon:"👤",label:"Perfil"}];
@@ -1148,7 +1148,10 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat}) {
       {items.map(item=>{
         const isActive=view===item.key;
         return (
-          <button key={item.key} onClick={()=>setView(item.key)} style={{flex:1,padding:"8px 4px 10px",background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
+          <button key={item.key} onClick={()=>{
+            if(item.key==="em-breve"){ showToast("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!","warn"); return; }
+            setView(item.key);
+          }} style={{flex:1,padding:"8px 4px 10px",background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
             <span style={{fontSize:18}}>{item.icon}</span>
             <span style={{fontSize:9,fontWeight:700,color:isActive?"#d4af37":"#4b5563",letterSpacing:0.5}}>{item.label}</span>
             {isActive&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:"#d4af37",borderRadius:99}}/>}
@@ -1495,8 +1498,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <PiggyBankCard piggybank={piggybank} history={history} cost={gameInfo.cost_per_player||COST}/>
         <div style={{height:70}}/>
       </div>
-      {view==="em-breve"&&<EmBreveView onBack={()=>setView("player")}/>}
-      <BottomNav view={view} setView={setView} isAdmin={false} hasDebts={debts.filter(d=>d.player_id===player.id).length>0} unreadChat={messages.length>0}/>
+      <BottomNav view={view} setView={setView} isAdmin={false} hasDebts={debts.filter(d=>d.player_id===player.id).length>0} unreadChat={messages.length>0} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
     </div>
   );
 }
@@ -1756,46 +1758,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
         <div style={{height:70}}/>
       </div>
-      {view==="em-breve"&&<EmBreveView onBack={()=>setView("admin")}/>}
-      <BottomNav view={view} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={messages.length>0}/>
+      <BottomNav view={view} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={messages.length>0} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
     </div>
   );
 }
 
-// ── EM BREVE VIEW ────────────────────────────────────────────────────────────
-function EmBreveView({onBack}) {
-  return (
-    <div className="screen">
-      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
-        <button onClick={onBack} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
-        <span style={{color:"white",fontWeight:700,fontSize:16}}>Em breve</span>
-      </div>
-      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center"}}>
-        <div style={{fontSize:72,marginBottom:24}}>🌍</div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:"white",letterSpacing:2,marginBottom:8}}>JOGADORES DISPONÍVEIS</div>
-        <div style={{fontSize:15,color:"#6b7280",lineHeight:1.7,maxWidth:280,marginBottom:40}}>
-          Faltam jogadores para completar o jogo? Em breve vais conseguir encontrar jogadores disponíveis perto de ti.
-        </div>
-        <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:16,padding:"20px 28px",display:"inline-flex",alignItems:"center",gap:12}}>
-          <div style={{width:10,height:10,borderRadius:"50%",background:"#d4af37",flexShrink:0}}/>
-          <span style={{color:"#d4af37",fontWeight:800,fontSize:14,letterSpacing:1}}>EM DESENVOLVIMENTO</span>
-        </div>
-        <div style={{marginTop:40,display:"flex",flexDirection:"column",gap:12,width:"100%",maxWidth:300}}>
-          {[
-            {icon:"📍",text:"Encontra jogadores perto do teu pavilhão"},
-            {icon:"⚽",text:"Filtra por posição — GR ou polivalente"},
-            {icon:"📲",text:"Convida diretamente pela app"},
-          ].map((item,i)=>(
-            <div key={i} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
-              <span style={{fontSize:22,flexShrink:0}}>{item.icon}</span>
-              <span style={{fontSize:13,color:"#4b5563",fontWeight:600}}>{item.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
 function getCss() {

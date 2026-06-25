@@ -1284,7 +1284,7 @@ function DebtsView({debts=[], members=[], player, onBack}) {
   const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
   return (
     <div className="screen">
-      <div style={{background:"linear-gradient(160deg,#1a1a0a,#0a0a0a)",padding:"16px 16px 20px",borderBottom:"2px solid #d4af37"}}>
+      <div style={{background:"#111",padding:"16px 16px 20px",borderBottom:"1px solid #1f1f1f"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>DÍVIDAS</span>
@@ -1315,7 +1315,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack}) {
   const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#16a34a"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#2563eb"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"}];
   return (
     <div className="screen">
-      <div style={{background:"#166534",padding:"16px 16px 14px",borderBottom:"2px solid #d4af37"}}>
+      <div style={{background:"#111",padding:"16px 16px 14px",borderBottom:"1px solid #1f1f1f"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <Avatar player={player} size={36}/>
@@ -1343,7 +1343,7 @@ function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[messages]);
   return (
     <div className="screen" style={{height:"100vh",display:"flex",flexDirection:"column"}}>
-      <div style={{background:"#166534",padding:"14px 16px",borderBottom:"3px solid #d4af37",flexShrink:0}}>
+      <div style={{background:"#111",padding:"14px 16px",borderBottom:"1px solid #1f1f1f",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>CHAT DO GRUPO</span>
@@ -1385,7 +1385,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount}) {
   const [color,setColor]=useState(player.avatar_color||AVATAR_COLORS[0]);
   return (
     <div className="screen">
-      <div style={{background:"#166534",padding:"14px 16px",borderBottom:"2px solid #d4af37"}}>
+      <div style={{background:"#111",padding:"14px 16px",borderBottom:"1px solid #1f1f1f"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>O MEU PERFIL</span>
@@ -1774,6 +1774,8 @@ body{background:#0a0a0a;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
 
+.field-nav-btn{background:transparent;border:none;border-radius:8px;padding:6px;color:#9ca3af;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.field-nav-btn:hover{background:rgba(255,255,255,0.05);}
 .body{flex:1;background:#0a0a0a;color:#f0f0f0;padding:16px 16px 48px;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .topbar-name{font-size:14px;color:#4ade80;font-weight:700;}

@@ -1453,23 +1453,6 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <button className={`btn-big ${isIn||isWait?"btn-red":"btn-green"}`} onClick={handleToggle} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
-        {/* Banner vencedor — aparece após fecho automático se não foi definido */}
-        {history.length>0&&history[0].date===gameInfo.date&&history[0].winner_team===null&&history[0].players_count>0&&(
-          <div style={{background:"rgba(37,99,235,0.12)",border:"2px solid #2563eb",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-            <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
-            <div style={{display:"flex",gap:8}}>
-              {["A","B","C"].map(t=>(
-                <button key={t} onClick={async()=>{
-                  await supabase.from("game_history").update({winner_team:t}).eq("id",history[0].id);
-                  showToast(`Equipa ${t} registada como vencedora ✓`);
-                  await reloadAll(currentUser?.group_id);
-                }} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #2563eb",background:"rgba(37,99,235,0.15)",color:"#93c5fd",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-                  Equipa {t}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo}/>
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>

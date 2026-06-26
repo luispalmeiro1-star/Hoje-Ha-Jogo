@@ -1,6 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase.js";
 
+
+// ── EDGE FUNCTION HELPERS ─────────────────────────────────────────────────────
+const REGISTER_URL = "https://juoheqnocyluxsqzcdcr.supabase.co/functions/v1/smooth-processor";
+const LOGIN_URL = "https://juoheqnocyluxsqzcdcr.supabase.co/functions/v1/auth-login";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1b2hlcW5vY3lsdXhzcXpjZGNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNTY2OTEsImV4cCI6MjA2MzkzMjY5MX0.SBOiXUCdRlPiPMHKVCQcN4OUCQlJhVUx_wXRv70oiMA";
+
+async function callRegister(data) {
+  const res = await fetch(REGISTER_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function callLogin(username, password, group_id=null) {
+  const res = await fetch(LOGIN_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+    body: JSON.stringify({username, password, group_id})
+  });
+  return await res.json();
+}
+
 const MAX_PLAYERS = 15;
 const MIN_PLAYERS = 10;
 const COST = 3;
@@ -268,14 +292,18 @@ export default function App() {
 
   const handleLogin = async(identifier,password,groupId=null)=>{
     const clean=identifier.trim().toLowerCase();
-    // Buscar diretamente do Supabase — não depende do estado local
-    let q=supabase.from("players").select("*").or(`username.eq.${clean},phone.eq.${identifier.trim().replace(/\s+/g,"")}`);
-    if(groupId) q=q.eq("group_id",groupId);
-    const{data:candidates}=await q;
-    if(!candidates||candidates.length===0) return false;
-    const p=candidates.find(c=>c.password===password);
+    // Usar Edge Function para verificar password (suporta hashed e texto puro)
+    const result = await callLogin(clean, password, groupId);
+    let p = result?.player || null;
+    // Se não encontrou por username, tentar por telemóvel via Supabase
+    if(!p){
+      const{data:byPhone}=await supabase.from("players").select("*").eq("phone",identifier.trim().replace(/\s+/g,""));
+      if(byPhone&&byPhone.length>0){
+        const phoneResult=await callLogin(byPhone[0].username, password, groupId||byPhone[0].group_id||null);
+        p=phoneResult?.player||null;
+      }
+    }
     if(!p) return false;
-    // Usar o group_id do próprio player (mesmo que não tenha sido passado)
     const effectiveGroupId=p.group_id||null;
     localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:effectiveGroupId}));
     if(effectiveGroupId) await reloadAll(effectiveGroupId);
@@ -321,9 +349,9 @@ export default function App() {
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const cleanUsername=username.trim().toLowerCase().replace(/\s+/g,"");
-    if(players.find(p=>p.username?.toLowerCase()===cleanUsername)){showToast("Esse utilizador já existe!","err");return;}
     const groupId=currentUser?.group_id||null;
-    await supabase.from("players").insert({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,avatar_color:color,group_id:groupId});
+    const result=await callRegister({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,password:password.trim(),is_admin:false,avatar_color:color,group_id:groupId});
+    if(result?.error){showToast(result.error,"err");return;}
     showToast(`${name} adicionado! 🎉`);
   };
   const updateGameInfo = async(patch)=>{ setGameInfo(prev=>({...prev,...patch})); await supabase.from("game_info").update(patch).eq("id",gameInfo.id||1); showToast("Jogo atualizado ✓"); };
@@ -827,9 +855,9 @@ function CriarContaView({setView, showToast}) {
     const{data:existing}=await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).is("group_id",null);
     if(existing&&existing.length>0){showToast("Username já existe","err");setLoading(false);return;}
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    const{error}=await supabase.from("players").insert({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,status:"out",paid:false,is_guest:false,avatar_color:color,group_id:null});
+    const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
     setLoading(false);
-    if(error){showToast("Erro ao criar conta","err");return;}
+    if(regResult?.error){showToast(regResult.error,"err");return;}
     setDone(true);
   };
 
@@ -913,8 +941,9 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code}).select().single();
       if(ge) throw ge;
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-      const{data:player,error:pe}=await supabase.from("players").insert({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,status:"out",paid:false,is_guest:false,avatar_color:color,group_id:group.id}).select().single();
-      if(pe) throw pe;
+      const regResult=await callRegister({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:group.id});
+      if(regResult?.error) throw new Error(regResult.error);
+      const player=regResult.player;
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
       await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
       // Guardar sessão e código — entrar direto sem ecrã intermédio
@@ -1057,8 +1086,9 @@ function EntrarConviteView({setView, showToast}) {
     const{data:existing}=await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).eq("group_id",group.id);
     if(existing&&existing.length>0){showToast("Username já existe neste grupo","err");setLoading(false);return;}
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    const{data:inserted,error}=await supabase.from("players").insert({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,status:"out",paid:false,is_guest:false,avatar_color:color,group_id:group.id}).select().single();
-    if(error||!inserted){showToast("Erro ao criar conta","err");setLoading(false);return;}
+    const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:group.id});
+    if(regResult?.error){showToast(regResult.error,"err");setLoading(false);return;}
+    const inserted=regResult.player;
     showToast("Conta criada! A entrar... 🎉");
     localStorage.setItem("hhb_session",JSON.stringify({playerId:inserted.id,groupId:group.id}));
     await new Promise(r=>setTimeout(r,800));

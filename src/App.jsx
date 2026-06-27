@@ -184,7 +184,19 @@ export default function App() {
   const groupIdRef = useRef(null); // guarda o groupId atual para os subscriptions
 
   const loadPlayers    = useCallback(async(gid=null)=>{ let q=supabase.from("players").select("*").order("id"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setPlayers(data); },[]);
-  const loadGameInfo   = useCallback(async(gid=null)=>{ let q=supabase.from("game_info").select("*"); if(gid){q=q.eq("group_id",gid).limit(1).single();}else{q=q.eq("id",1).single();} const{data}=await q; if(data)setGameInfo(data); },[]);
+  const loadGameInfo   = useCallback(async(gid=null)=>{
+    let q=supabase.from("game_info").select("*");
+    if(gid){q=q.eq("group_id",gid).limit(1).maybeSingle();}else{q=q.eq("id",1).maybeSingle();}
+    const{data}=await q;
+    if(data){ setGameInfo(data); }
+    else if(gid){
+      // Criar game_info se não existir para este grupo
+      const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
+      const{data:grp}=await supabase.from("groups").select("name,location,time,cost_per_player").eq("id",gid).maybeSingle();
+      const{data:created}=await supabase.from("game_info").insert({location:grp?.location||"A definir",date:nw(),time:grp?.time||"22:30",app_name:grp?.name||"Hoje Há Jogo",cost_per_player:grp?.cost_per_player||3,group_id:gid}).select().single();
+      if(created) setGameInfo(created);
+    }
+  },[]);
   const loadHistory    = useCallback(async(gid=null)=>{ let q=supabase.from("game_history").select("*").order("date",{ascending:false}); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));} },[]);
   const loadDebts      = useCallback(async(gid=null)=>{ let q=supabase.from("debts").select("*").order("created_at"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setDebts(data); },[]);
   const loadMessages   = useCallback(async(gid=null)=>{ let q=supabase.from("chat_messages").select("*").order("created_at").limit(100); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setMessages(data); },[]);

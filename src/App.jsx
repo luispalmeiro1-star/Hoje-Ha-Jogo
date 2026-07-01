@@ -557,12 +557,7 @@ export default function App() {
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={async(groupId)=>{
         const gid = Number(groupId);
         localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
-        groupIdRef.current=gid;
-        setActiveGroupId(gid);
-        await reloadAll(gid);
-        // Verificar se é admin neste grupo
-        const pg=myGroups.find(x=>x.group_id===gid);
-        setView(pg?.is_admin?"admin":"player");
+        window.location.reload();
       }} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
       {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}

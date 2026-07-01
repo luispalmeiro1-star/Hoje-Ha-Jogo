@@ -182,100 +182,120 @@ export default function App() {
   const effectiveDate = viewingDate || gameInfo.date;
 
   const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
-  const groupIdRef = useRef(null); // guarda o groupId atual para os subscriptions
+  const groupIdRef = useRef(null);
 
-  const loadPlayers    = useCallback(async(gid=null)=>{ let q=supabase.from("players").select("*").order("id"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setPlayers(data); },[]);
-  const loadGameInfo   = useCallback(async(gid=null)=>{
-    let q=supabase.from("game_info").select("*");
-    if(gid){q=q.eq("group_id",gid).limit(1).maybeSingle();}
-    else{q=q.eq("id",1).maybeSingle();}
-    const{data}=await q;
-    if(data) setGameInfo(data);
-  },[]);
-  const loadHistory    = useCallback(async(gid=null)=>{ let q=supabase.from("game_history").select("*").order("date",{ascending:false}); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));} },[]);
-  const loadDebts      = useCallback(async(gid=null)=>{ let q=supabase.from("debts").select("*").order("created_at"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setDebts(data); },[]);
-  const loadMessages   = useCallback(async(gid=null)=>{ let q=supabase.from("chat_messages").select("*").order("created_at").limit(100); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setMessages(data); },[]);
-  const loadMvp        = useCallback(async(gid=null)=>{ let q=supabase.from("mvp_votes").select("*"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setMvpVotes(data); },[]);
-  const loadAttendance = useCallback(async(gid=null)=>{ let q=supabase.from("game_attendance").select("*").order("game_date",{ascending:false}); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setAttendance(data); },[]);
+  const loadPlayers    = useCallback(async(gid)=>{ const q=supabase.from("players").select("*").order("id"); const{data}=gid?await q.eq("group_id",gid):await q; if(data)setPlayers(data); },[]);
+  const loadGameInfo   = useCallback(async(gid)=>{ const{data}=await supabase.from("game_info").select("*").eq("group_id",gid).limit(1).maybeSingle(); if(data)setGameInfo(data); },[]);
+  const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));} },[]);
+  const loadDebts      = useCallback(async(gid)=>{ const{data}=await supabase.from("debts").select("*").eq("group_id",gid).order("created_at"); if(data)setDebts(data); },[]);
+  const loadMessages   = useCallback(async(gid)=>{ const{data}=await supabase.from("chat_messages").select("*").eq("group_id",gid).order("created_at").limit(100); if(data)setMessages(data); },[]);
+  const loadMvp        = useCallback(async(gid)=>{ const{data}=await supabase.from("mvp_votes").select("*").eq("group_id",gid); if(data)setMvpVotes(data); },[]);
+  const loadAttendance = useCallback(async(gid)=>{ const{data}=await supabase.from("game_attendance").select("*").eq("group_id",gid).order("game_date",{ascending:false}); if(data)setAttendance(data); },[]);
 
-  const reloadAll = useCallback(async(gid=null)=>{
+  const reloadAll = useCallback(async(gid)=>{
+    if(!gid) return;
+    groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
+  // Carregar players inicialmente (sem groupId) para session restore
   useEffect(()=>{
     (async()=>{
       setLoading(true);
-      try{ await reloadAll(); }
-      catch(e){ console.error("reloadAll error:",e); }
+      try{
+        // Session restore — lê groupId da sessão e carrega tudo
+        const saved = JSON.parse(localStorage.getItem("hhb_session")||"null");
+        if(saved?.playerId && saved?.groupId){
+          const gid = Number(saved.groupId);
+          // Verificar se o grupo existe
+          const{data:grpCheck}=await supabase.from("groups").select("id").eq("id",gid).maybeSingle();
+          if(grpCheck){
+            await reloadAll(gid);
+            setActiveGroupId(gid);
+            // Buscar player desta sessão
+            const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
+            if(playerData){
+              setCurrentUser(playerData);
+              setView(playerData.is_admin?"admin":"player");
+              return;
+            }
+          }
+          // GroupId inválido — limpar
+          localStorage.removeItem("hhb_session");
+        } else if(saved?.playerId){
+          // Tem playerId mas sem groupId — mostrar seletor de grupos
+          const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",saved.playerId);
+          const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
+          if(pgRaw&&pgRaw.length>0&&playerData){
+            const gids=pgRaw.map(x=>Number(x.group_id));
+            const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
+            const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
+            setCurrentUser(playerData);
+            setMyGroups(enriched);
+            setView("meus-grupos");
+            return;
+          }
+          localStorage.removeItem("hhb_session");
+        }
+      } catch(e){ console.error("Session restore error:",e); localStorage.removeItem("hhb_session"); }
       finally{ setLoading(false); }
+      setView("landing");
     })();
+
     const safetyTimer=setTimeout(()=>setLoading(false),8000);
     const subs=[
-      supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>loadPlayers(groupIdRef.current)).subscribe(),
-      supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>loadGameInfo(groupIdRef.current)).subscribe(),
-      supabase.channel("history_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},()=>loadHistory(groupIdRef.current)).subscribe(),
-      supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},()=>loadDebts(groupIdRef.current)).subscribe(),
-      supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>loadMessages(groupIdRef.current)).subscribe(),
-      supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>loadMvp(groupIdRef.current)).subscribe(),
+      supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
+      supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) loadGameInfo(groupIdRef.current); }).subscribe(),
+      supabase.channel("history_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},()=>{ if(groupIdRef.current) loadHistory(groupIdRef.current); }).subscribe(),
+      supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},()=>{ if(groupIdRef.current) loadDebts(groupIdRef.current); }).subscribe(),
+      supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>{ if(groupIdRef.current) loadMessages(groupIdRef.current); }).subscribe(),
+      supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); };
   },[]);
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
 
-  // Actualiza a ref do groupId quando activeGroupId muda
-  useEffect(()=>{ if(activeGroupId) groupIdRef.current=activeGroupId; },[activeGroupId]);
-
-  // Fecho automático 3h30 após o jogo — vai buscar dados frescos ao Supabase
+  // Fecho automático 3h30 após o jogo
   useEffect(()=>{
-    if(!gameInfo.date||!gameInfo.time||!currentUser) return;
+    if(!gameInfo.date||!gameInfo.time||!currentUser||!activeGroupId) return;
     const [gy,gm,gd]=gameInfo.date.split("-").map(Number);
     const [gh,gmin]=gameInfo.time.split(":").map(Number);
     const gameEnd=new Date(gy,gm-1,gd,gh,gmin);
-    gameEnd.setMinutes(gameEnd.getMinutes()+210); // +3h30
+    gameEnd.setMinutes(gameEnd.getMinutes()+210);
     const msUntilClose=gameEnd-new Date();
-    if(msUntilClose<=0) return; // já passou, não agenda
-    const groupId=activeGroupId||null;
+    if(msUntilClose<=0) return;
+    const groupId=activeGroupId;
     const gDate=gameInfo.date;
     const gCost=gameInfo.cost_per_player||COST;
-    const gId=gameInfo.id||1;
+    const gId=gameInfo.id;
     const timer=setTimeout(async()=>{
-      // Buscar dados frescos directamente do Supabase
-      const{data:freshPlayers}=await supabase.from("players").select("*").eq(groupId?"group_id":"is_guest",groupId||false);
+      const{data:freshPlayers}=await supabase.from("players").select("*").eq("group_id",groupId);
       if(!freshPlayers) return;
       const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
       const freshMembers=freshPlayers.filter(p=>!p.is_guest);
-      // Dívidas para quem não pagou
       for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
         await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gCost,description:`Jogo de ${gDate}`,group_id:groupId});
-      // Dívidas de convidados — transferidas para quem os convidou
       for(const p of freshConfirmed.filter(p=>!p.paid&&p.is_guest)){
         const inviter=freshPlayers.find(m=>m.id===p.invited_by_id);
         if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gCost,description:`Jogo de ${gDate} — convidado ${p.name}`,group_id:groupId});
       }
-      // Presenças
       for(const p of freshConfirmed.filter(p=>!p.is_guest))
         await supabase.from("game_attendance").insert({game_date:gDate,player_id:p.id,player_name:p.name,group_id:groupId});
-      // Estatísticas
       for(const p of freshConfirmed.filter(p=>!p.is_guest)){
         const ns=(p.current_streak||0)+1;
         await supabase.from("players").update({total_games:(p.total_games||0)+1,total_paid:(p.total_paid||0)+(p.paid?gCost:0),current_streak:ns,best_streak:Math.max(p.best_streak||0,ns)}).eq("id",p.id);
       }
       for(const p of freshMembers.filter(m=>!freshConfirmed.find(c=>c.id===m.id)))
         await supabase.from("players").update({current_streak:0}).eq("id",p.id);
-      // MVP por votos
-      const{data:votes}=await supabase.from("mvp_votes").select("*").eq("game_date",gDate);
+      const{data:votes}=await supabase.from("mvp_votes").select("*").eq("game_date",gDate).eq("group_id",groupId);
       let mvpName=null;
       if(votes&&votes.length>0){const counts={};votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null;}
-      // Histórico (winner_team null — admin decide depois)
       const collected=freshConfirmed.filter(p=>p.paid).length*gCost;
       if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gDate,players_count:freshConfirmed.length,collected,winner_team:null,mvp_name:mvpName,group_id:groupId});
-      // Limpar presenças
-      await supabase.from("players").delete().eq("is_guest",true);
-      if(groupId) await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false).eq("group_id",groupId);
-      else await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false);
-      // Próxima data
-      const{data:grp}=groupId?await supabase.from("groups").select("game_days").eq("id",groupId).single():{data:null};
+      await supabase.from("players").delete().eq("is_guest",true).eq("group_id",groupId);
+      await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false).eq("group_id",groupId);
+      const{data:grp}=await supabase.from("groups").select("game_days").eq("id",groupId).maybeSingle();
       const gameDays=(grp?.game_days||[3]).map(Number).sort((a,b)=>a-b);
       const now2=new Date(); let nextDate=null;
       for(let i=1;i<=14;i++){const d=new Date(now2);d.setDate(now2.getDate()+i);if(gameDays.includes(d.getDay())){nextDate=d.toISOString().split("T")[0];break;}}
@@ -285,51 +305,6 @@ export default function App() {
     }, msUntilClose);
     return ()=>clearTimeout(timer);
   },[gameInfo.date, gameInfo.time, currentUser?.id, activeGroupId]);
-
-  useEffect(()=>{
-    if(loading||currentUser||players.length===0) return;
-    (async()=>{
-      try{
-        const saved=JSON.parse(localStorage.getItem("hhb_session")||"null");
-        if(saved?.playerId){
-          const p=players.find(pl=>pl.id===saved.playerId);
-          if(p){
-            setCurrentUser(p);
-            if(saved.groupId){
-              // Verificar se o groupId é válido
-              const{data:grpCheck}=await supabase.from("groups").select("id").eq("id",saved.groupId).maybeSingle();
-              if(grpCheck){
-                groupIdRef.current=saved.groupId;
-                setActiveGroupId(saved.groupId);
-                await reloadAll(saved.groupId);
-                setView(p.is_admin?"admin":"player");
-              } else {
-                // groupId inválido — limpar e verificar grupos
-                localStorage.removeItem("hhb_session");
-                const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",p.id);
-                if(pgRaw&&pgRaw.length>0){
-                  const gids=pgRaw.map(x=>x.group_id);
-                  const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
-                  const enriched=pgRaw.map(x=>({...x,groups:gData?.find(g=>g.id===x.group_id)||null}));
-                  setMyGroups(enriched); setView("meus-grupos");
-                } else setView("landing");
-              }
-            } else {
-              // Sem groupId guardado — verificar grupos
-              const{data:pgRaw}=await supabase.from("player_groups").select("group_id, is_admin").eq("player_id",p.id);
-              if(pgRaw&&pgRaw.length>1){
-                const gids=pgRaw.map(pg=>pg.group_id);
-                const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
-                const enriched=pgRaw.map(pg=>({...pg,groups:gData?.find(g=>g.id===pg.group_id)||null}));
-                setMyGroups(enriched); setView("meus-grupos");
-              }
-              else setView(p.is_admin?"admin":"player");
-            }
-          } else { localStorage.removeItem("hhb_session"); setView("landing"); }
-        } else setView("landing");
-      }catch(e){ console.error("Session restore error:",e); localStorage.removeItem("hhb_session"); setView("landing"); }
-    })();
-  },[loading,players]);
 
   const members   = players.filter(p=>!p.is_guest);
   const guests    = players.filter(p=>p.is_guest);
@@ -348,11 +323,18 @@ export default function App() {
     }catch(e){}
   };
 
+  // Função auxiliar para carregar grupos de um player
+  const loadMyGroups = async(playerId)=>{
+    const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",playerId);
+    if(!pgRaw||pgRaw.length===0) return [];
+    const gids=pgRaw.map(x=>Number(x.group_id));
+    const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
+    return pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
+  };
+
   const handleLogin = async(identifier,password,groupId=null)=>{
     const clean=identifier.trim().toLowerCase();
-    // Tentar login via Edge Function (suporta passwords hashed e texto puro)
     let result = await callLogin(clean, password, groupId);
-    // Se não encontrou por username, tentar por telemóvel
     if(result?.error==="Utilizador não encontrado"){
       const{data:byPhone}=await supabase.from("players").select("username,group_id").eq("phone",identifier.trim().replace(/\s+/g,"")).limit(1);
       if(byPhone&&byPhone.length>0){
@@ -363,42 +345,44 @@ export default function App() {
     if(!p) return false;
     setCurrentUser(p);
     linkOneSignal(p.id);
-    // Verificar quantos grupos este player tem
-    const{data:playerGroups}=await supabase.from("player_groups").select("group_id, is_admin").eq("player_id",p.id);
-    if(playerGroups&&playerGroups.length>1){
-      // Buscar dados dos grupos separadamente
-      const groupIds=playerGroups.map(pg=>pg.group_id);
-      const{data:groupsData}=await supabase.from("groups").select("id,name,location,time").in("id",groupIds);
-      const enriched=playerGroups.map(pg=>({...pg,groups:groupsData?.find(g=>Number(g.id)===Number(pg.group_id))||null}));
-      alert("grupos: " + JSON.stringify(enriched.map(x=>x.group_id)));
-      setMyGroups(enriched);
+    const groups = await loadMyGroups(p.id);
+    if(groups.length>1){
+      setMyGroups(groups);
       setView("meus-grupos");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:null}));
     } else {
-      // Tem um grupo (ou nenhum) — entrar direto
-      const effectiveGroupId=p.group_id||null;
-      localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:effectiveGroupId}));
-      if(effectiveGroupId){ groupIdRef.current=effectiveGroupId; setActiveGroupId(effectiveGroupId); await reloadAll(effectiveGroupId); }
-      else await reloadAll();
-      setView(p.is_admin?"admin":"player");
+      const gid = groups.length===1 ? groups[0].group_id : (p.group_id||null);
+      if(gid){
+        localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:gid}));
+        setActiveGroupId(gid);
+        await reloadAll(gid);
+        setView(p.is_admin?"admin":"player");
+      } else {
+        setView("landing");
+      }
     }
     return true;
   };
-  const handleLogout  = ()=>{ setCurrentUser(null); setView("landing"); setViewingDate(null); };
+
+  const handleLogout  = ()=>{ localStorage.removeItem("hhb_session"); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
+  const switchAccount = ()=>{ localStorage.removeItem("hhb_session"); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
+
   const handleMudarGrupo = async()=>{
     if(!currentUser) return;
-    const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",currentUser.id);
-    if(pgRaw&&pgRaw.length>0){
-      const gids=pgRaw.map(pg=>pg.group_id);
-      const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
-      const enriched=pgRaw.map(pg=>({...pg,groups:gData?.find(g=>g.id===pg.group_id)||null}));
-      setMyGroups(enriched);
-      setView("meus-grupos");
-    } else {
-      setView("entrar-convite");
-    }
+    const groups = await loadMyGroups(currentUser.id);
+    if(groups.length>0){ setMyGroups(groups); setView("meus-grupos"); }
+    else setView("entrar-convite");
   };
-  const switchAccount = ()=>{ localStorage.removeItem("hhb_session"); setCurrentUser(null); setView("landing"); setViewingDate(null); };
+
+  const selectGroup = async(groupId)=>{
+    const gid = Number(groupId);
+    localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
+    setActiveGroupId(gid);
+    await reloadAll(gid);
+    // Verificar se é admin neste grupo
+    const{data:pg}=await supabase.from("player_groups").select("is_admin").eq("player_id",currentUser.id).eq("group_id",gid).maybeSingle();
+    setView(pg?.is_admin?"admin":"player");
+  };
 
   const reassignAllTeams = async(updatedPlayers) => {
     const newConfirmed=updatedPlayers.filter(pl=>pl.status==="in");
@@ -422,7 +406,7 @@ export default function App() {
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
     if(!inviter||confirmed.length>=MAX_PLAYERS){showToast("Jogo cheio!","err");return;}
-    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:inviter.group_id||null}).select().single();
+    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:activeGroupId||null}).select().single();
     if(inserted) await reassignAllTeams([...players,inserted]);
     showToast(`${guestName} adicionado! 🎉`);
   };
@@ -434,14 +418,13 @@ export default function App() {
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const cleanUsername=username.trim().toLowerCase().replace(/\s+/g,"");
-    const groupId=currentUser?.group_id||null;
-    const result=await callRegister({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,password:password.trim(),is_admin:false,avatar_color:color,group_id:groupId});
+    const gid=activeGroupId||null;
+    const result=await callRegister({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,password:password.trim(),is_admin:false,avatar_color:color,group_id:gid});
     if(result?.error){showToast(result.error,"err");return;}
-    // Registar em player_groups
-    if(result.player&&groupId) await supabase.from("player_groups").upsert({player_id:result.player.id,group_id:groupId,is_admin:false},{onConflict:"player_id,group_id"});
+    if(result.player&&gid) await supabase.from("player_groups").upsert({player_id:result.player.id,group_id:gid,is_admin:false},{onConflict:"player_id,group_id"});
     showToast(`${name} adicionado! 🎉`);
   };
-  const updateGameInfo = async(patch)=>{ setGameInfo(prev=>({...prev,...patch})); await supabase.from("game_info").update(patch).eq("id",gameInfo.id||1); showToast("Jogo atualizado ✓"); };
+  const updateGameInfo = async(patch)=>{ setGameInfo(prev=>({...prev,...patch})); await supabase.from("game_info").update(patch).eq("id",gameInfo.id); showToast("Jogo atualizado ✓"); };
   const updateProfile  = async(id,newName,newPassword,newColor,newPhone)=>{
     const updates={};
     if(newName?.trim()) updates.name=newName.trim();
@@ -461,83 +444,70 @@ export default function App() {
   const sendPushNotification = async(title,message)=>{
     try{ await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt"}}); }catch(e){}
   };
-  // Calcula próxima data baseada nos dias habituais do grupo
   const getNextGameDate = (gameDays=[3])=>{
     const days=gameDays.map(Number).sort((a,b)=>a-b);
     const now=new Date();
-    // Tentar os próximos 14 dias
     for(let i=1;i<=14;i++){
       const d=new Date(now); d.setDate(now.getDate()+i);
       if(days.includes(d.getDay())) return d.toISOString().split("T")[0];
     }
-    // Fallback: 7 dias
     const fb=new Date(now); fb.setDate(now.getDate()+7);
     return fb.toISOString().split("T")[0];
   };
-
   const resetGame = async(winnerTeam, isAuto=false)=>{
     const gameCost=gameInfo.cost_per_player||COST;
     const collected=confirmed.filter(p=>p.paid).length*gameCost;
-    const groupId=currentUser?.group_id||null;
-    // Dívidas automáticas para quem não pagou
+    const gid=activeGroupId||null;
     for(const p of confirmed.filter(p=>!p.paid&&!p.is_guest))
-      await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:groupId});
-    // Dívidas de convidados que não pagaram — transferidas para quem os convidou
+      await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:gid});
     for(const p of confirmed.filter(p=>!p.paid&&p.is_guest)){
       const inviter=players.find(m=>m.id===p.invited_by_id);
-      if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gameCost,description:`Jogo de ${gameInfo.date} — convidado ${p.name}`,group_id:groupId});
+      if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gameCost,description:`Jogo de ${gameInfo.date} — convidado ${p.name}`,group_id:gid});
     }
-    // Registo de presenças
     const confirmedMembers=confirmed.filter(p=>!p.is_guest);
     for(const p of confirmedMembers)
-      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:groupId});
-    // Estatísticas dos jogadores
+      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
     for(const p of confirmedMembers){
       const pl=players.find(m=>m.id===p.id);
       if(pl){ const ns=(pl.current_streak||0)+1; await supabase.from("players").update({total_games:(pl.total_games||0)+1,total_paid:(pl.total_paid||0)+(p.paid?gameCost:0),current_streak:ns,best_streak:Math.max(pl.best_streak||0,ns)}).eq("id",p.id); }
     }
     for(const p of members.filter(m=>!confirmedMembers.find(c=>c.id===m.id)))
       await supabase.from("players").update({current_streak:0}).eq("id",p.id);
-    // MVP por votos
     const votes=mvpVotes.filter(v=>v.game_date===gameInfo.date);
     let mvpName=null;
     if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=players.find(p=>p.id===Number(topId))?.name||null; }
-    // Histórico (winnerTeam null se automático — admin decide depois)
-    if(collected>0||confirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:groupId});
-    // Limpar presenças e convidados
-    await supabase.from("players").delete().eq("is_guest",true);
-    if(groupId) await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false).eq("group_id",groupId);
-    else await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false);
-    // Avançar data para próximo dia habitual
-    const{data:grp}=groupId?await supabase.from("groups").select("game_days").eq("id",groupId).single():{data:null};
+    if(collected>0||confirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid});
+    await supabase.from("players").delete().eq("is_guest",true).eq("group_id",gid);
+    if(gid) await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false).eq("group_id",gid);
+    const{data:grp}=gid?await supabase.from("groups").select("game_days").eq("id",gid).maybeSingle():{data:null};
     const gameDays=grp?.game_days||[3];
     const nextDate=getNextGameDate(gameDays);
-    await supabase.from("game_info").update({date:nextDate}).eq("id",gameInfo.id||1);
+    await supabase.from("game_info").update({date:nextDate}).eq("id",gameInfo.id);
     showToast(isAuto?"Jogo fechado automaticamente ✓":"Jogo fechado ✓");
-    await reloadAll(groupId);
+    await reloadAll(gid);
   };
-  const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:currentUser?.group_id||null}); showToast("Dívida registada ✓"); };
+  const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast("Dívida registada ✓"); };
   const payDebt  = async(debtId,amountPaid=null)=>{
     const debt=debts.find(d=>d.id===debtId); if(!debt) return;
     const full=amountPaid===null||amountPaid>=Number(debt.amount);
     const paidNow=full?Number(debt.amount):Number(amountPaid);
-    await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:currentUser?.group_id||null});
+    await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null});
     if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
     else{ await supabase.from("debts").update({amount:Number(debt.amount)-Number(amountPaid)}).eq("id",debtId); showToast(`Pagamento parcial — restam ${Number(debt.amount)-Number(amountPaid)}€`); }
   };
-  const clearAllHistory = async()=>{ await supabase.from("game_history").delete().neq("id",0); await supabase.from("debts").delete().neq("id",0); showToast("Histórico e dívidas limpos ✓"); };
+  const clearAllHistory = async()=>{ await supabase.from("game_history").delete().eq("group_id",activeGroupId); await supabase.from("debts").delete().eq("group_id",activeGroupId); showToast("Histórico e dívidas limpos ✓"); };
   const sendMessage = async(text,playerId,playerName)=>{
     if(!text.trim()) return;
     setMessages(prev=>[...prev,{id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()}]);
-    await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:currentUser?.group_id||null});
+    await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:activeGroupId||null});
   };
   const voteForMvp = async(voterId,votedForId)=>{
     setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date}]);
-    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:currentUser?.group_id||null},{onConflict:"voter_id,game_date"});
+    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:activeGroupId||null},{onConflict:"voter_id,game_date"});
     showToast("Voto registado ✓");
   };
 
-  const liveUser = currentUser ? players.find(p=>p.id===currentUser.id) : null;
+  const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
   const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost};
 
@@ -555,22 +525,19 @@ export default function App() {
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
-      {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={async(groupId)=>{
-        const gid = Number(groupId);
-        alert("A entrar no grupo: " + gid);
-        localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
-        window.location.reload();
-      }} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
+      {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
       {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}
-      {view==="entrar-convite" && <EntrarConviteView setView={setView} showToast={showToast} currentUser={currentUser} onGrupoAdicionado={async()=>{ if(currentUser){ const{data:pgRaw}=await supabase.from("player_groups").select("group_id, is_admin").eq("player_id",currentUser.id);
-              const gids2=(pgRaw||[]).map(pg=>pg.group_id);
-              const{data:gData2}=await supabase.from("groups").select("id,name,location,time").in("id",gids2);
-              const enriched2=(pgRaw||[]).map(pg=>({...pg,groups:gData2?.find(g=>g.id===pg.group_id)||null}));
-              setMyGroups(enriched2); setView("meus-grupos"); }else setView("landing"); }}/>}
+      {view==="entrar-convite" && <EntrarConviteView setView={setView} showToast={showToast} currentUser={currentUser} onGrupoAdicionado={async()=>{
+        if(currentUser){
+          const groups=await loadMyGroups(currentUser.id);
+          setMyGroups(groups);
+          setView("meus-grupos");
+        } else setView("landing");
+      }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -1227,7 +1194,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
               const{error}=await supabase.from("player_groups").upsert({player_id:currentUser.id,group_id:group.id,is_admin:false},{onConflict:"player_id,group_id"});
               if(error){ showToast("Erro ao adicionar grupo","err"); setLoading(false); return; }
               // Atualizar group_id do player se ainda não tiver
-              if(!currentUser.group_id) await supabase.from("players").update({group_id:group.id}).eq("id",currentUser.id);
+              if(!currentUser.group_id||currentUser.group_id!==group.id) await supabase.from("players").update({group_id:group.id}).eq("id",currentUser.id);
               showToast(`${group.name} adicionado! 🎉`);
               // Pequena pausa para garantir que a BD atualizou
               await new Promise(r=>setTimeout(r,500));
@@ -1647,7 +1614,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null}) {
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -1675,13 +1642,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   useEffect(()=>{setEditLoc(gameInfo.location);setEditDate(gameInfo.date);setEditTime(gameInfo.time);setEditAppName(gameInfo.app_name||"Hoje Há Jogo");setEditCost(gameInfo.cost_per_player||3);},[gameInfo]);
   useEffect(()=>{
     if(!currentUser?.group_id) return;
-    supabase.from("groups").select("game_days").eq("id",currentUser.group_id).single().then(({data})=>{ if(data?.game_days) setEditGameDays(data.game_days.map(Number)); else setEditGameDays([3]); });
+    supabase.from("groups").select("game_days").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data?.game_days) setEditGameDays(data.game_days.map(Number)); else setEditGameDays([3]); });
   },[currentUser?.group_id]);
 
   // Buscar código do grupo
   useEffect(()=>{
     if(!currentUser?.group_id) return;
-    supabase.from("groups").select("invite_code").eq("id",currentUser.group_id).single().then(({data})=>{ if(data) setInviteCode(data.invite_code); });
+    supabase.from("groups").select("invite_code").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data) setInviteCode(data.invite_code); });
   },[currentUser?.group_id]);
 
   const handleShareCode = () => {
@@ -1903,7 +1870,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}}/>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if(currentUser?.group_id&&editGameDays) await supabase.from("groups").update({game_days:editGameDays}).eq("id",currentUser.group_id);
+              if((groupId||currentUser?.group_id)&&editGameDays) await supabase.from("groups").update({game_days:editGameDays}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>

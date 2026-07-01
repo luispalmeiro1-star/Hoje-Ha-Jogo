@@ -202,25 +202,12 @@ export default function App() {
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
   useEffect(()=>{
-    // Verificar se há groupId no URL (vindo de mudança de grupo)
-    const params = new URLSearchParams(window.location.search);
-    const urlGroupId = params.get("g");
-    if(urlGroupId) {
-      const gid = Number(urlGroupId);
-      const savedSession = JSON.parse(localStorage.getItem("hhb_session")||"{}");
-      if(savedSession.playerId) {
-        localStorage.setItem("hhb_session", JSON.stringify({playerId:savedSession.playerId, groupId:gid}));
-      }
-      // Limpar o URL sem recarregar
-      window.history.replaceState({}, "", window.location.pathname);
-    }
     (async()=>{
       setLoading(true);
       try{ await reloadAll(); }
       catch(e){ console.error("reloadAll error:",e); }
       finally{ setLoading(false); }
     })();
-    // Safety — se loading ainda estiver true após 8s, forçar false
     const safetyTimer=setTimeout(()=>setLoading(false),8000);
     const subs=[
       supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>loadPlayers(groupIdRef.current)).subscribe(),
@@ -552,8 +539,8 @@ export default function App() {
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={(groupId)=>{
-        localStorage.setItem("hhb_session",JSON.stringify({playerId:currentUser.id,groupId}));
-        window.location.href = window.location.pathname + "?g=" + groupId;
+        localStorage.setItem("hhb_session",JSON.stringify({playerId:currentUser.id,groupId:groupId}));
+        window.location.href="/";
       }} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
       {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}

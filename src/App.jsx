@@ -539,7 +539,9 @@ export default function App() {
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={(groupId)=>{
-        localStorage.setItem("hhb_session",JSON.stringify({playerId:currentUser?.id,groupId:groupId}));
+        const gid = Number(groupId);
+        console.log("Switching to group:", gid, typeof gid);
+        localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
         window.location.href="/";
       }} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}

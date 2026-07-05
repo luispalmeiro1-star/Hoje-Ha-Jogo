@@ -350,6 +350,8 @@ export default function App() {
       for(let i=1;i<=14;i++){const d=new Date(now2);d.setDate(now2.getDate()+i);if(gameDays.includes(d.getDay())){nextDate=d.toISOString().split("T")[0];break;}}
       if(!nextDate){const fb=new Date(now2);fb.setDate(now2.getDate()+7);nextDate=fb.toISOString().split("T")[0];}
       await supabase.from("game_info").update({date:nextDate}).eq("id",gId);
+      // Notificações automáticas após fecho
+      await supabase.functions.invoke("send-notification",{body:{title:"🏆 Vota no MVP!",message:"O jogo fechou! Entra na app e vota no melhor jogador de hoje.",url:"https://hojehajogo.pt"}});
       await reloadAll(groupId);
     }, msUntilClose);
     return ()=>clearTimeout(timer);
@@ -479,7 +481,16 @@ export default function App() {
     if(result.player&&gid) await supabase.from("player_groups").upsert({player_id:result.player.id,group_id:gid,is_admin:false},{onConflict:"player_id,group_id"});
     showToast(`${name} adicionado! 🎉`);
   };
-  const updateGameInfo = async(patch)=>{ setGameInfo(prev=>({...prev,...patch})); await supabase.from("game_info").update(patch).eq("id",gameInfo.id); showToast("Jogo atualizado ✓"); };
+  const updateGameInfo = async(patch)=>{
+    setGameInfo(prev=>({...prev,...patch}));
+    await supabase.from("game_info").update(patch).eq("id",gameInfo.id);
+    // Notificação automática se a data mudou
+    if(patch.date&&patch.date!==gameInfo.date){
+      const dateStr=new Date(patch.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"});
+      sendPushNotification("⚽ Novo jogo marcado!",`Jogo marcado para ${dateStr} às ${patch.time||gameInfo.time}. Confirma presença!`);
+    }
+    showToast("Jogo atualizado ✓");
+  };
   const updateProfile  = async(id,newName,newPassword,newColor,newPhone)=>{
     const updates={};
     if(newName?.trim()) updates.name=newName.trim();
@@ -545,6 +556,8 @@ export default function App() {
     const nextDate=getNextGameDate(gameDays);
     await supabase.from("game_info").update({date:nextDate}).eq("id",gameInfo.id);
     showToast(isAuto?"Jogo fechado automaticamente ✓":"Jogo fechado ✓");
+    // Notificação de MVP e fecho
+    sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.");
     await reloadAll(gid);
   };
   const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast("Dívida registada ✓"); };

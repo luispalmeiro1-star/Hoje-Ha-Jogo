@@ -305,8 +305,16 @@ export default function App() {
     const gCost=gameInfo.cost_per_player||COST;
     const gId=gameInfo.id;
     const timer=setTimeout(async()=>{
-      const{data:freshPlayers}=await supabase.from("players").select("*").eq("group_id",groupId);
-      if(!freshPlayers) return;
+      // Buscar players via player_groups (status por grupo)
+      const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid,is_admin").eq("group_id",groupId);
+      if(!pgRows) return;
+      const pids=pgRows.map(x=>x.player_id);
+      const{data:allPlayers}=await supabase.from("players").select("*").in("id",pids);
+      if(!allPlayers) return;
+      const freshPlayers=allPlayers.map(p=>{
+        const pg=pgRows.find(x=>x.player_id===p.id);
+        return {...p,status:pg?.status||"out",paid:pg?.paid||false};
+      });
       const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
       const freshMembers=freshPlayers.filter(p=>!p.is_guest);
       for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
@@ -328,8 +336,14 @@ export default function App() {
       if(votes&&votes.length>0){const counts={};votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null;}
       const collected=freshConfirmed.filter(p=>p.paid).length*gCost;
       if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gDate,players_count:freshConfirmed.length,collected,winner_team:null,mvp_name:mvpName,group_id:groupId});
-      await supabase.from("players").delete().eq("is_guest",true).eq("group_id",groupId);
-      await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false).eq("group_id",groupId);
+      // Remover convidados
+      const guestIds=freshPlayers.filter(p=>p.is_guest).map(p=>p.id);
+      if(guestIds.length>0){
+        await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",groupId);
+        await supabase.from("players").delete().in("id",guestIds);
+      }
+      // Reset status em player_groups
+      await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("group_id",groupId);
       const{data:grp}=await supabase.from("groups").select("game_days").eq("id",groupId).maybeSingle();
       const gameDays=(grp?.game_days||[3]).map(Number).sort((a,b)=>a-b);
       const now2=new Date(); let nextDate=null;
@@ -1829,7 +1843,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
 
         <div className="tabs">
-          {[["jogo","⚽"],["equipas","🎲"],["dividas","💸"],["jogadores","👥"],["gerir","⚙️"]].map(([k,l])=>(
+          {[["jogo","⚽ Jogo"],["equipas","🎲 Equipas"],["dividas","💸 Dívidas"],["historico","📋 Histórico"],["jogadores","👥 Jogadores"],["gerir","⚙️ Gerir"]].map(([k,l])=>(
             <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)}>{l}</button>
           ))}
         </div>
@@ -1899,6 +1913,46 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           </div>
         </>}
 
+        {adminTab==="historico"&&<>
+          <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
+          {history.length===0
+            ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
+            :history.map((h,i)=>(
+              <div key={i} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"14px 16px",marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"white",letterSpacing:1}}>{new Date(h.date).toLocaleDateString("pt-PT",{weekday:"short",day:"numeric",month:"short"})}</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                    {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>🏆 Equipa {h.winner_team}</span>}
+                    {h.mvp_name&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ {h.mvp_name}</span>}
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:16,alignItems:"center"}}>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>JOGADORES</div>
+                    <div style={{fontSize:16,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>RECOLHIDO</div>
+                    <div style={{fontSize:16,fontWeight:800,color:"#4ade80"}}>{h.collected||0}€</div>
+                  </div>
+                  {!h.winner_team&&h.players_count>0&&(
+                    <div style={{marginLeft:"auto",display:"flex",gap:4}}>
+                      {["A","B","C"].map(t=>(
+                        <button key={t} onClick={async()=>{
+                          await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
+                          showToast(`Equipa ${t} registada ✓`);
+                          await reloadAll(activeGroupId);
+                        }} style={{padding:"4px 10px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          }
+        </>}
         {adminTab==="jogadores"&&(
           <div className="player-list">
             {members.map(p=>(
@@ -1919,75 +1973,70 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         )}
 
         {adminTab==="gerir"&&<>
-          <p className="section-label"><Icon name="settings" size={12}/> TEMPORADA</p>
-          <TerminarEpocaButton players={players} history={history} debts={debts} members={members} mvpVotes={mvpVotes} groupId={groupId} gameInfo={gameInfo} showToast={showToast} reloadAll={()=>window.location.reload()}/>
-          <div className="game-info-card" style={{marginTop:14}}>
-            <div className="game-info-header"><Icon name="edit" size={13}/> NOME DA APP</div>
-            <input className="text-input" value={editAppName} onChange={e=>{setEditAppName(e.target.value);setEdited(true);}} placeholder="Nome do grupo/app..."/>
-          </div>
-          <div className="game-info-card" style={{marginTop:12}}>
-            <div className="game-info-header"><Icon name="cal" size={13}/> DIAS HABITUAIS</div>
-            <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {[["Dom",0],["Seg",1],["Ter",2],["Qua",3],["Qui",4],["Sex",5],["Sáb",6]].map(([label,day])=>{
-                const active=(editGameDays||[3]).includes(day);
-                return (
-                  <button key={day} onClick={()=>{
-                    const curr=editGameDays||[3];
-                    const next=active?curr.filter(d=>d!==day):[...curr,day].sort((a,b)=>a-b);
-                    if(next.length===0) return; // pelo menos 1 dia
-                    setEditGameDays(next); setEdited(true);
-                  }} style={{padding:"7px 12px",borderRadius:20,border:`1px solid ${active?"#16a34a":"#2a2a2a"}`,background:active?"#16241c":"#111",color:active?"#4ade80":"#6b7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-                    {label}
-                  </button>
-                );
-              })}
+          <ExpandableSection icon="⚙️" title="Configurações" subtitle="Nome, dias habituais e informações do jogo">
+            <div style={{marginBottom:12}}>
+              <label className="field-label">🏟️ Nome do grupo</label>
+              <input className="text-input" value={editAppName} onChange={e=>{setEditAppName(e.target.value);setEdited(true);}} placeholder="Nome do grupo/app..."/>
             </div>
-          </div>
-          <div className="game-info-card" style={{marginTop:12}}>
-            <div className="game-info-header"><Icon name="edit" size={13}/> INFORMAÇÕES DO JOGO</div>
-            <label className="field-label"><Icon name="pin" size={11}/> Local</label>
-            <input className="text-input" value={editLoc} onChange={e=>{setEditLoc(e.target.value);setEdited(true);}}/>
-            <div className="date-time-row">
-              <div style={{flex:1}}><label className="field-label"><Icon name="cal" size={11}/> Data</label><input className="text-input" type="date" value={editDate} onChange={e=>{setEditDate(e.target.value);setEdited(true);}}/></div>
-              <div style={{width:100}}><label className="field-label"><Icon name="clock" size={11}/> Hora</label><input className="text-input" type="time" value={editTime} onChange={e=>{setEditTime(e.target.value);setEdited(true);}}/></div>
+            <div style={{marginBottom:12}}>
+              <label className="field-label">📅 Dias habituais</label>
+              <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[["Dom",0],["Seg",1],["Ter",2],["Qua",3],["Qui",4],["Sex",5],["Sáb",6]].map(([label,day])=>{
+                  const active=(editGameDays||[3]).includes(day);
+                  return (
+                    <button key={day} onClick={()=>{
+                      const curr=editGameDays||[3];
+                      const next=active?curr.filter(d=>d!==day):[...curr,day].sort((a,b)=>a-b);
+                      if(next.length===0) return;
+                      setEditGameDays(next); setEdited(true);
+                    }} style={{padding:"7px 12px",borderRadius:20,border:`1px solid ${active?"#16a34a":"#2a2a2a"}`,background:active?"#16241c":"#111",color:active?"#4ade80":"#6b7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <label className="field-label">💰 Valor por jogador (€)</label>
-            <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}}/>
+            <div style={{marginBottom:12}}>
+              <label className="field-label">⚽ Informações do jogo</label>
+              <label className="field-label"><Icon name="pin" size={11}/> Local</label>
+              <input className="text-input" value={editLoc} onChange={e=>{setEditLoc(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
+              <div className="date-time-row">
+                <div style={{flex:1}}><label className="field-label"><Icon name="cal" size={11}/> Data</label><input className="text-input" type="date" value={editDate} onChange={e=>{setEditDate(e.target.value);setEdited(true);}}/></div>
+                <div style={{width:100}}><label className="field-label"><Icon name="clock" size={11}/> Hora</label><input className="text-input" type="time" value={editTime} onChange={e=>{setEditTime(e.target.value);setEdited(true);}}/></div>
+              </div>
+              <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
+              <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
+            </div>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
               if((groupId||currentUser?.group_id)&&editGameDays) await supabase.from("groups").update({game_days:editGameDays}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>
-          </div>
-          <p className="section-label" style={{marginTop:16}}><Icon name="plus" size={11}/> ADICIONAR MEMBRO</p>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <input className="text-input" placeholder="Nome..." value={newName} onChange={e=>setNewName(e.target.value)}/>
-            <input className="text-input" placeholder="Utilizador..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
-            <input className="text-input" placeholder="Telemóvel (opcional)..." value={newPhone} onChange={e=>setNewPhone(e.target.value)}/>
-            <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
-            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>
-          </div>
-          <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
-          <p className="section-label" style={{marginTop:20}}>🔔 NOTIFICAÇÕES MANUAIS</p>
-          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:8}}>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#16a34a"}} onClick={async()=>{await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast("Notificação enviada ✓");}}>⚽ Novo jogo disponível</button>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#0891b2"}} onClick={async()=>{await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast("Notificação enviada ✓");}}>⏰ Lembrete — Marcar presença</button>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#d97706"}} onClick={async()=>{await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast("Notificação enviada ✓");}}>💸 Lembrete — Pagamento</button>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#7c3aed"}} onClick={async()=>{await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!");showToast("Notificação enviada ✓");}}>🏆 MVP aberto para votação</button>
-          </div>
-          <p className="section-label" style={{marginTop:4}}>⚠️ ZONA DE PERIGO</p>
-          {!showClearConfirm
-            ?<button className="btn-danger-full" onClick={()=>setShowClearConfirm(true)}>🗑️ Limpar histórico e dívidas (reiniciar mealheiro)</button>
-            :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14}}>
-              <p style={{fontSize:13,fontWeight:700,color:"#f87171",marginBottom:8}}>Tens a certeza?</p>
-              <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Isto apaga todo o histórico e dívidas. O mealheiro volta a 0€.</p>
-              <div style={{display:"flex",gap:8}}>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onClearHistory();setShowClearConfirm(false);}}>✓ Confirmar</button>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#6b7280"}} onClick={()=>setShowClearConfirm(false)}>Cancelar</button>
-              </div>
-            </div>}
+          </ExpandableSection>
+          <ExpandableSection icon="👤" title="Adicionar Membro" subtitle="Criar conta para um jogador">
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <input className="text-input" placeholder="Nome..." value={newName} onChange={e=>setNewName(e.target.value)}/>
+              <input className="text-input" placeholder="Utilizador..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
+              <input className="text-input" placeholder="Telemóvel (opcional)..." value={newPhone} onChange={e=>setNewPhone(e.target.value)}/>
+              <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
+              <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>
+            </div>
+            <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
+          </ExpandableSection>
+          <ExpandableSection icon="🔔" title="Notificações" subtitle="Enviar notificações ao grupo">
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button className="btn-primary" style={{justifyContent:"center",background:"#16a34a"}} onClick={async()=>{await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast("Notificação enviada ✓");}}>⚽ Novo jogo disponível</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"#0891b2"}} onClick={async()=>{await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast("Notificação enviada ✓");}}>⏰ Lembrete — Marcar presença</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"#d97706"}} onClick={async()=>{await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast("Notificação enviada ✓");}}>💸 Lembrete — Pagamento</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"#7c3aed"}} onClick={async()=>{await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!");showToast("Notificação enviada ✓");}}>🏆 MVP aberto para votação</button>
+            </div>
+          </ExpandableSection>
+          <ExpandableSection icon="💰" title="Financeiro" subtitle="Mealheiro e gestão de época">
+            <ReiniciarMealheiroButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
+            <TerminarEpocaButton players={players} history={history} debts={debts} members={members} mvpVotes={mvpVotes} groupId={groupId} gameInfo={gameInfo} showToast={showToast} reloadAll={()=>window.location.reload()}/>
+          </ExpandableSection>
         </>}
 
         <div style={{height:70}}/>
@@ -2051,6 +2100,71 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
             </div>
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EXPANDABLE SECTION ───────────────────────────────────────────────────────
+function ExpandableSection({icon, title, subtitle, children}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{marginBottom:8}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:open?"14px 14px 0 0":14,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+        <div style={{width:36,height:36,background:"rgba(255,255,255,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>{icon}</div>
+        <div style={{flex:1}}>
+          <div style={{color:"white",fontSize:13,fontWeight:700}}>{title}</div>
+          <div style={{color:"#4b5563",fontSize:11}}>{subtitle}</div>
+        </div>
+        <span style={{color:"#4b5563",fontSize:12}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&<div style={{background:"#0f0f0f",border:"1px solid #1f1f1f",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── REINICIAR MEALHEIRO ──────────────────────────────────────────────────────
+function ReiniciarMealheiroButton({groupId, showToast, reloadAll}) {
+  const [confirm, setConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleReiniciar = async() => {
+    setLoading(true);
+    try {
+      await supabase.from("game_history").delete().eq("group_id", groupId);
+      await supabase.from("debts").delete().eq("group_id", groupId);
+      showToast("Mealheiro reiniciado! 💰");
+      setConfirm(false);
+      setTimeout(()=>reloadAll(), 500);
+    } catch(e) {
+      showToast("Erro ao reiniciar: "+e.message, "err");
+    }
+    setLoading(false);
+  };
+
+  if(!confirm) return (
+    <button onClick={()=>setConfirm(true)} style={{width:"100%",background:"rgba(8,145,178,0.1)",border:"2px solid rgba(8,145,178,0.4)",borderRadius:12,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,textAlign:"left",marginBottom:8}}>
+      <span style={{fontSize:22}}>💰</span>
+      <div>
+        <div style={{color:"#22d3ee",fontSize:13,fontWeight:800}}>Reiniciar Mealheiro</div>
+        <div style={{color:"#6b7280",fontSize:11}}>Limpa dívidas e histórico financeiro</div>
+      </div>
+    </button>
+  );
+
+  return (
+    <div style={{background:"rgba(8,145,178,0.1)",border:"2px solid #0891b2",borderRadius:12,padding:14,marginBottom:8}}>
+      <div style={{fontSize:13,fontWeight:700,color:"#22d3ee",marginBottom:8}}>💰 Reiniciar Mealheiro</div>
+      <div style={{fontSize:11,color:"#9ca3af",marginBottom:12}}>
+        Isto vai limpar todas as dívidas e o histórico financeiro. As stats dos jogadores e o histórico de jogos são mantidos.
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={handleReiniciar} disabled={loading} style={{flex:1,padding:"10px",background:"#0891b2",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+          {loading?"A reiniciar...":"✓ Confirmar"}
+        </button>
+        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#1f1f1f",border:"none",borderRadius:10,color:"#9ca3af",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+          Cancelar
+        </button>
       </div>
     </div>
   );

@@ -1402,13 +1402,7 @@ function PiggyBankCard({piggybank,history,cost=3}) {
   const gamesPlayed=history.filter(g=>g.players_count>0).length;
   return (
     <div style={{marginTop:16}}>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-        <div style={{width:36,height:36,background:"rgba(8,145,178,0.2)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>💰</div>
-        <div>
-          <div style={{fontSize:14,fontWeight:800,color:"white"}}>Mealheiro do Grupo</div>
-          <div style={{fontSize:11,color:"#4b5563"}}>Saldo acumulado de todos os jogos</div>
-        </div>
-      </div>
+
       <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
@@ -1492,15 +1486,16 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
-          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"]].map(([k,l])=>(
+          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["mealheiro","💰 Mealheiro"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>
       </div>
       <div className="body">
-        {tab==="pessoal"&&<><PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost}/><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div></>}
+        {tab==="pessoal"&&<><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div>}
         {tab==="ranking"&&<><p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p><ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/></>}
         {tab==="mvp"&&<HallOfFameMVP history={history} members={members}/>}
+        {tab==="mealheiro"&&<PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost}/>}
       </div>
     </div>
   );

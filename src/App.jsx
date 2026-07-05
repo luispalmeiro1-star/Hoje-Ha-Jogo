@@ -217,6 +217,19 @@ export default function App() {
     (async()=>{
       setLoading(true);
       try{
+        // Verificar se há código de convite no URL (?code=XXX)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCode = urlParams.get("code");
+        if(urlCode){
+          // Limpar URL sem recarregar
+          window.history.replaceState({}, "", window.location.pathname);
+          // Guardar código para o EntrarConviteView usar
+          localStorage.setItem("hhb_url_code", urlCode);
+          // NÃO retornamos aqui — deixamos o session restore correr normalmente
+          // No final, se há sessão ativa, vai para entrar-convite com currentUser
+          // Se não há sessão, vai para entrar-convite sem currentUser
+        }
+
         // Session restore — lê groupId da sessão e carrega tudo
         const saved = JSON.parse(localStorage.getItem("hhb_session")||"null");
         if(saved?.playerId && saved?.groupId){
@@ -230,6 +243,11 @@ export default function App() {
             const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
             if(playerData){
               setCurrentUser(playerData);
+              // Se há código de URL pendente, ir para entrar-convite com sessão ativa
+              if(localStorage.getItem("hhb_url_code")){
+                setView("entrar-convite");
+                return;
+              }
               setView(playerData.is_admin?"admin":"player");
               return;
             }
@@ -245,6 +263,11 @@ export default function App() {
             const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
             const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
             setCurrentUser(playerData);
+            // Se há código de URL pendente, ir para entrar-convite
+            if(localStorage.getItem("hhb_url_code")){
+              setView("entrar-convite");
+              return;
+            }
             setMyGroups(enriched);
             setView("meus-grupos");
             return;
@@ -1120,7 +1143,11 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
 
 // ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
 function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicionado=null}) {
-  const [code, setCode]         = useState("");
+  const [code, setCode]         = useState(()=>{
+    const c=localStorage.getItem("hhb_url_code");
+    if(c){ localStorage.removeItem("hhb_url_code"); return c; }
+    return "";
+  });
   const [group, setGroup]       = useState(null);
   const [step, setStep]         = useState(1); // 1=código, 2=escolha, 3=login, 4=registo
   const [name, setName]         = useState("");
@@ -1137,6 +1164,11 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     if(result?.error){showToast(result.error,"err");return;}
     setGroup(result.group); setStep(2);
   };
+
+  // Auto-verificar se código veio do URL (QR Code)
+  useEffect(()=>{
+    if(code&&code.length>=6) checkCode();
+  },[]);
 
   const handleLogin = async() => {
     if(!username.trim()||!password.trim()){showToast("Preenche os campos","err");return;}

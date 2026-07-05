@@ -1402,7 +1402,13 @@ function PiggyBankCard({piggybank,history,cost=3}) {
   const gamesPlayed=history.filter(g=>g.players_count>0).length;
   return (
     <div style={{marginTop:16}}>
-      <p className="section-label"><Icon name="euro" size={12}/> MEALHEIRO DO GRUPO</p>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+        <div style={{width:36,height:36,background:"rgba(8,145,178,0.2)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>💰</div>
+        <div>
+          <div style={{fontSize:14,fontWeight:800,color:"white"}}>Mealheiro do Grupo</div>
+          <div style={{fontSize:11,color:"#4b5563"}}>Saldo acumulado de todos os jogos</div>
+        </div>
+      </div>
       <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>

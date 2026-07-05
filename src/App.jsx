@@ -276,7 +276,12 @@ export default function App() {
         }
       } catch(e){ console.error("Session restore error:",e); localStorage.removeItem("hhb_session"); }
       finally{ setLoading(false); }
-      setView("landing");
+      // Se há código de URL pendente, ir para entrar-convite mesmo sem sessão
+      if(localStorage.getItem("hhb_url_code")){
+        setView("entrar-convite");
+      } else {
+        setView("landing");
+      }
     })();
 
     const safetyTimer=setTimeout(()=>setLoading(false),8000);

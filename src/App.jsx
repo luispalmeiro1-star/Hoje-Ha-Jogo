@@ -216,46 +216,38 @@ export default function App() {
   useEffect(()=>{
     (async()=>{
       setLoading(true);
+      let handled = false;
       try{
         // Verificar se há código de convite no URL (?code=XXX)
         const urlParams = new URLSearchParams(window.location.search);
         const urlCode = urlParams.get("code");
         if(urlCode){
-          // Limpar URL sem recarregar
           window.history.replaceState({}, "", window.location.pathname);
-          // Guardar código para o EntrarConviteView usar
           localStorage.setItem("hhb_url_code", urlCode);
-          // NÃO retornamos aqui — deixamos o session restore correr normalmente
-          // No final, se há sessão ativa, vai para entrar-convite com currentUser
-          // Se não há sessão, vai para entrar-convite sem currentUser
         }
 
         // Session restore — lê groupId da sessão e carrega tudo
         const saved = JSON.parse(localStorage.getItem("hhb_session")||"null");
         if(saved?.playerId && saved?.groupId){
           const gid = Number(saved.groupId);
-          // Verificar se o grupo existe
           const{data:grpCheck}=await supabase.from("groups").select("id").eq("id",gid).maybeSingle();
           if(grpCheck){
             await reloadAll(gid);
             setActiveGroupId(gid);
-            // Buscar player desta sessão
             const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
             if(playerData){
               setCurrentUser(playerData);
-              // Se há código de URL pendente, ir para entrar-convite com sessão ativa
               if(localStorage.getItem("hhb_url_code")){
                 setView("entrar-convite");
-                return;
+              } else {
+                setView(playerData.is_admin?"admin":"player");
               }
-              setView(playerData.is_admin?"admin":"player");
+              handled = true;
               return;
             }
           }
-          // GroupId inválido — limpar
           localStorage.removeItem("hhb_session");
         } else if(saved?.playerId){
-          // Tem playerId mas sem groupId — mostrar seletor de grupos
           const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",saved.playerId);
           const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
           if(pgRaw&&pgRaw.length>0&&playerData){
@@ -263,24 +255,25 @@ export default function App() {
             const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
             const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
             setCurrentUser(playerData);
-            // Se há código de URL pendente, ir para entrar-convite
             if(localStorage.getItem("hhb_url_code")){
               setView("entrar-convite");
-              return;
+            } else {
+              setMyGroups(enriched);
+              setView("meus-grupos");
             }
-            setMyGroups(enriched);
-            setView("meus-grupos");
+            handled = true;
             return;
           }
           localStorage.removeItem("hhb_session");
         }
       } catch(e){ console.error("Session restore error:",e); localStorage.removeItem("hhb_session"); }
       finally{ setLoading(false); }
-      // Se há código de URL pendente, ir para entrar-convite mesmo sem sessão
-      if(localStorage.getItem("hhb_url_code")){
-        setView("entrar-convite");
-      } else {
-        setView("landing");
+      if(!handled){
+        if(localStorage.getItem("hhb_url_code")){
+          setView("entrar-convite");
+        } else {
+          setView("landing");
+        }
       }
     })();
 
@@ -1943,8 +1936,8 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </div>}
         </>}
 
-        {/* Mealheiro no fundo */}
-        <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"14px 16px",marginBottom:14,color:"white",marginTop:8}}>
+        {/* Mealheiro — só na tab Jogo */}
+        {adminTab==="jogo"&&<div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"14px 16px",marginBottom:14,color:"white",marginTop:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><div style={{fontSize:9,fontWeight:700,letterSpacing:1,opacity:0.8}}>MEALHEIRO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div></div>
             <div style={{display:"flex",gap:14,textAlign:"right"}}>
@@ -1952,7 +1945,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               <div><div style={{fontSize:9,opacity:0.7}}>POR RECEBER</div><div style={{fontSize:14,fontWeight:800,color:"#fca5a5"}}>{totalUnpaid*(gameInfo.cost_per_player||COST)}€</div></div>
             </div>
           </div>
-        </div>
+        </div>}
         <div style={{height:70}}/>
       </div>
       <BottomNav view={adminTab==="equipas"?"equipas_tab":adminTab==="dividas"?"debts":"admin"} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");}else if(v==="debts"){setAdminTab("dividas");}else if(v==="admin"){setAdminTab("jogo");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>

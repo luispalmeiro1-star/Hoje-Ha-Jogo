@@ -1921,7 +1921,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
         <div style={{height:70}}/>
       </div>
-      <BottomNav view={view} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
+      <BottomNav view={adminTab==="equipas"?"equipas_tab":"admin"} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");}else if(v==="admin"){setAdminTab("jogo");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
     </div>
   );
 }

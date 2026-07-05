@@ -1061,10 +1061,15 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
   });
   const [copied, setCopied]           = useState(false);
 
-  const generateCode = () => {
+  const generateCode = async() => {
     const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code="HHJ-";
-    for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+    let code, exists=true;
+    while(exists){
+      code="HHJ-";
+      for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+      const{data}=await supabase.from("groups").select("id").eq("invite_code",code).maybeSingle();
+      exists=!!data;
+    }
     return code;
   };
 
@@ -1074,7 +1079,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     }
     setLoading(true);
     try {
-      const code=generateCode();
+      const code=await generateCode();
       const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code}).select().single();
       if(ge) throw ge;
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];

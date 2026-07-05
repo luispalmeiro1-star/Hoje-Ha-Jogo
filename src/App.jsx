@@ -442,11 +442,16 @@ export default function App() {
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
     if(!inviter||confirmed.length>=MAX_PLAYERS){showToast("Jogo cheio!","err");return;}
-    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:activeGroupId||null}).select().single();
-    if(inserted) await reassignAllTeams([...players,inserted]);
+    const gid=activeGroupId||null;
+    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid}).select().single();
+    if(inserted){
+      // Registar em player_groups com status "in"
+      await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:"in",paid:false,confirmed_at:Date.now()});
+      await reassignAllTeams([...players,inserted]);
+    }
     showToast(`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{ await supabase.from("players").delete().eq("id",id); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
+  const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
   const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("players").delete().eq("id",id); showToast("Jogador removido"); };
   const changePassword = async(id,pw)=>{ await supabase.from("players").update({password:pw}).eq("id",id); };
@@ -575,7 +580,7 @@ export default function App() {
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST}/>}
+      {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")}/>}
     </div>
@@ -1467,7 +1472,7 @@ function DebtsView({debts=[], members=[], player, onBack}) {
 }
 
 // ── STATS VIEW ───────────────────────────────────────────────────────────────
-function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3}) {
+function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3,groupId=null}) {
   const [tab,setTab]=useState("pessoal");
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});
@@ -1486,7 +1491,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
-          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["mealheiro","💰 Mealheiro"]].map(([k,l])=>(
+          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["mealheiro","💰 Mealheiro"],["epocas","🏁 Épocas"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>
@@ -1496,7 +1501,55 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         {tab==="ranking"&&<><p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p><ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/></>}
         {tab==="mvp"&&<HallOfFameMVP history={history} members={members}/>}
         {tab==="mealheiro"&&<PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost}/>}
+        {tab==="epocas"&&<SeasonStatsCard player={player} groupId={groupId}/>}
       </div>
+    </div>
+  );
+}
+
+// ── SEASON STATS VIEW ────────────────────────────────────────────────────────
+function SeasonStatsCard({player, groupId}) {
+  const [seasons, setSeasons] = useState([]);
+
+  useEffect(()=>{
+    if(!player||!groupId) return;
+    supabase.from("season_stats")
+      .select("*")
+      .eq("player_id", player.id)
+      .eq("group_id", groupId)
+      .order("season", {ascending:false})
+      .then(({data})=>{ if(data) setSeasons(data); });
+  },[player?.id, groupId]);
+
+  if(seasons.length===0) return (
+    <div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>
+      Nenhuma época anterior registada
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {seasons.map((s,i)=>(
+        <div key={i} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"14px 16px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37",letterSpacing:2}}>🏁 {s.season}</div>
+            {s.mvp_count>0&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ {s.mvp_count}x MVP</span>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+            {[
+              {icon:"⚽",value:s.total_games,label:"Jogos"},
+              {icon:"🔥",value:s.best_streak,label:"Melhor Série"},
+              {icon:"💰",value:s.total_paid+"€",label:"Total Pago"},
+            ].map((stat,j)=>(
+              <div key={j} style={{background:"#0a0a0a",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
+                <div style={{fontSize:18,marginBottom:4}}>{stat.icon}</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white"}}>{stat.value}</div>
+                <div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

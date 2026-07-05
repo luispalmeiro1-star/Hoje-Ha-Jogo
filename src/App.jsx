@@ -532,8 +532,14 @@ export default function App() {
     let mvpName=null;
     if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=players.find(p=>p.id===Number(topId))?.name||null; }
     if(collected>0||confirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid});
-    await supabase.from("player_groups").delete().eq("group_id",gid).eq("is_guest",true);
-    await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("group_id",gid).neq("is_admin",true).or("is_admin.eq.true");
+    // Remover convidados
+    const guestIds=confirmed.filter(p=>p.is_guest).map(p=>p.id);
+    if(guestIds.length>0){
+      await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",gid);
+      await supabase.from("players").delete().in("id",guestIds);
+    }
+    // Reset status de todos em player_groups
+    await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("group_id",gid);
     const{data:grp}=gid?await supabase.from("groups").select("game_days").eq("id",gid).maybeSingle():{data:null};
     const gameDays=grp?.game_days||[3];
     const nextDate=getNextGameDate(gameDays);
@@ -1917,40 +1923,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.length===0
             ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
-            :history.map((h,i)=>(
-              <div key={i} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"14px 16px",marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"white",letterSpacing:1}}>{new Date(h.date).toLocaleDateString("pt-PT",{weekday:"short",day:"numeric",month:"short"})}</div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
-                    {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>🏆 Equipa {h.winner_team}</span>}
-                    {h.mvp_name&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ {h.mvp_name}</span>}
-                  </div>
-                </div>
-                <div style={{display:"flex",gap:16,alignItems:"center"}}>
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>JOGADORES</div>
-                    <div style={{fontSize:16,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
-                  </div>
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>RECOLHIDO</div>
-                    <div style={{fontSize:16,fontWeight:800,color:"#4ade80"}}>{h.collected||0}€</div>
-                  </div>
-                  {!h.winner_team&&h.players_count>0&&(
-                    <div style={{marginLeft:"auto",display:"flex",gap:4}}>
-                      {["A","B","C"].map(t=>(
-                        <button key={t} onClick={async()=>{
-                          await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
-                          showToast(`Equipa ${t} registada ✓`);
-                          await reloadAll(activeGroupId);
-                        }} style={{padding:"4px 10px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
+            :history.map((h,i)=><HistoricoCard key={i} h={h} groupId={activeGroupId} showToast={showToast} reloadAll={()=>reloadAll(activeGroupId)}/>)
           }
         </>}
         {adminTab==="jogadores"&&(
@@ -2101,6 +2074,77 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── HISTORICO CARD ────────────────────────────────────────────────────────────
+function HistoricoCard({h, groupId, showToast, reloadAll}) {
+  const [open, setOpen] = useState(false);
+  const [jogadores, setJogadores] = useState([]);
+  const [loadingJogadores, setLoadingJogadores] = useState(false);
+
+  const loadJogadores = async() => {
+    if(jogadores.length>0){ setOpen(v=>!v); return; }
+    setLoadingJogadores(true);
+    const{data}=await supabase.from("game_attendance").select("player_name").eq("game_date",h.date).eq("group_id",groupId).order("player_name");
+    setJogadores(data||[]);
+    setLoadingJogadores(false);
+    setOpen(true);
+  };
+
+  return (
+    <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,marginBottom:8,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"14px 16px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:1}}>
+            {new Date(h.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})}
+          </div>
+          {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20}}>🏆 Equipa {h.winner_team}</span>}
+        </div>
+        <div style={{display:"flex",gap:20,marginBottom:h.winner_team?0:10}}>
+          <div>
+            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>JOGADORES</div>
+            <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
+          </div>
+          <div>
+            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>RECOLHIDO</div>
+            <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.collected||0}€</div>
+          </div>
+          {h.collected>0&&<div>
+            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>POR JOGO</div>
+            <div style={{fontSize:18,fontWeight:800,color:"#d4af37"}}>{h.players_count>0?Math.round(h.collected/h.players_count):0}€</div>
+          </div>}
+        </div>
+        {/* Definir vencedor se não está definido */}
+        {!h.winner_team&&h.players_count>0&&(
+          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:11,color:"#6b7280"}}>Vencedor:</span>
+            {["A","B","C"].map(t=>(
+              <button key={t} onClick={async()=>{
+                await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
+                showToast(`Equipa ${t} registada ✓`);
+                reloadAll();
+              }} style={{padding:"4px 10px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                Equipa {t}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Botão ver jogadores */}
+        {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #1f1f1f",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#4b5563",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          {loadingJogadores?"A carregar...":open?"▲ Ocultar jogadores":`▼ Ver ${h.players_count} jogadores`}
+        </button>}
+      </div>
+      {/* Lista de jogadores */}
+      {open&&jogadores.length>0&&(
+        <div style={{borderTop:"1px solid #1f1f1f",padding:"10px 16px",display:"flex",flexWrap:"wrap",gap:6}}>
+          {jogadores.map((j,i)=>(
+            <span key={i} style={{background:"#1a2e1a",border:"1px solid #23362a",borderRadius:20,padding:"4px 10px",fontSize:12,color:"#4ade80",fontWeight:600}}>{j.player_name}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

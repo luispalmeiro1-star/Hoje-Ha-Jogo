@@ -1936,16 +1936,6 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </div>}
         </>}
 
-        {/* Mealheiro — só na tab Jogo */}
-        {adminTab==="jogo"&&<div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"14px 16px",marginBottom:14,color:"white",marginTop:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><div style={{fontSize:9,fontWeight:700,letterSpacing:1,opacity:0.8}}>MEALHEIRO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div></div>
-            <div style={{display:"flex",gap:14,textAlign:"right"}}>
-              <div><div style={{fontSize:9,opacity:0.7}}>RECEBIDO</div><div style={{fontSize:14,fontWeight:800,color:"#86efac"}}>{totalPaid*(gameInfo.cost_per_player||COST)}€</div></div>
-              <div><div style={{fontSize:9,opacity:0.7}}>POR RECEBER</div><div style={{fontSize:14,fontWeight:800,color:"#fca5a5"}}>{totalUnpaid*(gameInfo.cost_per_player||COST)}€</div></div>
-            </div>
-          </div>
-        </div>}
         <div style={{height:70}}/>
       </div>
       <BottomNav view={adminTab==="equipas"?"equipas_tab":adminTab==="dividas"?"debts":"admin"} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");}else if(v==="debts"){setAdminTab("dividas");}else if(v==="admin"){setAdminTab("jogo");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>

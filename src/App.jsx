@@ -1557,6 +1557,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <button onClick={onSwitchAccount} style={{width:"100%",marginTop:8,padding:"11px",borderRadius:10,border:"2px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           <Icon name="logout" size={14}/> TROCAR DE CONTA
         </button>
+        <GroupCodeCard groupId={player.group_id}/>
       </div>
     </div>
   );
@@ -1702,6 +1703,25 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
 
 
+        {/* Banner código novo grupo — aparece só quando se cria um grupo */}
+        {newGroupCode&&(
+          <div style={{background:"#111",border:"2px solid #d4af37",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:8}}>O CÓDIGO DO TEU GRUPO É</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:8,marginBottom:4}}>{newGroupCode}</div>
+            <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Partilha com os teus jogadores para entrarem</div>
+            <div style={{display:"flex",gap:8,marginBottom:10}}>
+              <button onClick={()=>{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}} style={{flex:1,padding:"10px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <Icon name="copy" size={14}/> Copiar
+              </button>
+              <button onClick={()=>{if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!
+Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <Icon name="share" size={14}/> Partilhar
+              </button>
+            </div>
+            <button onClick={()=>setNewGroupCode(null)} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>Fechar</button>
+          </div>
+        )}
+
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
 
         {/* Banner vencedor — aparece após fecho automático se não foi definido */}
@@ -1815,7 +1835,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
         )}
 
         {adminTab==="gerir"&&<>
-          <div className="game-info-card">
+          <p className="section-label"><Icon name="settings" size={12}/> TEMPORADA</p>
+          <TerminarEpocaButton players={players} history={history} debts={debts} members={members} mvpVotes={mvpVotes} groupId={groupId} gameInfo={gameInfo} showToast={showToast} reloadAll={()=>window.location.reload()}/>
+          <div className="game-info-card" style={{marginTop:14}}>
             <div className="game-info-header"><Icon name="edit" size={13}/> NOME DA APP</div>
             <input className="text-input" value={editAppName} onChange={e=>{setEditAppName(e.target.value);setEdited(true);}} placeholder="Nome do grupo/app..."/>
           </div>
@@ -1929,27 +1951,7 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
           {groups.map((pg,i)=>{
             const group=pg.groups||{id:pg.group_id,name:"Grupo "+pg.group_id,location:"",time:""};
             return (
-              <button key={i} onClick={async()=>{
-                setLoading(pg.group_id);
-                await onSelect(pg.group_id);
-                setLoading(null);
-              }} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-                <div style={{width:44,height:44,background:"rgba(22,163,74,0.15)",border:"1px solid #16a34a33",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>
-                  ⚽
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:3}}>{group.name}</div>
-                  <div style={{color:"#4b5563",fontSize:12,display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {group.time&&<span>🕐 {group.time}</span>}
-                    {group.location&&<span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>📍 {group.location}</span>}
-                  </div>
-                  {pg.is_admin&&<div style={{marginTop:4}}><span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>Admin</span></div>}
-                </div>
-                {loading===pg.group_id
-                  ?<div style={{width:20,height:20,border:"2px solid #16a34a",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
-                  :<Icon name="right" size={16}/>
-                }
-              </button>
+              <GroupCard key={i} pg={pg} group={group} loading={loading} onSelect={onSelect} setLoading={setLoading}/>
             );
           })}
         </div>
@@ -1980,29 +1982,182 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
   );
 }
 
+// ── TERMINAR ÉPOCA ───────────────────────────────────────────────────────────
+function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupId, gameInfo, showToast, reloadAll}) {
+  const [confirm, setConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [seasonName, setSeasonName] = useState(()=>{
+    const y = new Date().getFullYear();
+    return `${y-1}-${y}`;
+  });
+
+  const handleTerminar = async() => {
+    setLoading(true);
+    try {
+      // Calcular MVP da época
+      const mvpCounts = {};
+      history.forEach(g=>{ if(g.mvp_name) mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1; });
+      const mvpEpoca = Object.entries(mvpCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+
+      // Guardar stats individuais
+      for(const p of members) {
+        await supabase.from("season_stats").upsert({
+          player_id: p.id,
+          player_name: p.name,
+          season: seasonName,
+          total_games: p.total_games||0,
+          total_paid: p.total_paid||0,
+          best_streak: p.best_streak||0,
+          mvp_count: mvpCounts[p.name]||0,
+          group_id: groupId
+        }, {onConflict:"player_id,season,group_id"});
+      }
+
+      // Limpar histórico, dívidas e presenças
+      await supabase.from("game_history").delete().eq("group_id", groupId);
+      await supabase.from("debts").delete().eq("group_id", groupId);
+      await supabase.from("mvp_votes").delete().eq("group_id", groupId);
+      await supabase.from("game_attendance").delete().eq("group_id", groupId);
+
+      // Resetar stats dos jogadores
+      for(const p of members) {
+        await supabase.from("players").update({
+          total_games: 0,
+          total_paid: 0,
+          current_streak: 0,
+          best_streak: 0
+        }).eq("id", p.id);
+      }
+
+      // Resetar status em player_groups
+      await supabase.from("player_groups").update({
+        status:"out", paid:false, confirmed_at:null, team:null
+      }).eq("group_id", groupId);
+
+      showToast(`Época ${seasonName} terminada! 🏆`);
+      setConfirm(false);
+      setTimeout(()=>reloadAll(), 1000);
+    } catch(e) {
+      showToast("Erro ao terminar época: "+e.message, "err");
+    }
+    setLoading(false);
+  };
+
+  if(!confirm) return (
+    <button onClick={()=>setConfirm(true)} style={{width:"100%",background:"rgba(124,58,237,0.1)",border:"2px solid rgba(124,58,237,0.4)",borderRadius:12,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,textAlign:"left"}}>
+      <span style={{fontSize:22}}>🏁</span>
+      <div>
+        <div style={{color:"#c084fc",fontSize:13,fontWeight:800}}>Terminar Época</div>
+        <div style={{color:"#6b7280",fontSize:11}}>Guarda stats e limpa o histórico</div>
+      </div>
+    </button>
+  );
+
+  return (
+    <div style={{background:"rgba(124,58,237,0.1)",border:"2px solid #7c3aed",borderRadius:12,padding:14}}>
+      <div style={{fontSize:13,fontWeight:700,color:"#c084fc",marginBottom:10}}>🏁 Terminar Época</div>
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>NOME DA ÉPOCA</div>
+        <input className="text-input" value={seasonName} onChange={e=>setSeasonName(e.target.value)} placeholder="Ex: 2024-2025"/>
+      </div>
+      <div style={{fontSize:11,color:"#9ca3af",marginBottom:12}}>
+        Isto vai guardar as stats individuais, limpar o histórico, dívidas e presenças. Esta ação não pode ser revertida.
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={handleTerminar} disabled={loading} style={{flex:1,padding:"10px",background:"#7c3aed",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+          {loading?"A guardar...":"✓ Confirmar"}
+        </button>
+        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#1f1f1f",border:"none",borderRadius:10,color:"#9ca3af",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── GROUP CARD (MEUS GRUPOS) ──────────────────────────────────────────────────
+function GroupCard({pg, group, loading, onSelect, setLoading}) {
+  const [status, setStatus] = useState(null);
+
+  useEffect(()=>{
+    if(!pg.group_id) return;
+    // Buscar estado do grupo em tempo real
+    (async()=>{
+      const{data:gi}=await supabase.from("game_info").select("date,time").eq("group_id",pg.group_id).maybeSingle();
+      if(!gi) return;
+      const{data:pg2}=await supabase.from("player_groups").select("player_id").eq("group_id",pg.group_id).eq("status","in");
+      const confirmed=pg2?.length||0;
+      const gameDate=new Date(gi.date+"T"+gi.time);
+      const now=new Date();
+      const diff=gameDate-now;
+      const days=Math.floor(diff/86400000);
+      let msg="";
+      if(days===0) msg="🔥 Jogo hoje!";
+      else if(days===1) msg="⚽ Jogo amanhã";
+      else if(days>0&&days<=7) msg=`📅 Jogo em ${days} dias`;
+      else msg="Sem jogo próximo";
+      setStatus({msg, confirmed});
+    })();
+  },[pg.group_id]);
+
+  return (
+    <button onClick={async()=>{ setLoading(pg.group_id); await onSelect(pg.group_id); setLoading(null); }} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+      <div style={{width:44,height:44,background:"rgba(22,163,74,0.15)",border:"1px solid #16a34a33",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>
+        ⚽
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:3}}>{group.name}</div>
+        <div style={{color:"#4b5563",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          {group.time&&<span>🕐 {group.time}</span>}
+          {group.location&&<span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>📍 {group.location}</span>}
+        </div>
+        {status&&<div style={{marginTop:4,fontSize:11,color:"#9ca3af"}}>{status.msg} · {status.confirmed} confirmados</div>}
+        {pg.is_admin&&<div style={{marginTop:4}}><span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>Admin</span></div>}
+      </div>
+      {loading===pg.group_id
+        ?<div style={{width:20,height:20,border:"2px solid #16a34a",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
+        :<Icon name="right" size={16}/>
+      }
+    </button>
+  );
+}
+
 // ── GROUP CODE CARD ───────────────────────────────────────────────────────────
 function GroupCodeCard({groupId}) {
   const [code, setCode] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const qrRef = useRef(null);
 
   useEffect(()=>{
     if(!groupId) return;
-    supabase.from("groups").select("invite_code").eq("id",groupId).single().then(({data})=>{ if(data) setCode(data.invite_code); });
+    supabase.from("groups").select("invite_code").eq("id",groupId).maybeSingle().then(({data})=>{ if(data) setCode(data.invite_code); });
   },[groupId]);
+
+  useEffect(()=>{
+    if(!showQR||!code||!qrRef.current) return;
+    qrRef.current.innerHTML="";
+    if(window.QRCode){
+      new window.QRCode(qrRef.current,{text:`https://hojehajogo.pt?code=${code}`,width:180,height:180,colorDark:"#d4af37",colorLight:"#111111",correctLevel:window.QRCode.CorrectLevel.M});
+    }
+  },[showQR,code]);
 
   if(!code) return null;
 
-  const handleShare = () => {
-    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${code}`,url:"https://hojehajogo.pt"}); }
+  const handleShare=()=>{
+    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${code}`,url:`https://hojehajogo.pt?code=${code}`}); }
     else { navigator.clipboard.writeText(code).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); }
   };
 
   return (
     <div style={{marginTop:16,background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"14px 16px"}}>
       <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0}}>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4af37",letterSpacing:5}}>{code}</div>
         <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?"rgba(212,175,55,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#d4af37":"#2a2a2a"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#d4af37":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+            QR
+          </button>
           <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
             <Icon name="copy" size={13}/>{copied?"Copiado!":"Copiar"}
           </button>
@@ -2011,6 +2166,12 @@ function GroupCodeCard({groupId}) {
           </button>
         </div>
       </div>
+      {showQR&&(
+        <div style={{textAlign:"center",padding:"12px 0 4px"}}>
+          <div ref={qrRef} style={{display:"inline-block",background:"#111",padding:8,borderRadius:8}}/>
+          <div style={{fontSize:11,color:"#4b5563",marginTop:8}}>Aponta a câmara para entrar no grupo</div>
+        </div>
+      )}
     </div>
   );
 }

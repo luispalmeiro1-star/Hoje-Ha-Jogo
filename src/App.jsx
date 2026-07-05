@@ -1923,7 +1923,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.length===0
             ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
-            :history.map((h,i)=><HistoricoCard key={i} h={h} groupId={activeGroupId} showToast={showToast} reloadAll={()=>reloadAll(activeGroupId)}/>)
+            :history.map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>)
           }
         </>}
         {adminTab==="jogadores"&&(

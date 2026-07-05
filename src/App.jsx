@@ -1554,7 +1554,6 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <button onClick={onEntrarCodigo} style={{width:"100%",marginTop:8,padding:"11px",borderRadius:10,border:"2px solid #1f1f1f",background:"transparent",color:"#9ca3af",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           <Icon name="key" size={14}/> ENTRAR NOUTRO GRUPO
         </button>
-        <div style={{marginTop:14}}><GroupCodeCard groupId={player.group_id}/></div>
         <button onClick={onSwitchAccount} style={{width:"100%",marginTop:8,padding:"11px",borderRadius:10,border:"2px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           <Icon name="logout" size={14}/> TROCAR DE CONTA
         </button>
@@ -1595,7 +1594,6 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
-        <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
           <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#23362a"}`,background:(player.position||"Polivalente")==="Polivalente"?"rgba(22,163,74,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#4ade80":"#6b7280"}}>⚽ Polivalente</button>
@@ -1732,23 +1730,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           </div>
         )}
 
-        {/* Banner código novo grupo */}
-        {newGroupCode&&(
-          <div style={{background:"#111",border:"2px solid #d4af37",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:8}}>O CÓDIGO DO TEU GRUPO É</div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:8,marginBottom:12}}>{newGroupCode}</div>
-            <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Partilha com os teus jogadores para entrarem</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}} style={{flex:1,padding:"10px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <Icon name="copy" size={14}/> Copiar
-              </button>
-              <button onClick={()=>{if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <Icon name="share" size={14}/> Partilhar
-              </button>
-            </div>
-            <button onClick={()=>setNewGroupCode(null)} style={{marginTop:10,background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>Fechar</button>
-          </div>
-        )}
 
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
 

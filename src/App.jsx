@@ -1699,36 +1699,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
         </div>
 
-        {/* Mealheiro */}
-        <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"14px 16px",marginBottom:14,color:"white"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><div style={{fontSize:9,fontWeight:700,letterSpacing:1,opacity:0.8}}>MEALHEIRO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div></div>
-            <div style={{display:"flex",gap:14,textAlign:"right"}}>
-              <div><div style={{fontSize:9,opacity:0.7}}>RECEBIDO</div><div style={{fontSize:14,fontWeight:800,color:"#86efac"}}>{totalPaid*(gameInfo.cost_per_player||COST)}€</div></div>
-              <div><div style={{fontSize:9,opacity:0.7}}>POR RECEBER</div><div style={{fontSize:14,fontWeight:800,color:"#fca5a5"}}>{totalUnpaid*(gameInfo.cost_per_player||COST)}€</div></div>
-            </div>
-          </div>
-        </div>
 
-        {/* Código de convite — visível no topo do painel admin */}
-        {inviteCode&&(
-          <div style={{background:"#111",border:"1px solid #2a2a2a",borderRadius:14,padding:"12px 16px",marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-              <div>
-                <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:4}}>CÓDIGO DO GRUPO</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#d4af37",letterSpacing:5}}>{inviteCode}</div>
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={handleCopyCode} style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,padding:"8px 12px",color:codeCopied?"#4ade80":"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6,transition:"color 0.2s"}}>
-                  <Icon name="copy" size={14}/>{codeCopied?"Copiado!":"Copiar"}
-                </button>
-                <button onClick={handleShareCode} style={{background:"#d4af37",border:"none",borderRadius:10,padding:"8px 14px",color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                  <Icon name="share" size={14}/>Partilhar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
 
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
@@ -1913,6 +1884,16 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             </div>}
         </>}
 
+        {/* Mealheiro no fundo */}
+        <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"14px 16px",marginBottom:14,color:"white",marginTop:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:9,fontWeight:700,letterSpacing:1,opacity:0.8}}>MEALHEIRO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div></div>
+            <div style={{display:"flex",gap:14,textAlign:"right"}}>
+              <div><div style={{fontSize:9,opacity:0.7}}>RECEBIDO</div><div style={{fontSize:14,fontWeight:800,color:"#86efac"}}>{totalPaid*(gameInfo.cost_per_player||COST)}€</div></div>
+              <div><div style={{fontSize:9,opacity:0.7}}>POR RECEBER</div><div style={{fontSize:14,fontWeight:800,color:"#fca5a5"}}>{totalUnpaid*(gameInfo.cost_per_player||COST)}€</div></div>
+            </div>
+          </div>
+        </div>
         <div style={{height:70}}/>
       </div>
       <BottomNav view={adminTab==="equipas"?"equipas_tab":adminTab==="dividas"?"debts":"admin"} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");}else if(v==="debts"){setAdminTab("dividas");}else if(v==="admin"){setAdminTab("jogo");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>

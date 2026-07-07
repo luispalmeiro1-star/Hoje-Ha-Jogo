@@ -28,6 +28,25 @@
           allowLocalhostAsSecureOrigin: true,
           serviceWorkerParam: { scope: "/" },
           serviceWorkerPath: "OneSignalSDKWorker.js",
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  type: "push",
+                  autoPrompt: true,
+                  text: {
+                    actionMessage: "Recebe notificações sobre os teus jogos!",
+                    acceptButton: "Ativar",
+                    cancelButton: "Agora não",
+                  },
+                  delay: {
+                    pageViews: 1,
+                    timeDelay: 3
+                  }
+                }
+              ]
+            }
+          }
         });
       });
     </script>

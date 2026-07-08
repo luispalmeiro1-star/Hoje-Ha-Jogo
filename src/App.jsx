@@ -1747,6 +1747,20 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   );
 }
 
+// ── EXPANDABLE LIST ───────────────────────────────────────────────────────────
+function ExpandableList({label, color="#4ade80", children}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{marginBottom:8,marginTop:8}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:`rgba(255,255,255,0.03)`,border:`1px solid #2a2a2a`,borderRadius:12,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <span style={{fontSize:13,fontWeight:700,color}}>{label}</span>
+        <span style={{fontSize:12,color:"#4b5563"}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&<div style={{marginTop:4}}>{children}</div>}
+    </div>
+  );
+}
+
 // ── EXPANDABLE CONFIRMED (ADMIN) ─────────────────────────────────────────────
 function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
   const [open, setOpen] = useState(false);
@@ -1875,7 +1889,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         {adminTab==="jogo"&&<>
           <ExpandableConfirmed confirmed={confirmed} onTogglePaid={onTogglePaid} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
-          {notYet.length>0&&<><p className="section-label" style={{marginTop:12}}>❓ SEM RESPOSTA ({notYet.length})</p><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+          {notYet.length>0&&<ExpandableList label={`❓ ${notYet.length} sem resposta`} color="#6b7280"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableList>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
           {confirmed.length>=MIN_PLAYERS&&<MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>}
           {!showReset
@@ -2494,4 +2508,4 @@ select.text-input{appearance:none;}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;font-family:'DM Sans',sans-serif;}
 .toast-ok{background:#16a34a;}.toast-warn{background:#d97706;}.toast-err{background:#dc2626;}
 `;
-}
+} 

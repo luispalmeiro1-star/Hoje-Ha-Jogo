@@ -1760,8 +1760,8 @@ function MBWayButton({number, amount}) {
     setTimeout(()=>{ navigator.clipboard?.writeText(clean); }, 1000);
   };
   return (
-    <button onClick={handleMBWay} style={{width:"100%",marginTop:8,padding:"14px",background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-      <span style={{fontSize:20}}>📱</span>
+    <button onClick={handleMBWay} style={{width:"100%",marginTop:8,background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}} className="btn-big">
+      <span style={{fontSize:20}}>💳</span>
       <span>PAGAR {amount}€ VIA MBWAY</span>
     </button>
   );

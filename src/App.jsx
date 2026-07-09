@@ -1719,7 +1719,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <button className={`btn-big ${isIn||isWait?"btn-red":"btn-green"}`} onClick={handleToggle} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
-        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost}/>}
+        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)}/>}
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
@@ -1753,17 +1753,43 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 
 // ── MBWAY BUTTON ─────────────────────────────────────────────────────────────
 function MBWayButton({number, amount}) {
+  const [copied, setCopied] = useState(false);
+  const [showNumber, setShowNumber] = useState(false);
+
   const handleMBWay = () => {
     const clean = number.replace(/\s+/g,"");
+    // Tentar deep link primeiro
     const mbwayLink = `mbway://payment?phoneNumber=${clean}&amount=${amount}&currency=EUR&description=Hoje%20H%C3%A1%20Jogo`;
     window.location.href = mbwayLink;
-    setTimeout(()=>{ navigator.clipboard?.writeText(clean); }, 1000);
+    // Mostrar número após 1.5s (se não abriu o MBWay)
+    setTimeout(()=>setShowNumber(true), 1500);
   };
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(number.replace(/\s+/g,""));
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 2000);
+  };
+
   return (
-    <button onClick={handleMBWay} style={{width:"100%",marginTop:8,background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}} className="btn-big">
-      <span style={{fontSize:20}}>💳</span>
-      <span>PAGAR {amount}€ VIA MBWAY</span>
-    </button>
+    <div style={{marginTop:8}}>
+      <button onClick={handleMBWay} className="btn-big" style={{background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",color:"white",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+        <span style={{fontSize:20}}>💳</span>
+        <span>PAGAR {amount}€ VIA MBWAY</span>
+      </button>
+      {showNumber&&(
+        <div style={{background:"#111",border:"1px solid #0077b6",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>NÚMERO MBWAY</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#00a0e4",letterSpacing:2}}>{number}</div>
+            <div style={{fontSize:10,color:"#4b5563",marginTop:2}}>Valor: {amount}€</div>
+          </div>
+          <button onClick={handleCopy} style={{background:"rgba(0,160,228,0.15)",border:"1px solid #0077b6",borderRadius:8,padding:"8px 12px",color:copied?"#4ade80":"#00a0e4",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+            {copied?"✓ Copiado!":"Copiar"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

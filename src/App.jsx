@@ -172,6 +172,7 @@ export default function App() {
   const [activeGroupId, setActiveGroupId] = useState(null);
   const [view, setView]               = useState("landing");
   const [myGroups, setMyGroups]       = useState([]);
+  const [mbwayNumber, setMbwayNumber]   = useState("");
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
@@ -210,6 +211,8 @@ export default function App() {
     if(!gid) return;
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
+    // Carregar mbway do grupo
+    supabase.from("groups").select("mbway_number").eq("id",gid).maybeSingle().then(({data})=>{ if(data) setMbwayNumber(data.mbway_number||""); });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
   // Carregar players inicialmente (sem groupId) para session restore
@@ -610,7 +613,7 @@ export default function App() {
         } else setView("landing");
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
@@ -1686,7 +1689,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber=""}) {
   const isIn=player.status==="in",isWait=player.status==="wait";
   const [confirming,setConfirming]=useState(false);
   const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
@@ -1716,6 +1719,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <button className={`btn-big ${isIn||isWait?"btn-red":"btn-green"}`} onClick={handleToggle} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
+        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost}/>}
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
@@ -1744,6 +1748,22 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
       </div>
       <BottomNav view={view} setView={setView} isAdmin={false} hasDebts={debts.filter(d=>d.player_id===player.id).length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
     </div>
+  );
+}
+
+// ── MBWAY BUTTON ─────────────────────────────────────────────────────────────
+function MBWayButton({number, amount}) {
+  const handleMBWay = () => {
+    const clean = number.replace(/\s+/g,"");
+    const mbwayLink = `mbway://payment?phoneNumber=${clean}&amount=${amount}&currency=EUR&description=Hoje%20H%C3%A1%20Jogo`;
+    window.location.href = mbwayLink;
+    setTimeout(()=>{ navigator.clipboard?.writeText(clean); }, 1000);
+  };
+  return (
+    <button onClick={handleMBWay} style={{width:"100%",marginTop:8,padding:"14px",background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+      <span style={{fontSize:20}}>📱</span>
+      <span>PAGAR {amount}€ VIA MBWAY</span>
+    </button>
   );
 }
 
@@ -1798,6 +1818,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [editGameDays,setEditGameDays]=useState(null);
   const [showClearConfirm,setShowClearConfirm]=useState(false);
   const [inviteCode,setInviteCode]=useState("");
+  const [mbwayNumber,setMbwayNumber]=useState("");
+  const [mbwaySaved,setMbwaySaved]=useState(false);
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
   const [codeCopied,setCodeCopied]=useState(false);
 
@@ -1810,7 +1832,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   // Buscar código do grupo
   useEffect(()=>{
     if(!currentUser?.group_id) return;
-    supabase.from("groups").select("invite_code").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data) setInviteCode(data.invite_code); });
+    supabase.from("groups").select("invite_code,mbway_number").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data){ setInviteCode(data.invite_code); setMbwayNumber(data.mbway_number||""); } });
   },[currentUser?.group_id]);
 
   const handleShareCode = () => {
@@ -2037,6 +2059,17 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               <button className="btn-primary" style={{justifyContent:"center",background:"#d97706"}} onClick={async()=>{await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast("Notificação enviada ✓");}}>💸 Lembrete — Pagamento</button>
               <button className="btn-primary" style={{justifyContent:"center",background:"#7c3aed"}} onClick={async()=>{await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!");showToast("Notificação enviada ✓");}}>🏆 MVP aberto para votação</button>
             </div>
+          </ExpandableSection>
+          <ExpandableSection icon="💳" title="Pagamentos" subtitle="Configurar MBWay para receber pagamentos">
+            <label className="field-label">📱 Número MBWay do tesoureiro</label>
+            <input className="text-input" type="tel" value={mbwayNumber} onChange={e=>setMbwayNumber(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:8}}/>
+            <button className={`btn-save ${mbwayNumber?"btn-save-active":""}`} onClick={async()=>{
+              await supabase.from("groups").update({mbway_number:mbwayNumber.trim()||null}).eq("id",groupId||currentUser.group_id);
+              setMbwaySaved(true); setTimeout(()=>setMbwaySaved(false),2000);
+              showToast("Número MBWay guardado ✓");
+            }}>
+              <Icon name="check" size={13}/> {mbwaySaved?"GUARDADO ✓":"GUARDAR"}
+            </button>
           </ExpandableSection>
           <ExpandableSection icon="💰" title="Financeiro" subtitle="Mealheiro e gestão de época">
             <ReiniciarMealheiroButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>

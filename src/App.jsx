@@ -546,8 +546,11 @@ export default function App() {
       const inviter=freshPlayers.find(m=>m.id===p.invited_by_id);
       if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gameCost,description:`Jogo de ${gameInfo.date} — convidado ${p.name}`,group_id:gid});
     }
-    for(const p of confirmedMembers)
-      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
+    console.log("confirmedMembers:", confirmedMembers.length, confirmedMembers.map(p=>p.name));
+    for(const p of confirmedMembers){
+      const result = await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
+      console.log("attendance insert:", p.name, result.error);
+    }
     for(const p of confirmedMembers){
       const pl=freshPlayers.find(m=>m.id===p.id);
       if(pl){ const ns=(pl.current_streak||0)+1; await supabase.from("players").update({total_games:(pl.total_games||0)+1,total_paid:(pl.total_paid||0)+(p.paid?gameCost:0),current_streak:ns,best_streak:Math.max(pl.best_streak||0,ns)}).eq("id",p.id); }

@@ -526,9 +526,11 @@ export default function App() {
   const resetGame = async(winnerTeam, isAuto=false)=>{
     const gameCost=gameInfo.cost_per_player||COST;
     const gid=activeGroupId||groupIdRef.current||null;
+    console.log("resetGame gid:", gid);
     if(!gid){ showToast("Erro: grupo não identificado","err"); return; }
     // Buscar confirmados diretamente da BD para garantir dados frescos
     const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid).eq("status","in");
+    console.log("pgRows:", pgRows?.length, pgRows);
     const pids=(pgRows||[]).map(x=>x.player_id);
     const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select("*").in("id",pids):{data:[]};
     const freshPlayers=(freshAllPlayers||[]).map(p=>{

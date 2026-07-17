@@ -1970,7 +1970,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
               <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
               <div style={{display:"flex",gap:8}}>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
+                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{console.log("FECHAR JOGO CLICADO");onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#6b7280"}} onClick={()=>setShowReset(false)}>Cancelar</button>
               </div>
             </div>}

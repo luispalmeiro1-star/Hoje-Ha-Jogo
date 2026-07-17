@@ -525,29 +525,38 @@ export default function App() {
   };
   const resetGame = async(winnerTeam, isAuto=false)=>{
     const gameCost=gameInfo.cost_per_player||COST;
-    const collected=confirmed.filter(p=>p.paid).length*gameCost;
     const gid=activeGroupId||null;
-    for(const p of confirmed.filter(p=>!p.paid&&!p.is_guest))
+    // Buscar confirmados diretamente da BD para garantir dados frescos
+    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid);
+    const pids=(pgRows||[]).map(x=>x.player_id);
+    const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select("*").in("id",pids):{data:[]};
+    const freshPlayers=(freshAllPlayers||[]).map(p=>{
+      const pg=(pgRows||[]).find(x=>x.player_id===p.id);
+      return {...p,status:pg?.status||"out",paid:pg?.paid||false};
+    });
+    const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
+    const confirmedMembers=freshConfirmed.filter(p=>!p.is_guest);
+    const collected=freshConfirmed.filter(p=>p.paid).length*gameCost;
+    for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
       await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:gid});
-    for(const p of confirmed.filter(p=>!p.paid&&p.is_guest)){
-      const inviter=players.find(m=>m.id===p.invited_by_id);
+    for(const p of freshConfirmed.filter(p=>!p.paid&&p.is_guest)){
+      const inviter=freshPlayers.find(m=>m.id===p.invited_by_id);
       if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gameCost,description:`Jogo de ${gameInfo.date} — convidado ${p.name}`,group_id:gid});
     }
-    const confirmedMembers=confirmed.filter(p=>!p.is_guest);
     for(const p of confirmedMembers)
       await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
     for(const p of confirmedMembers){
-      const pl=players.find(m=>m.id===p.id);
+      const pl=freshPlayers.find(m=>m.id===p.id);
       if(pl){ const ns=(pl.current_streak||0)+1; await supabase.from("players").update({total_games:(pl.total_games||0)+1,total_paid:(pl.total_paid||0)+(p.paid?gameCost:0),current_streak:ns,best_streak:Math.max(pl.best_streak||0,ns)}).eq("id",p.id); }
     }
-    for(const p of members.filter(m=>!confirmedMembers.find(c=>c.id===m.id)))
+    for(const p of freshPlayers.filter(m=>!m.is_guest&&!confirmedMembers.find(c=>c.id===m.id)))
       await supabase.from("players").update({current_streak:0}).eq("id",p.id);
     const votes=mvpVotes.filter(v=>v.game_date===gameInfo.date);
     let mvpName=null;
-    if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=players.find(p=>p.id===Number(topId))?.name||null; }
-    if(collected>0||confirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid});
+    if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null; }
+    if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:freshConfirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid});
     // Remover convidados
-    const guestIds=confirmed.filter(p=>p.is_guest).map(p=>p.id);
+    const guestIds=freshConfirmed.filter(p=>p.is_guest).map(p=>p.id);
     if(guestIds.length>0){
       await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",gid);
       await supabase.from("players").delete().in("id",guestIds);

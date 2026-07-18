@@ -1559,7 +1559,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
-          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["mealheiro","💰 Mealheiro"],["historico","📋 Histórico"],["epocas","🏁 Épocas"]].map(([k,l])=>(
+          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["historico","📋 Histórico"],["epocas","🏁 Épocas"],["mealheiro","💰 Mealheiro"]].map(([k,l])=>( 
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>

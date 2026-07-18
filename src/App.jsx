@@ -2413,6 +2413,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </button>
           </ExpandableSection>
           <ExpandableSection icon="💰" title="Financeiro" subtitle="Mealheiro e gestão de época">
+            <RegistarDespesaButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
             <ReiniciarMealheiroButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
             <TerminarEpocaButton players={players} history={history} debts={debts} members={members} mvpVotes={mvpVotes} groupId={groupId} gameInfo={gameInfo} showToast={showToast} reloadAll={()=>window.location.reload()}/>
           </ExpandableSection>
@@ -2569,6 +2570,67 @@ function ExpandableSection({icon, title, subtitle, children}) {
         <span style={{color:"#4b5563",fontSize:12}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<div style={{background:"#0f0f0f",border:"1px solid #1f1f1f",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── REGISTAR DESPESA ─────────────────────────────────────────────────────────
+function RegistarDespesaButton({groupId, showToast, reloadAll}) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [desc, setDesc] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRegistar = async() => {
+    if(!amount||!desc.trim()){showToast("Preenche o valor e descrição","err");return;}
+    setLoading(true);
+    try {
+      // Inserir como valor negativo no histórico (despesa)
+      await supabase.from("game_history").insert({
+        date: new Date().toISOString().split("T")[0],
+        players_count: 0,
+        collected: -Number(amount),
+        winner_team: null,
+        mvp_name: null,
+        group_id: groupId,
+        description: desc.trim()
+      });
+      showToast(`Despesa de ${amount}€ registada ✓`);
+      setOpen(false);
+      setAmount("");
+      setDesc("");
+      setTimeout(()=>reloadAll(), 500);
+    } catch(e) {
+      showToast("Erro ao registar despesa","err");
+    }
+    setLoading(false);
+  };
+
+  if(!open) return (
+    <button onClick={()=>setOpen(true)} style={{width:"100%",background:"rgba(239,68,68,0.1)",border:"2px solid rgba(239,68,68,0.3)",borderRadius:12,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,textAlign:"left",marginBottom:8}}>
+      <span style={{fontSize:22}}>🧾</span>
+      <div>
+        <div style={{color:"#f87171",fontSize:13,fontWeight:800}}>Registar Despesa</div>
+        <div style={{color:"#6b7280",fontSize:11}}>Bola, coletes, campo, etc.</div>
+      </div>
+    </button>
+  );
+
+  return (
+    <div style={{background:"rgba(239,68,68,0.1)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginBottom:8}}>
+      <div style={{fontSize:13,fontWeight:700,color:"#f87171",marginBottom:10}}>🧾 Registar Despesa</div>
+      <label className="field-label">Descrição</label>
+      <input className="text-input" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Ex: Compra de coletes..." style={{marginBottom:8}}/>
+      <label className="field-label">Valor (€)</label>
+      <input className="text-input" type="number" min="0" step="0.5" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0" style={{marginBottom:8}}/>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={handleRegistar} disabled={loading} style={{flex:1,padding:"10px",background:"#dc2626",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+          {loading?"A guardar...":"✓ Confirmar"}
+        </button>
+        <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px",background:"#1f1f1f",border:"none",borderRadius:10,color:"#9ca3af",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 }

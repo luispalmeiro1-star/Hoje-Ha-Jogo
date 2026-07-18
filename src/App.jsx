@@ -532,13 +532,16 @@ export default function App() {
     const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid).eq("status","in");
     console.log("pgRows:", pgRows?.length, pgRows);
     const pids=(pgRows||[]).map(x=>x.player_id);
+    console.log("pids:", pids);
     const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select("*").in("id",pids):{data:[]};
+    console.log("freshAllPlayers:", freshAllPlayers?.length, freshAllPlayers);
     const freshPlayers=(freshAllPlayers||[]).map(p=>{
       const pg=(pgRows||[]).find(x=>x.player_id===p.id);
       return {...p,status:pg?.status||"out",paid:pg?.paid||false};
     });
     const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
     const confirmedMembers=freshConfirmed.filter(p=>!p.is_guest);
+    console.log("freshConfirmed:", freshConfirmed.length, "confirmedMembers:", confirmedMembers.length);
     const collected=freshConfirmed.filter(p=>p.paid).length*gameCost;
     for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
       await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:gid});

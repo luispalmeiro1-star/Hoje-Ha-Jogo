@@ -173,6 +173,7 @@ export default function App() {
   const [view, setView]               = useState("landing");
   const [myGroups, setMyGroups]       = useState([]);
   const [mbwayNumber, setMbwayNumber]   = useState("");
+  const [maxPlayers, setMaxPlayers]     = useState(12);
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
@@ -212,7 +213,7 @@ export default function App() {
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
-    supabase.from("groups").select("mbway_number").eq("id",gid).maybeSingle().then(({data})=>{ if(data) setMbwayNumber(data.mbway_number||""); });
+    supabase.from("groups").select("mbway_number,max_players").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
   // Carregar players inicialmente (sem groupId) para session restore
@@ -365,7 +366,7 @@ export default function App() {
   const confirmed = sortedConfirmed(players);
   const waiting   = players.filter(p=>p.status==="wait");
   const notYet    = members.filter(p=>p.status==="out");
-  const spotsLeft = Math.max(0,MAX_PLAYERS-confirmed.length);
+  const spotsLeft = Math.max(0,maxPlayers-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
   const linkOneSignal = (playerId) => {
@@ -451,7 +452,7 @@ export default function App() {
     const p=players.find(pl=>pl.id===playerId); if(!p) return;
     let ns,na;
     if(p.status==="in"||p.status==="wait"){ns="out";na=null;}
-    else if(confirmed.length<MAX_PLAYERS){ns="in";na=Date.now();}
+    else if(confirmed.length<maxPlayers){ns="in";na=Date.now();}
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
     // Atualizar status no player_groups (por grupo)
     await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
@@ -460,7 +461,7 @@ export default function App() {
   const addGuest = async(guestName,invitedById)=>{
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
-    if(!inviter||confirmed.length>=MAX_PLAYERS){showToast("Jogo cheio!","err");return;}
+    if(!inviter||confirmed.length>=maxPlayers){showToast("Jogo cheio!","err");return;}
     const gid=activeGroupId||null;
     const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid}).select().single();
     if(inserted){
@@ -597,7 +598,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -628,7 +629,7 @@ export default function App() {
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
-      {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
+      {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")}/>}
     </div>
   );
@@ -1362,15 +1363,15 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 // ── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
   const items = isAdmin
-    ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"equipas_tab",icon:"🎲",label:"Equipas"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"em-breve",icon:"🌍",label:"Em Breve"},{key:"profile",icon:"👤",label:"Perfil"}]
-    : [{key:"player",icon:"⚽",label:"Jogo"},{key:"chat",icon:"💬",label:"Chat"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"em-breve",icon:"🌍",label:"Em Breve"},{key:"profile",icon:"👤",label:"Perfil"}];
+    ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"equipas_tab",icon:"🎲",label:"Equipas"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"zona",icon:"🌍",label:"Zona"},{key:"profile",icon:"👤",label:"Perfil"}]
+    : [{key:"player",icon:"⚽",label:"Jogo"},{key:"chat",icon:"💬",label:"Chat"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"zona",icon:"🌍",label:"Zona"},{key:"profile",icon:"👤",label:"Perfil"}];
   return (
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0a0a",borderTop:"1px solid #1a1a1a",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
       {items.map(item=>{
         const isActive=view===item.key;
         return (
           <button key={item.key} onClick={()=>{
-            if(item.key==="em-breve"){ showToast("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!","warn"); return; }
+            if(item.key==="zona"){ setView("zona"); return; }
             setView(item.key);
           }} style={{flex:1,padding:"8px 4px 10px",background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
             <span style={{fontSize:20}}>{item.icon}</span>
@@ -1614,6 +1615,124 @@ function SeasonStatsCard({player, groupId}) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── ZONA VIEW ────────────────────────────────────────────────────────────────
+const CONCELHOS_PT = ["Amadora","Almada","Barreiro","Cascais","Lisboa","Loures","Mafra","Moita","Montijo","Odivelas","Oeiras","Palmela","Seixal","Sesimbra","Setúbal","Sintra","Vila Franca de Xira","Braga","Guimarães","Porto","Matosinhos","Gaia","Maia","Gondomar","Valongo","Coimbra","Aveiro","Leiria","Viseu","Évora","Faro","Funchal","Ponta Delgada","Outro"];
+
+function ZonaView({player, players=[], onBack, showToast}) {
+  const [available, setAvailable] = useState(player.available||false);
+  const [zone, setZone] = useState(player.zone||"");
+  const [showPicker, setShowPicker] = useState(false);
+  const [availablePlayers, setAvailablePlayers] = useState([]);
+
+  useEffect(()=>{
+    // Buscar jogadores disponíveis
+    supabase.from("players").select("id,name,zone,avatar_color").eq("available",true).neq("id",player.id).then(({data})=>{
+      setAvailablePlayers(data||[]);
+    });
+  },[]);
+
+  const handleToggleAvailable = async(val) => {
+    setAvailable(val);
+    await supabase.from("players").update({available:val, zone:val?zone:null}).eq("id",player.id);
+    if(val) showToast("Estás disponível! 🌍");
+    else showToast("Removido da lista de disponíveis");
+  };
+
+  const handleZone = async(z) => {
+    setZone(z);
+    setShowPicker(false);
+    await supabase.from("players").update({zone:z}).eq("id",player.id);
+    if(available) showToast("Zona atualizada ✓");
+  };
+
+  const myZonePlayers = availablePlayers.filter(p=>p.zone===zone);
+  const otherPlayers = availablePlayers.filter(p=>p.zone!==zone);
+
+  return (
+    <div className="screen">
+      <div style={{background:"#111",padding:"16px 16px 20px",borderBottom:"1px solid #1f1f1f"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
+          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>🌍 ZONA</span>
+        </div>
+      </div>
+      <div className="body">
+        {/* A minha disponibilidade */}
+        <p className="section-label">A MINHA DISPONIBILIDADE</p>
+        <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:14,marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:"white"}}>Estou disponível para jogar</div>
+              <div style={{fontSize:11,color:"#4b5563"}}>Aparece na lista de disponíveis da tua zona</div>
+            </div>
+            <button onClick={()=>handleToggleAvailable(!available)} style={{width:48,height:26,borderRadius:13,border:"none",background:available?"#16a34a":"#374151",cursor:"pointer",position:"relative",transition:"background 0.2s"}}>
+              <div style={{width:20,height:20,borderRadius:10,background:"white",position:"absolute",top:3,left:available?24:4,transition:"left 0.2s"}}/>
+            </button>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>A MINHA ZONA</div>
+            <button onClick={()=>setShowPicker(v=>!v)} style={{width:"100%",background:"#0f0f0f",border:"1px solid #2a2a2a",borderRadius:10,padding:"10px 14px",color:zone?"white":"#4b5563",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+              {zone||"Seleciona o teu concelho..."}<span>▼</span>
+            </button>
+            {showPicker&&(
+              <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:10,marginTop:4,maxHeight:200,overflowY:"auto"}}>
+                {CONCELHOS_PT.map(c=>(
+                  <button key={c} onClick={()=>handleZone(c)} style={{width:"100%",padding:"10px 14px",background:zone===c?"#16241c":"transparent",border:"none",color:zone===c?"#4ade80":"white",fontSize:13,cursor:"pointer",textAlign:"left",borderBottom:"1px solid #1f1f1f"}}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Jogadores disponíveis na minha zona */}
+        {zone&&<>
+          <p className="section-label">📍 DISPONÍVEIS EM {zone.toUpperCase()}</p>
+          {myZonePlayers.length===0
+            ?<div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:13}}>Nenhum jogador disponível na tua zona</div>
+            :<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+              {myZonePlayers.map(p=>(
+                <div key={p.id} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:12}}>
+                  <Avatar player={p} size={36}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
+                    <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          }
+        </>}
+
+        {/* Outros jogadores disponíveis */}
+        {otherPlayers.length>0&&<>
+          <p className="section-label">🌍 DISPONÍVEIS NOUTRAS ZONAS</p>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {otherPlayers.map(p=>(
+              <div key={p.id} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:12}}>
+                <Avatar player={p} size={36}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
+                  <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone||"Zona não definida"}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>}
+
+        {availablePlayers.length===0&&!zone&&(
+          <div style={{textAlign:"center",padding:"30px 0",color:"#4b5563",fontSize:13}}>
+            <div style={{fontSize:32,marginBottom:8}}>🌍</div>
+            <div>Define a tua zona e marca disponibilidade</div>
+            <div style={{fontSize:11,marginTop:4}}>para encontrares jogadores perto de ti</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1869,6 +1988,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [inviteCode,setInviteCode]=useState("");
   const [mbwayNumber,setMbwayNumber]=useState("");
   const [mbwaySaved,setMbwaySaved]=useState(false);
+  const [editMaxPlayers,setEditMaxPlayers]=useState(12);
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
   const [codeCopied,setCodeCopied]=useState(false);
 
@@ -1881,7 +2001,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   // Buscar código do grupo
   useEffect(()=>{
     if(!currentUser?.group_id) return;
-    supabase.from("groups").select("invite_code,mbway_number").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data){ setInviteCode(data.invite_code); setMbwayNumber(data.mbway_number||""); } });
+    supabase.from("groups").select("invite_code,mbway_number,max_players").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data){ setInviteCode(data.invite_code); setMbwayNumber(data.mbway_number||""); setEditMaxPlayers(data.max_players||12); } });
   },[currentUser?.group_id]);
 
   const handleShareCode = () => {
@@ -2084,9 +2204,17 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
               <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
             </div>
+            <label className="field-label">👥 Máximo de jogadores</label>
+            <div style={{display:"flex",gap:8,marginBottom:8}}>
+              {[12,13,14,15].map(n=>(
+                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:1,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#16a34a":"#2a2a2a"}`,background:(editMaxPlayers||12)===n?"#16241c":"#111",color:(editMaxPlayers||12)===n?"#4ade80":"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                  {n}
+                </button>
+              ))}
+            </div>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if((groupId||currentUser?.group_id)&&editGameDays) await supabase.from("groups").update({game_days:editGameDays}).eq("id",groupId||currentUser.group_id);
+              if((groupId||currentUser?.group_id)&&editGameDays) await supabase.from("groups").update({game_days:editGameDays,max_players:editMaxPlayers||12}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>

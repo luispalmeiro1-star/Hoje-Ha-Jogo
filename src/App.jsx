@@ -915,34 +915,88 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
 
 // ── LANDING VIEW — 4 botões ───────────────────────────────────────────────────
 function LandingView({setView}) {
-  const items = [
-    {key:"criar-grupo",    icon:"plus",   iconBg:"rgba(212,175,55,0.15)", title:"Criar grupo",        sub:"Sou o organizador",          solid:true},
-    {key:"entrar-convite", icon:"key",    iconBg:"rgba(255,255,255,0.05)",title:"Entrar com convite", sub:"Tenho um código de convite",  solid:true},
-    {key:"criar-conta",    icon:"user",   iconBg:"rgba(255,255,255,0.05)",title:"Criar conta",         sub:"Entrar num grupo existente", solid:true},
-    {key:"login",          icon:"shield", iconBg:"rgba(255,255,255,0.03)",title:"Já tenho conta",      sub:"Iniciar sessão",             solid:false},
-  ];
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <div style={{textAlign:"center",marginBottom:36}}>
-        <div style={{fontSize:22,fontWeight:500,color:"white",letterSpacing:1}}>HOJE HÁ</div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,color:"#d4af37",letterSpacing:3,lineHeight:1}}>JOGO</div>
-        <div style={{fontSize:12,color:"#4b5563",marginTop:8}}>Gestão de futsal semanal</div>
-      </div>
-      <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:10}}>
-        {items.map((item,i)=>(
-          <button key={i} onClick={()=>setView(item.key)} style={{width:"100%",background:item.solid?"#111":"transparent",border:item.solid?"1px solid #1f1f1f":"none",borderRadius:14,padding:item.solid?"16px":"14px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-            <div style={{width:44,height:44,background:item.iconBg,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <Icon name={item.icon} size={22}/>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>{item.title}</div>
-              <div style={{color:"#4b5563",fontSize:12}}>{item.sub}</div>
-            </div>
-            <Icon name="right" size={16}/>
+    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden"}}>
+      {/* Hero */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"48px 24px 32px",textAlign:"center",position:"relative"}}>
+        {/* Background glow */}
+        <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",width:300,height:300,background:"radial-gradient(circle,rgba(212,175,55,0.08) 0%,transparent 70%)",pointerEvents:"none"}}/>
+
+        <div style={{fontSize:13,fontWeight:700,color:"#d4af37",letterSpacing:4,marginBottom:16,opacity:0.8}}>⚽ HOJE HÁ JOGO</div>
+        <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,color:"white",letterSpacing:2,lineHeight:1.1,marginBottom:16,margin:"0 0 16px"}}>
+          O teu grupo de futsal,<br/>
+          <span style={{color:"#d4af37"}}>organizado.</span>
+        </h1>
+        <p style={{fontSize:15,color:"#6b7280",maxWidth:300,lineHeight:1.6,marginBottom:36}}>
+          Presenças, pagamentos e estatísticas — tudo num só lugar. Grátis.
+        </p>
+
+        {/* CTAs */}
+        <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320}}>
+          <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0a0a",fontWeight:800,fontSize:15,cursor:"pointer",letterSpacing:0.5}}>
+            Criar grupo grátis
           </button>
-        ))}
+          <button onClick={()=>setView("entrar-convite")} style={{width:"100%",padding:"16px",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+            Tenho um código de convite
+          </button>
+          <button onClick={()=>setView("login")} style={{width:"100%",padding:"12px",background:"transparent",border:"none",borderRadius:14,color:"#4b5563",fontWeight:600,fontSize:13,cursor:"pointer"}}>
+            Já tenho conta → Entrar
+          </button>
+        </div>
       </div>
-      <div style={{position:"absolute",bottom:24,color:"#222",fontSize:11}}>hojehajogo.pt</div>
+
+      {/* Features */}
+      <div style={{padding:"32px 24px",borderTop:"1px solid #111"}}>
+        <div style={{maxWidth:480,margin:"0 auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#4b5563",letterSpacing:3,textAlign:"center",marginBottom:24}}>FUNCIONALIDADES</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            {[
+              {icon:"✅",title:"Presenças",desc:"Confirma em segundos quem joga"},
+              {icon:"💸",title:"Pagamentos",desc:"Regista quem pagou e quem deve"},
+              {icon:"📊",title:"Estatísticas",desc:"Jogos, séries e conquistas"},
+              {icon:"🎲",title:"Equipas automáticas",desc:"Divisão equilibrada dos times"},
+              {icon:"💰",title:"Mealheiro",desc:"Controlo do saldo do grupo"},
+              {icon:"🌍",title:"Zona",desc:"Encontra reforços perto de ti"},
+            ].map((f,i)=>(
+              <div key={i} style={{background:"#111",border:"1px solid #1a1a1a",borderRadius:12,padding:"14px"}}>
+                <div style={{fontSize:22,marginBottom:6}}>{f.icon}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"white",marginBottom:4}}>{f.title}</div>
+                <div style={{fontSize:11,color:"#4b5563",lineHeight:1.4}}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* How it works */}
+      <div style={{padding:"32px 24px",borderTop:"1px solid #111"}}>
+        <div style={{maxWidth:480,margin:"0 auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#4b5563",letterSpacing:3,textAlign:"center",marginBottom:24}}>COMO FUNCIONA</div>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            {[
+              {n:"1",title:"Crias o grupo",desc:"Em 2 minutos tens o teu grupo criado com nome, local e horário."},
+              {n:"2",title:"Partilhas o código",desc:"Os jogadores entram com o código ou QR Code — sem complicações."},
+              {n:"3",title:"Jogas sem stress",desc:"Presenças, pagamentos e equipas tratados automaticamente."},
+            ].map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:16,alignItems:"flex-start"}}>
+                <div style={{width:32,height:32,background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.3)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#d4af37"}}>{s.n}</div>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:"white",marginBottom:4}}>{s.title}</div>
+                  <div style={{fontSize:12,color:"#6b7280",lineHeight:1.5}}>{s.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer CTA */}
+      <div style={{padding:"32px 24px 48px",borderTop:"1px solid #111",textAlign:"center"}}>
+        <button onClick={()=>setView("criar-grupo")} style={{padding:"16px 40px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0a0a",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:16}}>
+          Começa agora — é grátis
+        </button>
+        <div style={{fontSize:11,color:"#2a2a2a"}}>hojehajogo.pt</div>
+      </div>
     </div>
   );
 }

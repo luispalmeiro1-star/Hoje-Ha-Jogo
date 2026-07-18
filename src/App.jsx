@@ -526,22 +526,17 @@ export default function App() {
   const resetGame = async(winnerTeam, isAuto=false)=>{
     const gameCost=gameInfo.cost_per_player||COST;
     const gid=activeGroupId||groupIdRef.current||null;
-    console.log("resetGame gid:", gid);
     if(!gid){ showToast("Erro: grupo não identificado","err"); return; }
     // Buscar confirmados diretamente da BD para garantir dados frescos
     const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid).eq("status","in");
-    console.log("pgRows:", pgRows?.length, pgRows);
     const pids=(pgRows||[]).map(x=>x.player_id);
-    console.log("pids:", pids);
     const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select("*").in("id",pids):{data:[]};
-    console.log("freshAllPlayers:", freshAllPlayers?.length, freshAllPlayers);
     const freshPlayers=(freshAllPlayers||[]).map(p=>{
       const pg=(pgRows||[]).find(x=>x.player_id===p.id);
       return {...p,status:pg?.status||"out",paid:pg?.paid||false};
     });
     const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
     const confirmedMembers=freshConfirmed; // incluir convidados também
-    console.log("freshConfirmed:", freshConfirmed.length, "confirmedMembers:", confirmedMembers.length);
     const collected=freshConfirmed.filter(p=>p.paid).length*gameCost;
     for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
       await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:gid});
@@ -549,10 +544,8 @@ export default function App() {
       const inviter=freshPlayers.find(m=>m.id===p.invited_by_id);
       if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gameCost,description:`Jogo de ${gameInfo.date} — convidado ${p.name}`,group_id:gid});
     }
-    console.log("confirmedMembers:", confirmedMembers.length, confirmedMembers.map(p=>p.name));
     for(const p of confirmedMembers){
       const result = await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
-      console.log("attendance insert:", p.name, result.error);
     }
     for(const p of confirmedMembers){
       const pl=freshPlayers.find(m=>m.id===p.id);
@@ -1947,7 +1940,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",history[0].id);
                   showToast(`Equipa ${t} registada como vencedora ✓`);
-                  await reloadAll(currentUser?.group_id);
+                  window.location.reload();
                 }} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #2563eb",background:"rgba(37,99,235,0.15)",color:"#93c5fd",fontWeight:800,fontSize:14,cursor:"pointer"}}>
                   Equipa {t}
                 </button>
@@ -1976,7 +1969,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
               <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
               <div style={{display:"flex",gap:8}}>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{console.log("FECHAR JOGO CLICADO");onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
+                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#6b7280"}} onClick={()=>setShowReset(false)}>Cancelar</button>
               </div>
             </div>}

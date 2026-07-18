@@ -540,7 +540,7 @@ export default function App() {
       return {...p,status:pg?.status||"out",paid:pg?.paid||false};
     });
     const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
-    const confirmedMembers=freshConfirmed.filter(p=>!p.is_guest);
+    const confirmedMembers=freshConfirmed; // incluir convidados também
     console.log("freshConfirmed:", freshConfirmed.length, "confirmedMembers:", confirmedMembers.length);
     const collected=freshConfirmed.filter(p=>p.paid).length*gameCost;
     for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))

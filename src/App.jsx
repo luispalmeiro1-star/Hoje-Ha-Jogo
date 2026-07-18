@@ -1459,21 +1459,32 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
 
 // ── PIGGYBANK ─────────────────────────────────────────────────────────────────
 function PiggyBankCard({piggybank,history,cost=3}) {
-  const totalReceived=history.reduce((s,g)=>s+(Number(g.collected)||0),0);
+  const totalReceived=history.filter(g=>Number(g.collected)>0).reduce((s,g)=>s+(Number(g.collected)||0),0);
+  const totalExpenses=history.filter(g=>Number(g.collected)<0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const gamesPlayed=history.filter(g=>g.players_count>0).length;
+  const expenses=history.filter(g=>Number(g.collected)<0);
   return (
     <div style={{marginTop:16}}>
-
       <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
         <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.2)"}}>
           <div><div style={{fontSize:9,opacity:0.7}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#86efac"}}>+{totalReceived}€</div></div>
           <div><div style={{fontSize:9,opacity:0.7}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{gamesPlayed*RENT}€</div></div>
+          {totalExpenses<0&&<div><div style={{fontSize:9,opacity:0.7}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>{totalExpenses}€</div></div>}
           <div><div style={{fontSize:9,opacity:0.7}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
         </div>
       </div>
-      <div style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>Cada jogo desconta {RENT}€ do aluguer · {cost}€ por jogador</div>
+      <div style={{fontSize:11,color:"#6b7280",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {RENT}€ do aluguer · {cost}€ por jogador</div>
+      {expenses.length>0&&<>
+        <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
+        {expenses.map((e,i)=>(
+          <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:12,color:"#9ca3af"}}>{e.description||`Despesa de ${e.date}`}</span>
+            <span style={{fontSize:13,fontWeight:700,color:"#f87171"}}>{e.collected}€</span>
+          </div>
+        ))}
+      </>}
     </div>
   );
 }

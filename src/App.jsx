@@ -1717,6 +1717,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
   const [availablePlayers, setAvailablePlayers] = useState([]);
   const [availDays, setAvailDays] = useState(player.availability_days||[]);
   const [availNotes, setAvailNotes] = useState(player.availability_notes||"");
+  const [zoneContact, setZoneContact] = useState(player.zone_contact||"");
 
   const DAYS = [["Dom","0"],["Seg","1"],["Ter","2"],["Qua","3"],["Qui","4"],["Sex","5"],["Sáb","6"]];
 
@@ -1727,13 +1728,13 @@ function ZonaView({player, players=[], onBack, showToast}) {
   };
 
   const saveNotes = async() => {
-    await supabase.from("players").update({availability_notes:availNotes}).eq("id",player.id);
+    await supabase.from("players").update({availability_notes:availNotes, zone_contact:zoneContact}).eq("id",player.id);
     showToast("Disponibilidade guardada ✓");
   };
 
   useEffect(()=>{
     // Buscar jogadores disponíveis
-    supabase.from("players").select("id,name,zone,avatar_color,phone,availability_notes,availability_days").eq("available",true).neq("id",player.id).then(({data})=>{
+    supabase.from("players").select("id,name,zone,avatar_color,zone_contact,availability_notes,availability_days").eq("available",true).neq("id",player.id).then(({data})=>{
       setAvailablePlayers(data||[]);
     });
   },[]);
@@ -1771,11 +1772,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
             Marca a tua disponibilidade e zona para que outros jogadores te encontrem quando precisam de reforços. Podes também encontrar jogadores disponíveis perto de ti para completar um jogo.
           </div>
         </div>
-        {/* Lembrete telemóvel */}
-        {!player.phone&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
-          <span style={{fontSize:16}}>⚠️</span>
-          <div style={{fontSize:12,color:"#fbbf24"}}>Adiciona o teu telemóvel no <strong>Perfil</strong> para que outros te possam contactar via WhatsApp.</div>
-        </div>}
+
 
         {/* A minha disponibilidade */}
         <p className="section-label">A MINHA DISPONIBILIDADE</p>
@@ -1799,6 +1796,11 @@ function ZonaView({player, players=[], onBack, showToast}) {
                 </button>
               ))}
             </div>
+          </div>
+          {/* Contacto */}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>CONTACTO WHATSAPP</div>
+            <input className="text-input" value={zoneContact} onChange={e=>setZoneContact(e.target.value)} placeholder="Ex: 9XX XXX XXX" style={{marginBottom:0}} type="tel"/>
           </div>
           {/* Notas */}
           <div>
@@ -1840,7 +1842,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
                       <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone}</div>
                     </div>
                   </div>
-                  {p.phone&&<a href={`https://wa.me/351${p.phone.replace(/\s+/g,"").replace(/^\+351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
+                  {p.zone_contact&&<a href={`https://wa.me/351${p.zone_contact.replace(/\s+/g,"").replace(/^\+351/,"").replace(/^351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
                     💬 Enviar mensagem no WhatsApp
                   </a>}
                 </div>
@@ -1862,7 +1864,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
                     <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone||"Zona não definida"}</div>
                   </div>
                 </div>
-                {p.phone&&<a href={`https://wa.me/351${p.phone.replace(/\s+/g,"").replace(/^\+351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
+                {p.zone_contact&&<a href={`https://wa.me/351${p.zone_contact.replace(/\s+/g,"").replace(/^\+351/,"").replace(/^351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
                   💬 Enviar mensagem no WhatsApp
                 </a>}
               </div>

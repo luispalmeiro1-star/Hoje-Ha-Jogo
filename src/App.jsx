@@ -152,6 +152,9 @@ const Icon = ({name,size=18}) => {
 
 function Avatar({player={}, size=32, style={}}) {
   const color = getAvatar(player);
+  if(player?.avatar_url) return (
+    <img src={player.avatar_url} alt={player.name} style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",flexShrink:0,border:`2px solid ${color||"#16a34a"}`,...style}}/>
+  );
   return (
     <div style={{width:size,height:size,borderRadius:"50%",background:color||"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.4,fontWeight:800,color:"white",flexShrink:0,...style}}>
       {player?.name?.[0]||"?"}
@@ -1556,18 +1559,103 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
-          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["mealheiro","💰 Mealheiro"],["epocas","🏁 Épocas"]].map(([k,l])=>(
+          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["mealheiro","💰 Mealheiro"],["historico","📋 Histórico"],["epocas","🏁 Épocas"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>
       </div>
       <div className="body">
-        {tab==="pessoal"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div>}
+        {tab==="pessoal"&&<>
+          <BadgesCard player={player} history={history} attendance={attendance}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div></>}
         {tab==="ranking"&&<><p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p><ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/></>}
         {tab==="mvp"&&<HallOfFameMVP history={history} members={members}/>}
         {tab==="mealheiro"&&<PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost}/>}
+        {tab==="historico"&&<HistoricoPessoalCard player={player} attendance={attendance} history={history}/>}
         {tab==="epocas"&&<SeasonStatsCard player={player} groupId={groupId}/>}
       </div>
+    </div>
+  );
+}
+
+// ── HISTORICO PESSOAL CARD ────────────────────────────────────────────────────
+function HistoricoPessoalCard({player, attendance=[], history=[]}) {
+  const myGames = attendance
+    .filter(a=>a.player_id===player.id)
+    .map(a=>({
+      ...a,
+      gameInfo: history.find(h=>h.date===a.game_date)
+    }))
+    .sort((a,b)=>new Date(b.game_date)-new Date(a.game_date));
+
+  if(myGames.length===0) return (
+    <div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>
+      <div style={{fontSize:32,marginBottom:8}}>📋</div>
+      Ainda não há jogos registados
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {myGames.map((g,i)=>(
+        <div key={i} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:"white"}}>
+              {new Date(g.game_date).toLocaleDateString("pt-PT",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
+            </div>
+            {g.gameInfo?.winner_team&&<div style={{fontSize:11,color:"#93c5fd",marginTop:2}}>🏆 Equipa {g.gameInfo.winner_team} venceu</div>}
+          </div>
+          <div style={{textAlign:"right"}}>
+            {g.gameInfo?.players_count&&<div style={{fontSize:11,color:"#4b5563"}}>{g.gameInfo.players_count} jogadores</div>}
+            <div style={{fontSize:11,color:"#4ade80",fontWeight:700,marginTop:2}}>✓ Presente</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── BADGES CARD ───────────────────────────────────────────────────────────────
+function BadgesCard({player, history=[], attendance=[]}) {
+  const totalGames = player.total_games||0;
+  const bestStreak = player.best_streak||0;
+  const myAttendance = attendance.filter(a=>a.player_id===player.id);
+
+  const badges = [
+    {id:"first",icon:"⚽",label:"Primeiro Jogo",desc:"Jogaste o teu primeiro jogo",earned:totalGames>=1},
+    {id:"5games",icon:"🔥",label:"5 Jogos",desc:"Jogaste 5 jogos",earned:totalGames>=5},
+    {id:"10games",icon:"💪",label:"10 Jogos",desc:"Jogaste 10 jogos",earned:totalGames>=10},
+    {id:"25games",icon:"🏅",label:"25 Jogos",desc:"Jogaste 25 jogos",earned:totalGames>=25},
+    {id:"50games",icon:"🏆",label:"50 Jogos",desc:"Jogaste 50 jogos",earned:totalGames>=50},
+    {id:"streak3",icon:"🔥",label:"Série de 3",desc:"3 jogos seguidos",earned:bestStreak>=3},
+    {id:"streak5",icon:"⚡",label:"Série de 5",desc:"5 jogos seguidos",earned:bestStreak>=5},
+    {id:"streak10",icon:"👑",label:"Série de 10",desc:"10 jogos seguidos",earned:bestStreak>=10},
+  ];
+
+  const earned = badges.filter(b=>b.earned);
+  const locked = badges.filter(b=>!b.earned);
+
+  if(badges.every(b=>!b.earned)) return null;
+
+  return (
+    <div style={{marginBottom:14}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:earned.length>0&&locked.length>0?8:0}}>
+        {earned.map(b=>(
+          <div key={b.id} title={b.desc} style={{background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:16}}>{b.icon}</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#d4af37"}}>{b.label}</span>
+          </div>
+        ))}
+      </div>
+      {locked.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+        {locked.map(b=>(
+          <div key={b.id} title={b.desc} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6,opacity:0.4}}>
+            <span style={{fontSize:16,filter:"grayscale(1)"}}>{b.icon}</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#4b5563"}}>{b.label}</span>
+          </div>
+        ))}
+      </div>}
     </div>
   );
 }
@@ -1627,10 +1715,25 @@ function ZonaView({player, players=[], onBack, showToast}) {
   const [zone, setZone] = useState(player.zone||"");
   const [showPicker, setShowPicker] = useState(false);
   const [availablePlayers, setAvailablePlayers] = useState([]);
+  const [availDays, setAvailDays] = useState(player.availability_days||[]);
+  const [availNotes, setAvailNotes] = useState(player.availability_notes||"");
+
+  const DAYS = [["Dom","0"],["Seg","1"],["Ter","2"],["Qua","3"],["Qui","4"],["Sex","5"],["Sáb","6"]];
+
+  const toggleDay = async(day) => {
+    const next = availDays.includes(day) ? availDays.filter(d=>d!==day) : [...availDays, day];
+    setAvailDays(next);
+    await supabase.from("players").update({availability_days:next}).eq("id",player.id);
+  };
+
+  const saveNotes = async() => {
+    await supabase.from("players").update({availability_notes:availNotes}).eq("id",player.id);
+    showToast("Disponibilidade guardada ✓");
+  };
 
   useEffect(()=>{
     // Buscar jogadores disponíveis
-    supabase.from("players").select("id,name,zone,avatar_color").eq("available",true).neq("id",player.id).then(({data})=>{
+    supabase.from("players").select("id,name,zone,avatar_color,phone,availability_notes,availability_days").eq("available",true).neq("id",player.id).then(({data})=>{
       setAvailablePlayers(data||[]);
     });
   },[]);
@@ -1661,6 +1764,19 @@ function ZonaView({player, players=[], onBack, showToast}) {
         </div>
       </div>
       <div className="body">
+        {/* Explicação */}
+        <div style={{background:"rgba(37,99,235,0.1)",border:"1px solid rgba(37,99,235,0.3)",borderRadius:12,padding:"12px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"flex-start"}}>
+          <span style={{fontSize:20,flexShrink:0}}>💡</span>
+          <div style={{fontSize:12,color:"#93c5fd",lineHeight:1.5}}>
+            Marca a tua disponibilidade e zona para que outros jogadores te encontrem quando precisam de reforços. Podes também encontrar jogadores disponíveis perto de ti para completar um jogo.
+          </div>
+        </div>
+        {/* Lembrete telemóvel */}
+        {!player.phone&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
+          <span style={{fontSize:16}}>⚠️</span>
+          <div style={{fontSize:12,color:"#fbbf24"}}>Adiciona o teu telemóvel no <strong>Perfil</strong> para que outros te possam contactar via WhatsApp.</div>
+        </div>}
+
         {/* A minha disponibilidade */}
         <p className="section-label">A MINHA DISPONIBILIDADE</p>
         <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:14,marginBottom:14}}>
@@ -1672,6 +1788,25 @@ function ZonaView({player, players=[], onBack, showToast}) {
             <button onClick={()=>handleToggleAvailable(!available)} style={{width:48,height:26,borderRadius:13,border:"none",background:available?"#16a34a":"#374151",cursor:"pointer",position:"relative",transition:"background 0.2s"}}>
               <div style={{width:20,height:20,borderRadius:10,background:"white",position:"absolute",top:3,left:available?24:4,transition:"left 0.2s"}}/>
             </button>
+          </div>
+          {/* Dias disponíveis */}
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>DIAS HABITUAIS</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {DAYS.map(([label,day])=>(
+                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#2563eb":"#2a2a2a"}`,background:availDays.includes(day)?"rgba(37,99,235,0.15)":"#0f0f0f",color:availDays.includes(day)?"#93c5fd":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Notas */}
+          <div>
+            <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>NOTA (opcional)</div>
+            <div style={{display:"flex",gap:6}}>
+              <input className="text-input" value={availNotes} onChange={e=>setAvailNotes(e.target.value)} placeholder="Ex: disponível após as 21h..." style={{flex:1,marginBottom:0}}/>
+              <button onClick={saveNotes} style={{padding:"8px 12px",background:"#1f1f1f",border:"1px solid #2a2a2a",borderRadius:8,color:"#9ca3af",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>Guardar</button>
+            </div>
           </div>
           <div>
             <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>A MINHA ZONA</div>
@@ -1697,12 +1832,17 @@ function ZonaView({player, players=[], onBack, showToast}) {
             ?<div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:13}}>Nenhum jogador disponível na tua zona</div>
             :<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
               {myZonePlayers.map(p=>(
-                <div key={p.id} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:12}}>
-                  <Avatar player={p} size={36}/>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
-                    <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone}</div>
+                <div key={p.id} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:p.phone?8:0}}>
+                    <Avatar player={p} size={36}/>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
+                      <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone}</div>
+                    </div>
                   </div>
+                  {p.phone&&<a href={`https://wa.me/351${p.phone.replace(/\s+/g,"").replace(/^\+351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
+                    💬 Enviar mensagem no WhatsApp
+                  </a>}
                 </div>
               ))}
             </div>
@@ -1714,12 +1854,17 @@ function ZonaView({player, players=[], onBack, showToast}) {
           <p className="section-label">🌍 DISPONÍVEIS NOUTRAS ZONAS</p>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {otherPlayers.map(p=>(
-              <div key={p.id} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:12}}>
-                <Avatar player={p} size={36}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
-                  <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone||"Zona não definida"}</div>
+              <div key={p.id} style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:p.phone?8:0}}>
+                  <Avatar player={p} size={36}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
+                    <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone||"Zona não definida"}</div>
+                  </div>
                 </div>
+                {p.phone&&<a href={`https://wa.me/351${p.phone.replace(/\s+/g,"").replace(/^\+351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
+                  💬 Enviar mensagem no WhatsApp
+                </a>}
               </div>
             ))}
           </div>
@@ -1794,7 +1939,24 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
       </div>
       <div className="body">
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:20}}>
-          <Avatar player={{...player,avatar_color:color}} size={72} style={{marginBottom:12}}/>
+          <div style={{position:"relative",display:"inline-block",marginBottom:12}}>
+            <Avatar player={{...player,avatar_color:color}} size={72}/>
+            <label style={{position:"absolute",bottom:0,right:0,width:24,height:24,background:"#d4af37",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,border:"2px solid #0a0a0a"}}>
+              📷
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={async(e)=>{
+                const file=e.target.files[0];
+                if(!file) return;
+                const reader=new FileReader();
+                reader.onload=async(ev)=>{
+                  const dataUrl=ev.target.result;
+                  await supabase.from("players").update({avatar_url:dataUrl}).eq("id",player.id);
+                  showToast("Foto atualizada ✓");
+                  window.location.reload();
+                };
+                reader.readAsDataURL(file);
+              }}/>
+            </label>
+          </div>
           <p className="section-label" style={{marginBottom:8}}>COR DO AVATAR</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
             {AVATAR_COLORS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
@@ -2206,7 +2368,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
-              {[12,13,14,15].map(n=>(
+              {[10,11,12,13,14,15].map(n=>(
                 <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:1,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#16a34a":"#2a2a2a"}`,background:(editMaxPlayers||12)===n?"#16241c":"#111",color:(editMaxPlayers||12)===n?"#4ade80":"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>

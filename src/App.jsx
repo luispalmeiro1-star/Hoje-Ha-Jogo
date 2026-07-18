@@ -1540,7 +1540,7 @@ function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effect
 }
 
 // ── STATS VIEW ───────────────────────────────────────────────────────────────
-function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3,groupId=null}) {
+function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3,groupId=null,attendance=[]}) {
   const [tab,setTab]=useState("pessoal");
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});

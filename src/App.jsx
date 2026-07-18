@@ -1480,7 +1480,10 @@ function PiggyBankCard({piggybank,history,cost=3}) {
         <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
         {expenses.map((e,i)=>(
           <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:"#9ca3af"}}>{e.description||`Despesa de ${e.date}`}</span>
+            <div>
+              <div style={{fontSize:12,color:"#9ca3af"}}>{e.description||"Despesa"}</div>
+              <div style={{fontSize:10,color:"#4b5563",marginTop:2}}>{new Date(e.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}</div>
+            </div>
             <span style={{fontSize:13,fontWeight:700,color:"#f87171"}}>{e.collected}€</span>
           </div>
         ))}

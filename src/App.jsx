@@ -372,11 +372,17 @@ export default function App() {
   const spotsLeft = Math.max(0,maxPlayers-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
-  const linkOneSignal = (playerId) => {
+  const linkOneSignal = (playerId, groupId=null) => {
     try{
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function(OneSignal) {
-        try{ if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission(); if(OneSignal.Notifications.permission===true) await OneSignal.User.addTag("player_id",String(playerId)); }catch(err){}
+        try{
+          if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission();
+          if(OneSignal.Notifications.permission===true){
+            await OneSignal.User.addTag("player_id",String(playerId));
+            if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
+          }
+        }catch(err){}
       });
     }catch(e){}
   };
@@ -402,16 +408,17 @@ export default function App() {
     const p=result?.player||null;
     if(!p) return false;
     setCurrentUser(p);
-    linkOneSignal(p.id);
     const groups = await loadMyGroups(p.id);
     if(groups.length>1){
       setMyGroups(groups);
       setView("meus-grupos");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:null}));
+      linkOneSignal(p.id);
     } else {
       const gid = groups.length===1 ? groups[0].group_id : (p.group_id||null);
       if(gid){
         localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:gid}));
+        linkOneSignal(p.id, gid);
         setActiveGroupId(gid);
         await reloadAll(gid);
         setView(p.is_admin?"admin":"player");
@@ -515,7 +522,7 @@ export default function App() {
     showToast("Posição atualizada ✓");
   };
   const sendPushNotification = async(title,message)=>{
-    try{ await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt"}}); }catch(e){}
+    try{ await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt",group_id:activeGroupId}}); }catch(e){}
   };
   const getNextGameDate = (gameDays=[3])=>{
     const days=gameDays.map(Number).sort((a,b)=>a-b);
@@ -631,6 +638,7 @@ export default function App() {
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
+      {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")}/>}
@@ -2106,7 +2114,15 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
             <AutoTeamsDisplay confirmed={confirmed} players={players}/>
           </div>
         )}
-        {confirmed.length>=MIN_PLAYERS&&<ExpandableCard title="⭐ MVP DA SEMANA"><MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/></ExpandableCard>}
+        {confirmed.length>=MIN_PLAYERS&&(()=>{
+          const [gy,gm,gd]=(gameInfo.date||"").split("-").map(Number);
+          const [gh,gmin]=(gameInfo.time||"22:30").split(":").map(Number);
+          const gameStart=new Date(gy,gm-1,gd,gh,gmin);
+          const gameEnd=new Date(gameStart.getTime()+90*60000);
+          const canVote=new Date()>=gameEnd;
+          if(!canVote) return null;
+          return <ExpandableCard title="⭐ MVP DA SEMANA"><MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/></ExpandableCard>;
+        })()}
         <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`}>
           <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}

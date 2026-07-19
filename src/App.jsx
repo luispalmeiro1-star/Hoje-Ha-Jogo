@@ -285,6 +285,8 @@ export default function App() {
     })();
 
     const safetyTimer=setTimeout(()=>setLoading(false),8000);
+    // Polling a cada 10s para garantir atualização dos jogadores
+    const pollTimer=setInterval(()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); },5000);
     const subs=[
       supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) loadGameInfo(groupIdRef.current); }).subscribe(),
@@ -295,7 +297,7 @@ export default function App() {
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); } }); }).subscribe(),
     ];
-    return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); };
+    return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); clearInterval(pollTimer); };
   },[]);
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);

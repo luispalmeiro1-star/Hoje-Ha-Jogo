@@ -2494,7 +2494,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           </ExpandableSection>
           <ExpandableSection icon="💳" title="Pagamentos" subtitle="Configurar MBWay para receber pagamentos">
             <label className="field-label">📱 Número MBWay do tesoureiro</label>
-            <input className="text-input" type="tel" value={mbwayNumber} onChange={e=>setMbwayNumber(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:8}}/>
+            <input className="text-input" type="tel" value={mbwayNumber} onChange={e=>setMbwayNumber(e.target.value.replace(/[^0-9\s+]/g,""))} placeholder="9XX XXX XXX" style={{marginBottom:8}}/>
             <button className={`btn-save ${mbwayNumber?"btn-save-active":""}`} onClick={async()=>{
               await supabase.from("groups").update({mbway_number:mbwayNumber.trim()||null}).eq("id",groupId||currentUser.group_id);
               setMbwaySaved(true); setTimeout(()=>setMbwaySaved(false),2000);

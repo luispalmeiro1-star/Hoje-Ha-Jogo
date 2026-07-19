@@ -766,7 +766,7 @@ function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo}) {
   if(history.length>0&&history[0].mvp_name) highlights.push({icon:"⭐",text:`${history[0].mvp_name} foi o MVP do último jogo!`});
   if(history.length>0&&history[0].winner_team) highlights.push({icon:"🏆",text:`Equipa ${history[0].winner_team} venceu o último jogo!`});
   const topPlayer=[...members].sort((a,b)=>(b.total_games||0)-(a.total_games||0))[0];
-  if(topPlayer&&topPlayer.total_games>0) highlights.push({icon:"👑",text:`${topPlayer.name} lidera com ${topPlayer.total_games} jogos!`});
+
   const faltam=15-confirmed.length;
   if(faltam>0&&faltam<=5&&confirmed.length>=8) highlights.push({icon:"🎯",text:`Faltam apenas ${faltam} jogador${faltam!==1?"es":""} para lotação máxima!`});
   const votesHoje=mvpVotes.filter(v=>v.game_date===gameInfo.date);
@@ -792,7 +792,7 @@ function GroupStatusCard({confirmed, notYet, members, players=[]}) {
   if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
   if(confirmed.length>=10&&grs.length>=2&&confirmed.length<15) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#16a34a",bg:"rgba(22,163,74,0.1)"});
   if(notYet.length>0) msgs.push({icon:"📢",text:`${notYet.length} jogador${notYet.length!==1?"es":""} ainda não ${notYet.length!==1?"responderam":"respondeu"}`,color:"#6b7280",bg:"rgba(107,114,128,0.1)"});
-  if(confirmed.length<6) msgs.push({icon:"😴",text:"Ainda poucos confirmados — partilha com o grupo!",color:"#7c3aed",bg:"rgba(124,58,237,0.1)"});
+
   if(msgs.length===0) return null;
   const m=msgs[0]; // Mostrar só a mais importante
   return (

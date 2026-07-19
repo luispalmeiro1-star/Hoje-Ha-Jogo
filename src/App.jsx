@@ -292,6 +292,7 @@ export default function App() {
       supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},()=>{ if(groupIdRef.current) loadDebts(groupIdRef.current); }).subscribe(),
       supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>{ if(groupIdRef.current) loadMessages(groupIdRef.current); }).subscribe(),
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
+      supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); };
   },[]);
@@ -1607,6 +1608,9 @@ function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effect
               </div>)}
             </div>
             {mbwayNumber&&<MBWayButton number={mbwayNumber} amount={myTotal}/>}
+            {!mbwayNumber&&myTotal>0&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:12,color:"#fbbf24"}}>
+              💡 Para pagar via MBWay, pede ao teu admin para configurar o número nas definições do grupo.
+            </div>}
           </div>}
         {othersDebts.length>0&&<><p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p><div style={{display:"flex",flexDirection:"column",gap:6}}>{othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#16241c",border:"1px solid #23362a",borderRadius:10,padding:"10px 14px"}}><Avatar player={m} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span></div>)}</div></>}
         {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:20,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
@@ -2308,7 +2312,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",history[0].id);
                   showToast(`Equipa ${t} registada como vencedora ✓`);
-                  window.location.reload();
+                  setAdminTab("historico");
                 }} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #2563eb",background:"rgba(37,99,235,0.15)",color:"#93c5fd",fontWeight:800,fontSize:14,cursor:"pointer"}}>
                   Equipa {t}
                 </button>
@@ -2939,6 +2943,9 @@ function GroupCodeCard({groupId}) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0}}>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4af37",letterSpacing:5}}>{code}</div>
         <div style={{display:"flex",gap:6}}>
+          <button onClick={handleRefreshCode} title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #2a2a2a",borderRadius:8,padding:"7px 10px",color:"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+            🔄
+          </button>
           <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?"rgba(212,175,55,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#d4af37":"#2a2a2a"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#d4af37":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             QR
           </button>

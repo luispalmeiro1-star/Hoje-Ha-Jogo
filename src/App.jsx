@@ -2932,6 +2932,20 @@ function GroupCodeCard({groupId}) {
 
   if(!code) return null;
 
+  const handleRefreshCode=async()=>{
+    const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let newCode, exists=true;
+    while(exists){
+      newCode="HHJ-";
+      for(let i=0;i<4;i++) newCode+=chars[Math.floor(Math.random()*chars.length)];
+      const{data}=await supabase.from("groups").select("id").eq("invite_code",newCode).maybeSingle();
+      exists=!!data;
+    }
+    await supabase.from("groups").update({invite_code:newCode}).eq("id",groupId);
+    setCode(newCode);
+    setShowQR(false);
+  };
+
   const handleShare=()=>{
     if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${code}`,url:`https://hojehajogo.pt?code=${code}`}); }
     else { navigator.clipboard.writeText(code).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); }

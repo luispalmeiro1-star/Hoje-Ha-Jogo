@@ -176,6 +176,8 @@ export default function App() {
   const [view, setView]               = useState("landing");
   const [myGroups, setMyGroups]       = useState([]);
   const [mbwayNumber, setMbwayNumber]   = useState("");
+  const [treasurerId, setTreasurerId]   = useState(null);
+  const [treasurerName, setTreasurerName] = useState("");
   const [maxPlayers, setMaxPlayers]     = useState(12);
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
@@ -217,6 +219,7 @@ export default function App() {
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
     supabase.from("groups").select("mbway_number,max_players").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); } });
+    supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
   // Carregar players inicialmente (sem groupId) para session restore
@@ -612,7 +615,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -639,8 +642,8 @@ export default function App() {
         } else setView("landing");
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
@@ -1524,7 +1527,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
 }
 
 // ── PIGGYBANK ─────────────────────────────────────────────────────────────────
-function PiggyBankCard({piggybank,history,cost=3}) {
+function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false}) {
   const totalReceived=history.filter(g=>Number(g.collected)>0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const totalExpenses=history.filter(g=>Number(g.collected)<0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const gamesPlayed=history.filter(g=>g.players_count>0).length;
@@ -1542,6 +1545,7 @@ function PiggyBankCard({piggybank,history,cost=3}) {
         </div>
       </div>
       <div style={{fontSize:11,color:"#6b7280",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {RENT}€ do aluguer · {cost}€ por jogador</div>
+      <TreasurerBalances groupId={groupId} isAdmin={isAdmin}/>
       {expenses.length>0&&<>
         <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
         {expenses.map((e,i)=>(
@@ -1653,7 +1657,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div></>}
         {tab==="ranking"&&<><p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p><ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/></>}
         {tab==="mvp"&&<HallOfFameMVP history={history} members={members}/>}
-        {tab==="mealheiro"&&<PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost}/>}
+        {tab==="mealheiro"&&<PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>}
         {tab==="historico"&&<HistoricoPessoalCard player={player} attendance={attendance} history={history}/>}
         {tab==="epocas"&&<SeasonStatsCard player={player} groupId={groupId}/>}
       </div>
@@ -1694,6 +1698,126 @@ function HistoricoPessoalCard({player, attendance=[], history=[]}) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── TREASURER BALANCES ────────────────────────────────────────────────────────
+function TreasurerBalances({groupId, isAdmin=false}) {
+  const [balances, setBalances] = useState([]);
+
+  useEffect(()=>{
+    if(!groupId) return;
+    supabase.from("treasurer_balances")
+      .select("*")
+      .eq("group_id", groupId)
+      .eq("confirmed", false)
+      .order("created_at", {ascending:false})
+      .then(({data})=>{ if(data&&data.length>0) setBalances(data); });
+  },[groupId]);
+
+  if(balances.length===0) return null;
+
+  return (
+    <div style={{marginBottom:12}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>💰 SALDOS PENDENTES DOS TESOUREIROS</div>
+      {balances.map((b,i)=>(
+        <div key={i} style={{background:"rgba(212,175,55,0.08)",border:"1px solid rgba(212,175,55,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:"#d4af37"}}>{b.treasurer_name}</div>
+              <div style={{fontSize:10,color:"#6b7280"}}>Jogo de {new Date(b.game_date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37"}}>{b.amount}€</div>
+              {b.transferred&&!b.confirmed&&isAdmin&&(
+                <button onClick={async()=>{
+                  await supabase.from("treasurer_balances").update({confirmed:true}).eq("id",b.id);
+                  setBalances(prev=>prev.filter(x=>x.id!==b.id));
+                }} style={{fontSize:10,padding:"3px 8px",borderRadius:6,border:"1px solid #16a34a",background:"rgba(22,163,74,0.15)",color:"#4ade80",cursor:"pointer",fontWeight:700}}>
+                  ✓ Confirmar recebido
+                </button>
+              )}
+              {b.transferred&&<div style={{fontSize:10,color:"#4ade80",marginTop:2}}>✓ Transferido</div>}
+              {!b.transferred&&<div style={{fontSize:10,color:"#f87171",marginTop:2}}>⏳ Por transferir</div>}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── TREASURER PANEL ───────────────────────────────────────────────────────────
+function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effectiveCost, groupId, showToast, setView}) {
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const myCollected = confirmed.filter(p=>p.paid).length * effectiveCost;
+
+  const handleTogglePaid = async(playerId) => {
+    const p = players.find(pl=>pl.id===playerId);
+    if(!p) return;
+    await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",playerId).eq("group_id",groupId||gameInfo.group_id);
+  };
+
+  const handleTransfer = async() => {
+    if(!transferAmount) return;
+    setLoading(true);
+    await supabase.from("treasurer_balances").insert({
+      group_id: groupId||gameInfo.group_id,
+      game_date: gameInfo.date,
+      treasurer_id: players[0]?.id,
+      treasurer_name: players[0]?.name,
+      amount: Number(transferAmount),
+      transferred: true,
+      confirmed: false,
+    });
+    showToast("Transferência registada ✓");
+    setShowTransfer(false);
+    setTransferAmount("");
+    setLoading(false);
+  };
+
+  return (
+    <div style={{background:"rgba(212,175,55,0.08)",border:"2px solid rgba(212,175,55,0.3)",borderRadius:14,padding:14,marginTop:8}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <span style={{fontSize:20}}>💰</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:800,color:"#d4af37"}}>És o Tesoureiro deste jogo</div>
+          <div style={{fontSize:11,color:"#6b7280"}}>Recolhido até agora: {myCollected}€</div>
+        </div>
+      </div>
+      {/* Lista de pagamentos */}
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
+        {confirmed.filter(p=>!p.is_guest).map(p=>(
+          <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #1a1a1a"}}>
+            <Avatar player={p} size={24}/>
+            <span style={{flex:1,fontSize:12,color:"white"}}>{p.name}</span>
+            <button onClick={()=>handleTogglePaid(p.id)} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${p.paid?"#16a34a":"#2a2a2a"}`,background:p.paid?"rgba(22,163,74,0.15)":"#111",color:p.paid?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              {p.paid?"✓ Pago":"Não pagou"}
+            </button>
+          </div>
+        ))}
+      </div>
+      {/* Transferir para admin */}
+      {!showTransfer
+        ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+          💸 Registar transferência para o admin
+        </button>
+        :<div>
+          <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>Valor transferido (€)</div>
+          <div style={{display:"flex",gap:6}}>
+            <input className="text-input" type="number" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} placeholder={String(myCollected)} style={{flex:1,marginBottom:0}}/>
+            <button onClick={handleTransfer} disabled={loading} style={{padding:"8px 14px",background:"#d4af37",border:"none",borderRadius:8,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+              {loading?"...":"✓"}
+            </button>
+            <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#1f1f1f",border:"none",borderRadius:8,color:"#6b7280",fontSize:12,cursor:"pointer"}}>✕</button>
+          </div>
+        </div>
+      }
     </div>
   );
 }
@@ -2078,7 +2202,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber=""}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
   const isIn=player.status==="in",isWait=player.status==="wait";
   const [confirming,setConfirming]=useState(false);
   const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
@@ -2108,7 +2232,8 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <button className={`btn-big ${isIn||isWait?"btn-red":"btn-green"}`} onClick={handleToggle} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
-        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)}/>}
+        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
+        {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView}/>}
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
@@ -2149,7 +2274,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 }
 
 // ── MBWAY BUTTON ─────────────────────────────────────────────────────────────
-function MBWayButton({number, amount}) {
+function MBWayButton({number, amount, treasurerName=""}) {
   const [copied, setCopied] = useState(false);
   const [showNumber, setShowNumber] = useState(false);
 
@@ -2172,7 +2297,7 @@ function MBWayButton({number, amount}) {
     <div style={{marginTop:8}}>
       <button onClick={handleMBWay} className="btn-big" style={{background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",color:"white",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
         <span style={{fontSize:20}}>💳</span>
-        <span>PAGAR {amount}€ VIA MBWAY</span>
+        <span>PAGAR {amount}€ VIA MBWAY{treasurerName?" a "+treasurerName:""}</span>
       </button>
       {showNumber&&(
         <div style={{background:"#111",border:"1px solid #0077b6",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2219,7 +2344,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName=""}) {
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -2334,6 +2459,35 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         {adminTab==="jogo"&&<>
           <ExpandableConfirmed confirmed={confirmed} onTogglePaid={onTogglePaid} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
+          {/* Tesoureiro */}
+          <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",marginTop:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>💰 TESOUREIRO DO JOGO</div>
+            {treasurerName
+              ?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:16}}>💰</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"#d4af37"}}>{treasurerName}</span>
+                </div>
+                <button onClick={async()=>{
+                  await supabase.from("game_info").update({treasurer_id:null,treasurer_name:null}).eq("group_id",groupId);
+                  showToast("Tesoureiro removido");
+                }} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>✕ Remover</button>
+              </div>
+              :<div>
+                <div style={{fontSize:11,color:"#4b5563",marginBottom:8}}>Nomeia um tesoureiro para este jogo</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {members.filter(m=>!m.is_guest).map(m=>(
+                    <button key={m.id} onClick={async()=>{
+                      await supabase.from("game_info").update({treasurer_id:m.id,treasurer_name:m.name}).eq("group_id",groupId);
+                      showToast(`${m.name} nomeado tesoureiro ✓`);
+                    }} style={{padding:"6px 12px",borderRadius:20,border:"1px solid #2a2a2a",background:"#0f0f0f",color:"white",fontSize:12,cursor:"pointer",fontWeight:600}}>
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            }
+          </div>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#6b7280"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}

@@ -1799,7 +1799,7 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
       {/* Lista de pagamentos */}
       <div style={{marginBottom:10}}>
         <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
-        {confirmed.filter(p=>!p.is_guest).map(p=>(
+        {confirmed.map(p=>(
           <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #1a1a1a"}}>
             <Avatar player={p} size={24}/>
             <span style={{flex:1,fontSize:12,color:"white"}}>{p.name}</span>

@@ -580,7 +580,7 @@ export default function App() {
     const votes=mvpVotes.filter(v=>v.game_date===gameInfo.date);
     let mvpName=null;
     if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null; }
-    if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:freshConfirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid});
+    if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:freshConfirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid,treasurer_name:treasurerName||null});
     // Remover convidados
     const guestIds=freshConfirmed.filter(p=>p.is_guest).map(p=>p.id);
     if(guestIds.length>0){
@@ -1664,10 +1664,8 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
             {stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
           </div>
-          {/* Conquistas expansível */}
-          <ExpandableSection icon="🏅" title="Conquistas" subtitle="Os teus badges e realizações">
-            <BadgesCard player={player} history={history} attendance={attendance}/>
-          </ExpandableSection>
+          {/* Conquistas sempre visível */}
+          <BadgesCard player={player} history={history} attendance={attendance}/>
           {/* Histórico pessoal expansível */}
           <ExpandableSection icon="📋" title="Os meus jogos" subtitle="Histórico de presenças">
             <HistoricoPessoalCard player={player} attendance={attendance} history={history}/>
@@ -2779,6 +2777,7 @@ function HistoricoCard({h, groupId, showToast, reloadAll}) {
             {new Date(h.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})}
           </div>
           {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20}}>🏆 Equipa {h.winner_team}</span>}
+          {h.treasurer_name&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20}}>💰 {h.treasurer_name}</span>}
         </div>
         <div style={{display:"flex",gap:20,marginBottom:h.winner_team?0:10}}>
           <div>

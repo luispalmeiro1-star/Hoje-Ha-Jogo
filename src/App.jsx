@@ -801,7 +801,7 @@ function GroupStatusCard({confirmed, notYet, members, players=[]}) {
   else if(confirmed.length>=12) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${15-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
   if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
   if(confirmed.length>=10&&grs.length>=2&&confirmed.length<15) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#16a34a",bg:"rgba(22,163,74,0.1)"});
-  if(notYet.length>0) msgs.push({icon:"📢",text:`${notYet.length} jogador${notYet.length!==1?"es":""} ainda não ${notYet.length!==1?"responderam":"respondeu"}`,color:"#6b7280",bg:"rgba(107,114,128,0.1)"});
+  if(notYet.length>0) {} // Removido - já aparece no header
 
   if(msgs.length===0) return null;
   const m=msgs[0]; // Mostrar só a mais importante
@@ -1653,19 +1653,37 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
-          {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"],["historico","📋 Histórico"],["epocas","🏁 Épocas"],["mealheiro","💰 Mealheiro"]].map(([k,l])=>( 
+          {[["pessoal","⚽ Pessoal"],["grupo","🏆 Grupo"],["epocas","🏁 Épocas"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>
       </div>
       <div className="body">
         {tab==="pessoal"&&<>
-          <BadgesCard player={player} history={history} attendance={attendance}/>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div></>}
-        {tab==="ranking"&&<><p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p><ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/></>}
-        {tab==="mvp"&&<HallOfFameMVP history={history} members={members}/>}
-        {tab==="mealheiro"&&<PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>}
-        {tab==="historico"&&<HistoricoPessoalCard player={player} attendance={attendance} history={history}/>}
+          {/* Stats grid sempre visível */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+            {stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
+          </div>
+          {/* Conquistas expansível */}
+          <ExpandableSection icon="🏅" title="Conquistas" subtitle="Os teus badges e realizações">
+            <BadgesCard player={player} history={history} attendance={attendance}/>
+          </ExpandableSection>
+          {/* Histórico pessoal expansível */}
+          <ExpandableSection icon="📋" title="Os meus jogos" subtitle="Histórico de presenças">
+            <HistoricoPessoalCard player={player} attendance={attendance} history={history}/>
+          </ExpandableSection>
+        </>}
+        {tab==="grupo"&&<>
+          <ExpandableSection icon="🏆" title="Ranking" subtitle="Classificação de presenças">
+            <ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/>
+          </ExpandableSection>
+          <ExpandableSection icon="⭐" title="Hall of Fame" subtitle="MVPs da época">
+            <HallOfFameMVP history={history} members={members}/>
+          </ExpandableSection>
+          <ExpandableSection icon="💰" title="Mealheiro" subtitle="Saldo financeiro do grupo">
+            <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>
+          </ExpandableSection>
+        </>}
         {tab==="epocas"&&<SeasonStatsCard player={player} groupId={groupId}/>}
       </div>
     </div>
@@ -1810,7 +1828,7 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
         ))}
       </div>
       {/* Transferir para admin */}
-      {confirmed.length===0&&(!showTransfer
+      {(!showTransfer
         ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           💸 Registar transferência para o admin
         </button>

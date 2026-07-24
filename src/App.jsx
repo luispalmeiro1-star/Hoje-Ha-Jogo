@@ -289,7 +289,12 @@ export default function App() {
 
     const safetyTimer=setTimeout(()=>setLoading(false),8000);
     // Polling a cada 10s para garantir atualização dos jogadores
-    const pollTimer=setInterval(()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); },5000);
+    const pollTimer=setInterval(()=>{ 
+      if(groupIdRef.current){
+        loadPlayers(groupIdRef.current);
+        supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
+      }
+    },5000);
     const subs=[
       supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) loadGameInfo(groupIdRef.current); }).subscribe(),
@@ -298,6 +303,7 @@ export default function App() {
       supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>{ if(groupIdRef.current) loadMessages(groupIdRef.current); }).subscribe(),
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
+      supabase.channel("gameinfo_treasurer_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } }); }).subscribe(),
       supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); } }); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); clearInterval(pollTimer); };
@@ -587,6 +593,7 @@ export default function App() {
     const gameDays=grp?.game_days||[3];
     const nextDate=getNextGameDate(gameDays);
     await supabase.from("game_info").update({date:nextDate}).eq("id",gameInfo.id);
+    await supabase.from("game_info").update({treasurer_id:null,treasurer_name:null}).eq("group_id",gid);
     showToast(isAuto?"Jogo fechado automaticamente ✓":"Jogo fechado ✓");
     // Notificação de MVP e fecho
     sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.");
@@ -1749,7 +1756,7 @@ function TreasurerBalances({groupId, isAdmin=false}) {
 }
 
 // ── TREASURER PANEL ───────────────────────────────────────────────────────────
-function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effectiveCost, groupId, showToast, setView}) {
+function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effectiveCost, groupId, showToast, setView, player}) {
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1768,8 +1775,8 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
     await supabase.from("treasurer_balances").insert({
       group_id: groupId||gameInfo.group_id,
       game_date: gameInfo.date,
-      treasurer_id: players[0]?.id,
-      treasurer_name: players[0]?.name,
+      treasurer_id: player?.id||0,
+      treasurer_name: player?.name||"Tesoureiro",
       amount: Number(transferAmount),
       transferred: true,
       confirmed: false,
@@ -1803,7 +1810,7 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
         ))}
       </div>
       {/* Transferir para admin */}
-      {!showTransfer
+      {confirmed.length===0&&(!showTransfer
         ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           💸 Registar transferência para o admin
         </button>
@@ -2233,7 +2240,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
-        {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView}/>}
+        {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>

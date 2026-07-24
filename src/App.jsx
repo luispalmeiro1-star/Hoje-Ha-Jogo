@@ -653,6 +653,7 @@ export default function App() {
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
+      {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")}/>}
@@ -1442,8 +1443,8 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 // ── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
   const items = isAdmin
-    ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"equipas_tab",icon:"🎲",label:"Equipas"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"zona",icon:"🌍",label:"Zona"},{key:"profile",icon:"👤",label:"Perfil"}]
-    : [{key:"player",icon:"⚽",label:"Jogo"},{key:"chat",icon:"💬",label:"Chat"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"zona",icon:"🌍",label:"Zona"},{key:"profile",icon:"👤",label:"Perfil"}];
+    ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}]
+    : [{key:"player",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}];
   return (
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0a0a",borderTop:"1px solid #1a1a1a",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
       {items.map(item=>{
@@ -1589,6 +1590,68 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── FINANCAS VIEW ─────────────────────────────────────────────────────────────
+function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],groupId=null}) {
+  const myDebts=debts.filter(d=>d.player_id===player.id);
+  const myTotal=myDebts.reduce((s,d)=>s+Number(d.amount),0);
+  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
+  return (
+    <div className="screen">
+      <div style={{background:"#111",padding:"16px 16px 20px",borderBottom:"1px solid #1f1f1f"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
+          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>💸 FINANÇAS</span>
+        </div>
+      </div>
+      <div className="body">
+        <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"16px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.7)",letterSpacing:1}}>MEALHEIRO DO GRUPO</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:36,color:piggybank>=0?"white":"#fecaca",lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div>
+          </div>
+          <span style={{fontSize:36}}>💰</span>
+        </div>
+        <p className="section-label"><Icon name="warn" size={12}/> AS MINHAS DÍVIDAS</p>
+        {myTotal===0
+          ?<div style={{background:"rgba(22,163,74,0.1)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:12,padding:"16px",textAlign:"center",marginBottom:14}}>
+            <div style={{fontSize:24,marginBottom:6}}>🎉</div>
+            <div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>Não deves nada!</div>
+          </div>
+          :<div style={{marginBottom:14}}>
+            <div style={{background:"rgba(239,68,68,0.1)",border:"2px solid #dc2626",borderRadius:14,padding:"14px",marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:13,fontWeight:700,color:"white"}}>Total em dívida</span>
+                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span>
+              </div>
+              {myDebts.map(d=><div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
+                <span style={{fontSize:12,color:"#9ca3af"}}>{d.description}</span>
+                <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
+              </div>)}
+            </div>
+            {mbwayNumber&&<MBWayButton number={mbwayNumber} amount={myTotal}/>}
+            {!mbwayNumber&&myTotal>0&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:12,color:"#fbbf24"}}>
+              💡 Para pagar via MBWay, pede ao teu admin para configurar o número.
+            </div>}
+          </div>}
+        {othersDebts.length>0&&<>
+          <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
+          <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
+            {othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#16241c",border:"1px solid #23362a",borderRadius:10,padding:"10px 14px"}}>
+              <Avatar player={m} size={28}/>
+              <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span>
+              <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span>
+            </div>)}
+          </div>
+        </>}
+        <ExpandableSection icon="💰" title="Mealheiro detalhado" subtitle="Histórico financeiro completo">
+          <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>
+        </ExpandableSection>
+        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
+      </div>
     </div>
   );
 }
@@ -2258,6 +2321,15 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
         {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
+        {/* Botões rápidos */}
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            💬 Chat
+          </button>
+          <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            🌍 Zona
+          </button>
+        </div>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
           <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#23362a"}`,background:(player.position||"Polivalente")==="Polivalente"?"rgba(22,163,74,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#4ade80":"#6b7280"}}>⚽ Polivalente</button>
@@ -2291,7 +2363,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         </ExpandableCard>
         <div style={{height:70}}/>
       </div>
-      <BottomNav view={view} setView={setView} isAdmin={false} hasDebts={debts.filter(d=>d.player_id===player.id).length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
+      <BottomNav view={view} setView={setView} isAdmin={false} hasDebts={debts.filter(d=>d.player_id===player.id).length>0} unreadChat={false} showToast={showToast}/>
     </div>
   );
 }
@@ -2689,7 +2761,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         <div style={{height:70}}/>
       </div>
-      <BottomNav view={adminTab==="equipas"?"equipas_tab":adminTab==="dividas"?"debts":"admin"} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");}else if(v==="debts"){setAdminTab("dividas");}else if(v==="admin"){setAdminTab("jogo");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={()=>alert("🔜 Em breve poderás encontrar jogadores para completar o vosso jogo!")}/>
+      <BottomNav view={view==="financas"?"financas":"admin"} setView={v=>{ if(v==="admin"){setAdminTab("jogo");setView("admin");} else setView(v); }} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={showToast}/>
     </div>
   );
 }

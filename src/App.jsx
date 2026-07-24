@@ -1824,7 +1824,7 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
             <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#1f1f1f",border:"none",borderRadius:8,color:"#6b7280",fontSize:12,cursor:"pointer"}}>✕</button>
           </div>
         </div>
-      }
+      )}
     </div>
   );
 }

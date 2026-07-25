@@ -2337,7 +2337,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
   const isIn=player.status==="in",isWait=player.status==="wait";
   const [confirming,setConfirming]=useState(false);
   const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
@@ -2488,7 +2488,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName=""}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12}) {
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");

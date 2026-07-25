@@ -1744,10 +1744,6 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           </div>
           {/* Conquistas sempre visível */}
           <BadgesCard player={player} history={history} attendance={attendance}/>
-          {/* Gráfico presenças */}
-          <ExpandableSection icon="📈" title="As minhas presenças" subtitle="Gráfico por mês">
-            <GraficoPresencas player={player} attendance={attendance}/>
-          </ExpandableSection>
           {/* Histórico pessoal expansível */}
           <ExpandableSection icon="📋" title="Os meus jogos" subtitle="Histórico de presenças">
             <HistoricoPessoalCard player={player} attendance={attendance} history={history}/>
@@ -1755,7 +1751,6 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         </>}
         {tab==="grupo"&&<>
           <ExpandableSection icon="🏆" title="Ranking" subtitle="Classificação de presenças">
-            <GraficoRanking members={members} currentPlayer={player}/>
             <ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/>
           </ExpandableSection>
           <ExpandableSection icon="⭐" title="Hall of Fame" subtitle="MVPs da época">

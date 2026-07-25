@@ -2294,7 +2294,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
             {player.is_admin&&<>
               <label className="field-label">Username</label>
-              <input className="text-input" value={player.phone||""} readOnly style={{opacity:0.5,cursor:"not-allowed"}}/>
+              <input className="text-input" value={player.phone||""} readOnly style={{cursor:"not-allowed",color:"white",background:"#1a1a1a"}}/>
             </>}
             {!player.is_admin&&<>
               <label className="field-label">Telemóvel</label>

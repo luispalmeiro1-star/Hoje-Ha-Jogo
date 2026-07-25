@@ -2008,7 +2008,6 @@ function GraficoPresencas({player, attendance=[]}) {
   const myGames = attendance.filter(a=>a.player_id===player.id);
   if(myGames.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Ainda não há jogos suficientes</div>;
 
-  // Agrupar por mês
   const byMonth = {};
   myGames.forEach(a=>{
     const d = new Date(a.game_date);
@@ -2017,18 +2016,18 @@ function GraficoPresencas({player, attendance=[]}) {
     if(!byMonth[key]) byMonth[key]={label,jogos:0};
     byMonth[key].jogos++;
   });
-  const data = Object.values(byMonth).slice(-6); // últimos 6 meses
+  const data = Object.values(byMonth).slice(-6);
 
   return (
     <div style={{marginTop:8}}>
       <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
       <ResponsiveContainer width="100%" height={140}>
-        <BarChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="label" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
-          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]}/>
-          <Bar dataKey="jogos" fill="#16a34a" radius={[4,4,0,0]}/>
-        </BarChart>
+        <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
+          <XAxis dataKey="label" tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#2a2a2a"}}/>
+          <Line type="monotone" dataKey="jogos" stroke="#16a34a" strokeWidth={2} dot={{fill:"#16a34a",r:3}} activeDot={{r:5}}/>
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );
@@ -2046,15 +2045,16 @@ function GraficoRanking({members=[], currentPlayer}) {
   return (
     <div style={{marginTop:8}}>
       <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
-      <ResponsiveContainer width="100%" height={Math.max(140,data.length*32)}>
-        <BarChart data={data} layout="vertical" margin={{top:0,right:30,left:10,bottom:0}}>
-          <XAxis type="number" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
-          <YAxis type="category" dataKey="name" tick={{fill:"#9ca3af",fontSize:11}} tickLine={false} axisLine={false} width={60}/>
-          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]}/>
-          <Bar dataKey="jogos" radius={[0,4,4,0]}>
-            {data.map((entry,i)=><Cell key={i} fill={entry.isMe?"#d4af37":"#16a34a"}/>)}
-          </Bar>
-        </BarChart>
+      <ResponsiveContainer width="100%" height={160}>
+        <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
+          <XAxis dataKey="name" tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#2a2a2a"}}/>
+          <Line type="monotone" dataKey="jogos" stroke="#d4af37" strokeWidth={2} dot={(props)=>{
+            const{cx,cy,payload}=props;
+            return <circle key={payload.name} cx={cx} cy={cy} r={payload.isMe?5:3} fill={payload.isMe?"#d4af37":"#16a34a"} stroke="none"/>;
+          }} activeDot={{r:5,fill:"#d4af37"}}/>
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

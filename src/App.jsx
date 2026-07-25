@@ -2292,6 +2292,10 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
           {editOpen&&<div style={{background:"#111",border:"1px solid #1f1f1f",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
             <label className="field-label">Nome</label>
             <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
+            {player.is_admin&&<>
+              <label className="field-label">Username</label>
+              <input className="text-input" value={player.phone||""} readOnly style={{opacity:0.5,cursor:"not-allowed"}}/>
+            </>}
             {!player.is_admin&&<>
               <label className="field-label">Telemóvel</label>
               <input className="text-input" type="tel" value={newPhone} onChange={e=>setNewPhone(e.target.value.replace(/[^0-9\s+]/g,""))} placeholder="9XX XXX XXX"/>

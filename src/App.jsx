@@ -830,8 +830,8 @@ function ExpandableList({confirmed}) {
 }
 
 // ── GAME HEADER — design limpo e profissional ────────────────────────────────
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true}) {
-  const pct=Math.round((confirmed.length/MAX_PLAYERS)*100);
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
+  const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   const now=new Date();
   const [gy,gm,gd]=(gameInfo.date||"2099-01-01").split("-").map(Number);
@@ -916,7 +916,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
           <div style={{marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <span style={{fontSize:11,color:"#4b5563",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
-              <span style={{fontSize:11,color:pct>=100?"#f87171":"#4b5563",fontWeight:700}}>{confirmed.length} / {MAX_PLAYERS}</span>
+              <span style={{fontSize:11,color:pct>=100?"#f87171":"#4b5563",fontWeight:700}}>{confirmed.length} / {maxPlayers}</span>
             </div>
             <div style={{height:6,background:"#1a1a1a",borderRadius:99,overflow:"hidden"}}>
               <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:pct>=100?"#dc2626":"#16a34a",borderRadius:99,transition:"width 0.6s"}}/>
@@ -2347,7 +2347,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const [guestName,setGuestName]=useState("");
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
         
       />
       <div className="body">
@@ -2542,7 +2542,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
         
       />
       <div className="body">

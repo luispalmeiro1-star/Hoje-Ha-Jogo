@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase.js";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 
 // ── EDGE FUNCTION HELPERS ─────────────────────────────────────────────────────
@@ -481,12 +482,12 @@ export default function App() {
     await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
     await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
   };
-  const addGuest = async(guestName,invitedById)=>{
+  const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
     if(!inviter||confirmed.length>=maxPlayers){showToast("Jogo cheio!","err");return;}
     const gid=activeGroupId||null;
-    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid}).select().single();
+    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select().single();
     if(inserted){
       // Registar em player_groups com status "in"
       await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:"in",paid:false,confirmed_at:Date.now()});
@@ -649,8 +650,8 @@ export default function App() {
         } else setView("landing");
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -817,14 +818,24 @@ function GroupStatusCard({confirmed, notYet, members, players=[]}) {
 }
 
 // ── EXPANDABLE LIST ──────────────────────────────────────────────────────────
-function ExpandableList({confirmed}) {
+function ExpandableList({confirmed, waiting=[]}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginTop:4}}>
       <button onClick={()=>setOpen(v=>!v)} style={{background:"rgba(0,0,0,0.2)",border:"none",borderRadius:20,padding:"3px 10px",color:"rgba(255,255,255,0.9)",fontSize:10,fontWeight:700,cursor:"pointer"}}>
         ✓ {confirmed.length} confirmados {open?"▲":"▼"}
       </button>
-      {open&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:6}}>{confirmed.map(p=><span key={p.id} style={{background:p.is_guest?"rgba(124,58,237,0.3)":"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 7px",fontSize:10,color:p.is_guest?"#c4b5fd":"rgba(255,255,255,0.85)",fontWeight:600}}>{p.name}{p.is_guest?" 👤":""}</span>)}</div>}
+      {open&&<div style={{marginTop:6}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:waiting.length>0?6:0}}>
+          {confirmed.map(p=><span key={p.id} style={{background:p.is_guest?"rgba(124,58,237,0.3)":"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 7px",fontSize:10,color:p.is_guest?"#c4b5fd":"rgba(255,255,255,0.85)",fontWeight:600}}>{p.name}{p.is_guest?" 👤":""}</span>)}
+        </div>
+        {waiting.length>0&&<>
+          <div style={{fontSize:9,color:"#f87171",fontWeight:700,letterSpacing:1,marginBottom:4}}>⏳ LISTA DE ESPERA</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+            {waiting.map((p,i)=><span key={p.id} style={{background:"rgba(220,38,38,0.2)",borderRadius:20,padding:"2px 7px",fontSize:10,color:"#fca5a5",fontWeight:600}}>{i+1}. {p.name}</span>)}
+          </div>
+        </>}
+      </div>}
     </div>
   );
 }
@@ -931,7 +942,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
               {confirmed.length>0&&<div style={{background:"#16241c",border:"1px solid #16a34a33",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#16a34a",flexShrink:0}}/><span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>{confirmed.length} confirmados</span></div>}
               {notYet&&notYet.length>0&&<div style={{background:"#1a1a0a",border:"1px solid #d4af3733",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#d4af37",flexShrink:0}}/><span style={{fontSize:11,color:"#fbbf24",fontWeight:700}}>{notYet.length} sem resposta</span></div>}
               {waiting.length>0&&<div style={{background:"#1a1010",border:"1px solid #dc262633",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dc2626",flexShrink:0}}/><span style={{fontSize:11,color:"#f87171",fontWeight:700}}>{waiting.length} em espera</span></div>}
-              {confirmed.length>0&&<ExpandableList confirmed={confirmed}/>}
+              {confirmed.length>0&&<ExpandableList confirmed={confirmed} waiting={waiting}/>}
             </div>
           )}
         </>
@@ -1733,6 +1744,10 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           </div>
           {/* Conquistas sempre visível */}
           <BadgesCard player={player} history={history} attendance={attendance}/>
+          {/* Gráfico presenças */}
+          <ExpandableSection icon="📈" title="As minhas presenças" subtitle="Gráfico por mês">
+            <GraficoPresencas player={player} attendance={attendance}/>
+          </ExpandableSection>
           {/* Histórico pessoal expansível */}
           <ExpandableSection icon="📋" title="Os meus jogos" subtitle="Histórico de presenças">
             <HistoricoPessoalCard player={player} attendance={attendance} history={history}/>
@@ -1740,12 +1755,14 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         </>}
         {tab==="grupo"&&<>
           <ExpandableSection icon="🏆" title="Ranking" subtitle="Classificação de presenças">
+            <GraficoRanking members={members} currentPlayer={player}/>
             <ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/>
           </ExpandableSection>
           <ExpandableSection icon="⭐" title="Hall of Fame" subtitle="MVPs da época">
             <HallOfFameMVP history={history} members={members}/>
           </ExpandableSection>
           <ExpandableSection icon="💰" title="Mealheiro" subtitle="Saldo financeiro do grupo">
+            <GraficoMealheiro history={history}/>
             <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>
           </ExpandableSection>
         </>}
@@ -1953,6 +1970,92 @@ function BadgesCard({player, history=[], attendance=[]}) {
           </div>
         ))}
       </div>}
+    </div>
+  );
+}
+
+// ── GRÁFICO MEALHEIRO ─────────────────────────────────────────────────────────
+function GraficoMealheiro({history=[]}) {
+  const jogos = history.filter(h=>h.players_count>0).slice().reverse();
+  if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
+
+  let saldo = 0;
+  const data = jogos.map(h=>{
+    saldo += Number(h.collected||0) - RENT;
+    return {
+      date: new Date(h.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"}),
+      saldo: Math.round(saldo*100)/100,
+    };
+  });
+
+  return (
+    <div style={{marginTop:8}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
+      <ResponsiveContainer width="100%" height={160}>
+        <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
+          <XAxis dataKey="date" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
+          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
+          <Line type="monotone" dataKey="saldo" stroke="#0891b2" strokeWidth={2} dot={{fill:"#0891b2",r:3}} activeDot={{r:5}}/>
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── GRÁFICO PRESENÇAS PESSOAIS ────────────────────────────────────────────────
+function GraficoPresencas({player, attendance=[]}) {
+  const myGames = attendance.filter(a=>a.player_id===player.id);
+  if(myGames.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Ainda não há jogos suficientes</div>;
+
+  // Agrupar por mês
+  const byMonth = {};
+  myGames.forEach(a=>{
+    const d = new Date(a.game_date);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    const label = d.toLocaleDateString("pt-PT",{month:"short",year:"2-digit"});
+    if(!byMonth[key]) byMonth[key]={label,jogos:0};
+    byMonth[key].jogos++;
+  });
+  const data = Object.values(byMonth).slice(-6); // últimos 6 meses
+
+  return (
+    <div style={{marginTop:8}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
+          <XAxis dataKey="label" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]}/>
+          <Bar dataKey="jogos" fill="#16a34a" radius={[4,4,0,0]}/>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── GRÁFICO RANKING ───────────────────────────────────────────────────────────
+function GraficoRanking({members=[], currentPlayer}) {
+  const data = [...members].filter(p=>!p.is_guest&&(p.total_games||0)>0)
+    .sort((a,b)=>(b.total_games||0)-(a.total_games||0))
+    .slice(0,8)
+    .map(p=>({name:p.name.split(" ")[0],jogos:p.total_games||0,isMe:p.id===currentPlayer?.id}));
+
+  if(data.length===0) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Ainda não há jogos registados</div>;
+
+  return (
+    <div style={{marginTop:8}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
+      <ResponsiveContainer width="100%" height={Math.max(140,data.length*32)}>
+        <BarChart data={data} layout="vertical" margin={{top:0,right:30,left:10,bottom:0}}>
+          <XAxis type="number" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <YAxis type="category" dataKey="name" tick={{fill:"#9ca3af",fontSize:11}} tickLine={false} axisLine={false} width={60}/>
+          <Tooltip contentStyle={{background:"#111",border:"1px solid #1f1f1f",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]}/>
+          <Bar dataKey="jogos" radius={[0,4,4,0]}>
+            {data.map((entry,i)=><Cell key={i} fill={entry.isMe?"#d4af37":"#16a34a"}/>)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -2345,6 +2448,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
   const totalDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const [guestName,setGuestName]=useState("");
+  const [guestPosition,setGuestPosition]=useState("polivalente");
   return (
     <div className="screen">
       <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
@@ -2406,7 +2510,16 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         <ExpandableCard title="👤 CONVIDAR ALGUÉM">
           {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<>
             {confirmed.length<MIN_PLAYERS&&<div className="guest-hint">⚠️ Membros têm prioridade.</div>}
-            <div className="add-guest-row"><input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName),setGuestName(""))}/><button className="btn-add" onClick={()=>{onAddGuest(guestName);setGuestName("");}}><Icon name="plus" size={16}/></button></div>
+            <div>
+              <div className="add-guest-row" style={{marginBottom:6}}>
+                <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
+                <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#16a34a":"#2a2a2a"}`,background:guestPosition==="polivalente"?"rgba(22,163,74,0.15)":"#111",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
+                <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#2a2a2a"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#111",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
+              </div>
+            </div>
             {myGuests.map(g=><div key={g.id} className="guest-row"><div className="av-guest">{g.name[0]}</div><span className="guest-row-name">{g.name}</span><span className="tag-guest">convidado</span><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}
           </>}
         </ExpandableCard>
@@ -2496,6 +2609,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [editPassId,setEditPassId]=useState(null);
   const [editPassVal,setEditPassVal]=useState("");
   const [guestName,setGuestName]=useState("");
+  const [guestPosition,setGuestPosition]=useState("polivalente");
   const [editLoc,setEditLoc]=useState(gameInfo.location);
   const [editDate,setEditDate]=useState(gameInfo.date);
   const [editTime,setEditTime]=useState(gameInfo.time);
@@ -2684,7 +2798,16 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
           <GroupCodeCard groupId={groupId}/>
           <p className="section-label" style={{marginTop:14}}><Icon name="guest" size={12}/> ADICIONAR CONVIDADO</p>
-          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<div className="add-guest-row"><input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName),setGuestName(""))}/><button className="btn-add" onClick={()=>{onAddGuest(guestName);setGuestName("");}}><Icon name="plus" size={16}/></button></div>}
+          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<div>
+              <div className="add-guest-row" style={{marginBottom:6}}>
+                <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
+                <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#16a34a":"#2a2a2a"}`,background:guestPosition==="polivalente"?"rgba(22,163,74,0.15)":"#111",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
+                <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#2a2a2a"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#111",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
+              </div>
+            </div>}
         </>}
 
         {adminTab==="dividas"&&<>

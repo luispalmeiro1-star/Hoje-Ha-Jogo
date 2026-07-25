@@ -2526,7 +2526,15 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
 
-        {/* Banner vencedor — aparece após fecho automático se não foi definido */}
+        {/* Botões rápidos Chat e Zona */}
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            💬 Chat
+          </button>
+          <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            🌍 Zona
+          </button>
+        </div>
         {history.length>0&&history[0].winner_team===null&&history[0].players_count>0&&(
           <div style={{background:"rgba(37,99,235,0.12)",border:"2px solid #2563eb",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
             <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>

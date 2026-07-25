@@ -910,17 +910,21 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
               <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>FALTAM</div>
-              <div style={{fontSize:32,fontWeight:900,color:"#d4af37",lineHeight:1}}>{cdStr}</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,color:"#d4af37",lineHeight:1,letterSpacing:2}}>{cdStr}</div>
             </div>
           </div>
           <div style={{marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <span style={{fontSize:11,color:"#4b5563",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
-              <span style={{fontSize:11,color:"#4b5563",fontWeight:700}}>{confirmed.length} / {MAX_PLAYERS}</span>
+              <span style={{fontSize:11,color:pct>=100?"#f87171":"#4b5563",fontWeight:700}}>{confirmed.length} / {MAX_PLAYERS}</span>
             </div>
             <div style={{height:6,background:"#1a1a1a",borderRadius:99,overflow:"hidden"}}>
-              <div style={{width:`${pct}%`,height:"100%",background:"#16a34a",borderRadius:99,transition:"width 0.6s"}}/>
+              <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:pct>=100?"#dc2626":"#16a34a",borderRadius:99,transition:"width 0.6s"}}/>
             </div>
+            {pct>=100&&<div style={{marginTop:8,background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.4)",borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:16}}>🔒</span>
+              <span style={{fontSize:12,fontWeight:800,color:"#f87171"}}>JOGO CHEIO — Lista de espera ativa</span>
+            </div>}
           </div>
           {isLoggedIn&&(
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>

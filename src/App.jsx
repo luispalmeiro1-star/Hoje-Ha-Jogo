@@ -2224,19 +2224,22 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
   const [newPwC,setNewPwC]=useState("");
   const [showPw,setShowPw]=useState(false);
   const [color,setColor]=useState(player.avatar_color||AVATAR_COLORS[0]);
+  const [editOpen,setEditOpen]=useState(false);
+
   return (
     <div className="screen">
       <div style={{background:"#111",padding:"14px 16px",borderBottom:"1px solid #1f1f1f"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
-          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>O MEU PERFIL</span>
+          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>PERFIL</span>
         </div>
       </div>
       <div className="body">
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:20}}>
+        {/* Avatar + nome + stats rápidas */}
+        <div style={{textAlign:"center",padding:"24px 0 20px",borderBottom:"1px solid #1a1a1a",marginBottom:16}}>
           <div style={{position:"relative",display:"inline-block",marginBottom:12}}>
-            <Avatar player={{...player,avatar_color:color}} size={72}/>
-            <label style={{position:"absolute",bottom:0,right:0,width:24,height:24,background:"#d4af37",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,border:"2px solid #0a0a0a"}}>
+            <Avatar player={{...player,avatar_color:color}} size={88}/>
+            <label style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#d4af37",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,border:"2px solid #0a0a0a"}}>
               📷
               <input type="file" accept="image/*" style={{display:"none"}} onChange={async(e)=>{
                 const file=e.target.files[0];
@@ -2245,43 +2248,79 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
                 reader.onload=async(ev)=>{
                   const dataUrl=ev.target.result;
                   await supabase.from("players").update({avatar_url:dataUrl}).eq("id",player.id);
-                  showToast("Foto atualizada ✓");
                   window.location.reload();
                 };
                 reader.readAsDataURL(file);
               }}/>
             </label>
           </div>
-          <p className="section-label" style={{marginBottom:8}}>COR DO AVATAR</p>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1,marginBottom:2}}>{player.name}</div>
+          <div style={{fontSize:11,color:"#6b7280",marginBottom:16}}>{player.is_admin?"⚡ Admin":player.position==="GR"?"🧤 Guarda-Redes":"⚽ Polivalente"}</div>
+          {/* Stats rápidas */}
+          <div style={{display:"flex",justifyContent:"center",gap:24}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#4ade80",lineHeight:1}}>{player.total_games||0}</div>
+              <div style={{fontSize:10,color:"#6b7280",fontWeight:700,letterSpacing:1}}>JOGOS</div>
+            </div>
+            <div style={{width:1,background:"#1f1f1f"}}/>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f59e0b",lineHeight:1}}>{player.current_streak||0}</div>
+              <div style={{fontSize:10,color:"#6b7280",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
+            </div>
+            <div style={{width:1,background:"#1f1f1f"}}/>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#60a5fa",lineHeight:1}}>{player.best_streak||0}</div>
+              <div style={{fontSize:10,color:"#6b7280",fontWeight:700,letterSpacing:1}}>RECORDE</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Cor do avatar */}
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>COR DO AVATAR</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {AVATAR_COLORS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
         </div>
-        <div style={{background:"#16241c",border:"2px solid #23362a",borderRadius:14,padding:16,display:"flex",flexDirection:"column",gap:10}}>
-          <label className="field-label">Nome</label>
-          <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
-          <label className="field-label">Telemóvel</label>
-          <input className="text-input" type="tel" value={newPhone} onChange={e=>setNewPhone(e.target.value)} placeholder="9XX XXX XXX"/>
-          <label className="field-label">Nova password</label>
-          <div style={{display:"flex",gap:8}}>
-            <input className="text-input" type={showPw?"text":"password"} value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Nova password..."/>
-            <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={15}/></button>
-          </div>
-          <label className="field-label">Confirmar password</label>
-          <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
-          <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{if(newPw&&newPw!==newPwC){alert("As passwords não coincidem!");return;}onUpdateProfile(newName,newPw,color,newPhone);setTimeout(()=>onLogout(),800);}}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
-          <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
+
+        {/* Editar perfil expansível */}
+        <div style={{marginBottom:12}}>
+          <button onClick={()=>setEditOpen(v=>!v)} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:13,fontWeight:700,color:"white"}}>✏️ Editar perfil</span>
+            <span style={{fontSize:12,color:"#4b5563"}}>{editOpen?"▲":"▼"}</span>
+          </button>
+          {editOpen&&<div style={{background:"#111",border:"1px solid #1f1f1f",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            <label className="field-label">Nome</label>
+            <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
+            <label className="field-label">Telemóvel</label>
+            <input className="text-input" type="tel" value={newPhone} onChange={e=>setNewPhone(e.target.value)} placeholder="9XX XXX XXX"/>
+            <label className="field-label">Nova password</label>
+            <div style={{display:"flex",gap:8}}>
+              <input className="text-input" type={showPw?"text":"password"} value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Nova password..."/>
+              <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={15}/></button>
+            </div>
+            <label className="field-label">Confirmar password</label>
+            <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
+            <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{if(newPw&&newPw!==newPwC){alert("As passwords não coincidem!");return;}onUpdateProfile(newName,newPw,color,newPhone);setTimeout(()=>onLogout(),800);}}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
+            <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
+          </div>}
         </div>
-        <button onClick={onMudarGrupo} style={{width:"100%",marginTop:14,padding:"11px",borderRadius:10,border:"2px solid #1f1f1f",background:"transparent",color:"#9ca3af",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-          <Icon name="people" size={14}/> OS MEUS GRUPOS
-        </button>
-        <button onClick={onEntrarCodigo} style={{width:"100%",marginTop:8,padding:"11px",borderRadius:10,border:"2px solid #1f1f1f",background:"transparent",color:"#9ca3af",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-          <Icon name="key" size={14}/> ENTRAR NOUTRO GRUPO
-        </button>
-        <button onClick={onSwitchAccount} style={{width:"100%",marginTop:8,padding:"11px",borderRadius:10,border:"2px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-          <Icon name="logout" size={14}/> TROCAR DE CONTA
-        </button>
+
+        {/* Código do grupo */}
         <GroupCodeCard groupId={activeGroupId||player.group_id}/>
+
+        {/* Ações */}
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
+          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #1f1f1f",background:"#111",color:"#9ca3af",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <Icon name="people" size={14}/> Os meus grupos
+          </button>
+          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #1f1f1f",background:"#111",color:"#9ca3af",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <Icon name="key" size={14}/> Entrar noutro grupo
+          </button>
+          <button onClick={onSwitchAccount} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <Icon name="logout" size={14}/> Trocar de conta
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2299,7 +2338,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   return (
     <div className="screen">
       <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}}
-        extraRight={<button className="field-nav-btn" onClick={()=>setView("chat")}><Icon name="chat" size={13}/></button>}
+        
       />
       <div className="body">
         <div className="topbar">
@@ -2494,7 +2533,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   return (
     <div className="screen">
       <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}}
-        extraRight={<button className="field-nav-btn" onClick={()=>setView("chat")}><Icon name="chat" size={13}/></button>}
+        
       />
       <div className="body">
         <div className="topbar">
@@ -2527,12 +2566,20 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
 
         {/* Botões rápidos Chat e Zona */}
-        <div style={{display:"flex",gap:8,marginBottom:14}}>
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
           <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             💬 Chat
           </button>
           <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona
+          </button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <button onClick={()=>setAdminTab("dividas")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:debts.length>0?"#f87171":"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            💸 Dívidas{debts.length>0?` (${debts.length})`:""}
+          </button>
+          <button onClick={()=>setAdminTab("historico")} style={{flex:1,padding:"10px",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            📋 Histórico
           </button>
         </div>
         {history.length>0&&history[0].winner_team===null&&history[0].players_count>0&&(
@@ -2555,7 +2602,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
 
         <div className="tabs">
-          {[["jogo","⚽ Jogo"],["equipas","🎲 Equipas"],["dividas","💸 Dívidas"],["historico","📋 Histórico"],["jogadores","👥 Jogadores"],["gerir","⚙️ Gerir"]].map(([k,l])=>(
+          {[["jogo","⚽ Jogo"],["equipas","🎲 Equipas"],["jogadores","👥 Jogadores"],["gerir","⚙️ Gerir"]].map(([k,l])=>(
             <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)}>{l}</button>
           ))}
         </div>

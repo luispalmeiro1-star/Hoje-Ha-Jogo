@@ -2705,7 +2705,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <div style={{background:"rgba(37,99,235,0.12)",border:"2px solid #2563eb",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
             <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
             <div style={{display:"flex",gap:8}}>
-              {["A","B","C"].map(t=>(
+              {["A","B","C"].slice(0,confirmed.length>=15||maxPlayers>=15?3:2).map(t=>(
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",history[0].id);
                   showToast(`Equipa ${t} registada como vencedora ✓`);
@@ -3052,7 +3052,7 @@ function HistoricoCard({h, groupId, showToast, reloadAll}) {
         {!h.winner_team&&h.players_count>0&&(
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
             <span style={{fontSize:11,color:"#6b7280"}}>Vencedor:</span>
-            {["A","B","C"].map(t=>(
+            {["A","B","C"].slice(0,h.players_count>=15?3:2).map(t=>(
               <button key={t} onClick={async()=>{
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
                 showToast(`Equipa ${t} registada ✓`);

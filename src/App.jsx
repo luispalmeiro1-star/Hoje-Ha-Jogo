@@ -485,15 +485,16 @@ export default function App() {
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
-    if(!inviter||confirmed.length>=maxPlayers){showToast("Jogo cheio!","err");return;}
+    if(!inviter) return;
     const gid=activeGroupId||null;
-    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select().single();
+    const isFull = confirmed.length>=maxPlayers;
+    const guestStatus = isFull ? "wait" : "in";
+    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select().single();
     if(inserted){
-      // Registar em player_groups com status "in"
-      await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:"in",paid:false,confirmed_at:Date.now()});
-      await reassignAllTeams([...players,inserted]);
+      await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
+      if(!isFull) await reassignAllTeams([...players,inserted]);
     }
-    showToast(`${guestName} adicionado! 🎉`);
+    showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
   const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
@@ -2503,7 +2504,8 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
         </ExpandableCard>
         <ExpandableCard title="👤 CONVIDAR ALGUÉM">
-          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<>
+          {spotsLeft===0&&<div className="guest-locked">🔒 Jogo cheio — convidado vai para lista de espera</div>}
+          <>
             {confirmed.length<MIN_PLAYERS&&<div className="guest-hint">⚠️ Membros têm prioridade.</div>}
             <div>
               <div className="add-guest-row" style={{marginBottom:6}}>
@@ -2516,7 +2518,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
               </div>
             </div>
             {myGuests.map(g=><div key={g.id} className="guest-row"><div className="av-guest">{g.name[0]}</div><span className="guest-row-name">{g.name}</span><span className="tag-guest">convidado</span><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}
-          </>}
+          </>
         </ExpandableCard>
         <div style={{height:70}}/>
       </div>

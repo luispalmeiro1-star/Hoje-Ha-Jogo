@@ -1008,7 +1008,7 @@ function LandingView({setView}) {
           </p>
         </div>
 
-        <button onClick={()=>setView("login")} style={{marginTop:12,background:"transparent",border:"none",color:"#4b5563",fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setView("login")} style={{marginTop:12,background:"transparent",border:"none",color:"#4ade80",fontSize:12,cursor:"pointer",fontWeight:700}}>
           Já tenho conta → Entrar
         </button>
       </div>
@@ -2763,8 +2763,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         {adminTab==="jogo"&&<>
           <ExpandableConfirmed confirmed={confirmed} onTogglePaid={onTogglePaid} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {/* Tesoureiro */}
-          <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"12px 14px",marginTop:8}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>💰 TESOUREIRO DO JOGO</div>
+          <ExpandableSection icon="💰" title="Tesoureiro" subtitle={treasurerName?`${treasurerName} é o tesoureiro`:"Nomeia o tesoureiro do jogo"}>
             {treasurerName
               ?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2790,10 +2789,24 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
                 </div>
               </div>
             }
-          </div>
+          </ExpandableSection>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#6b7280"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
+          {/* Convidar */}
+          <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>
+            {spotsLeft===0&&<div className="guest-locked" style={{marginBottom:8}}>🔒 Jogo cheio — convidado vai para lista de espera</div>}
+            <div>
+              <div className="add-guest-row" style={{marginBottom:6}}>
+                <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
+                <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#16a34a":"#2a2a2a"}`,background:guestPosition==="polivalente"?"rgba(22,163,74,0.15)":"#111",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
+                <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#2a2a2a"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#111",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
+              </div>
+            </div>
+          </ExpandableSection>
           {confirmed.length>=MIN_PLAYERS&&<MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>}
           {!showReset
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
@@ -2826,18 +2839,6 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </>}
           <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
           <GroupCodeCard groupId={groupId}/>
-          <p className="section-label" style={{marginTop:14}}><Icon name="guest" size={12}/> ADICIONAR CONVIDADO</p>
-          {spotsLeft===0&&<div className="guest-locked">🔒 Jogo cheio — convidado vai para lista de espera</div>}
-          <div>
-              <div className="add-guest-row" style={{marginBottom:6}}>
-                <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
-                <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#16a34a":"#2a2a2a"}`,background:guestPosition==="polivalente"?"rgba(22,163,74,0.15)":"#111",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
-                <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#2a2a2a"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#111",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
-              </div>
-            </div>
         </>}
 
         {adminTab==="dividas"&&<>

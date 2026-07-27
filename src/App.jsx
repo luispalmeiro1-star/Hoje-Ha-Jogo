@@ -2521,7 +2521,19 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           const gameEnd=new Date(gameStart.getTime()+90*60000);
           const canVote=new Date()>=gameEnd;
           if(!canVote) return null;
-          return <ExpandableCard title="⭐ MVP DA SEMANA"><MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/></ExpandableCard>;
+          const myVote = mvpVotes.find(v=>v.voter_id===player.id&&v.game_date===gameInfo.date);
+          return (
+            <div style={{background:"linear-gradient(135deg,rgba(212,175,55,0.15),rgba(212,175,55,0.05))",border:"2px solid rgba(212,175,55,0.4)",borderRadius:14,padding:14,marginBottom:8,animation:"pulse-gold 2s ease-in-out infinite"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                <span style={{fontSize:22}}>⭐</span>
+                <div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#d4af37"}}>{myVote?"Já votaste!":"Vota no MVP do jogo!"}</div>
+                  <div style={{fontSize:11,color:"#6b7280"}}>{myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?"}</div>
+                </div>
+              </div>
+              <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>
+            </div>
+          );
         })()}
         <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`}>
           <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
@@ -3061,6 +3073,13 @@ function HistoricoCard({h, groupId, showToast, reloadAll}) {
           {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20}}>🏆 Equipa {h.winner_team}</span>}
           {h.treasurer_name&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20}}>💰 {h.treasurer_name}</span>}
         </div>
+        {h.mvp_name&&<div style={{background:"linear-gradient(135deg,rgba(212,175,55,0.2),rgba(212,175,55,0.05))",border:"1px solid rgba(212,175,55,0.3)",borderRadius:10,padding:"8px 12px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:18}}>⭐</span>
+          <div>
+            <div style={{fontSize:10,color:"#d4af37",fontWeight:700,letterSpacing:1}}>MVP DO JOGO</div>
+            <div style={{fontSize:14,fontWeight:800,color:"white"}}>{h.mvp_name}</div>
+          </div>
+        </div>}
         <div style={{display:"flex",gap:20,marginBottom:h.winner_team?0:10}}>
           <div>
             <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>JOGADORES</div>
@@ -3507,7 +3526,7 @@ function GroupCodeCard({groupId}) {
 function getCss() {
   return `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&display=swap');
-@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0.3)}50%{box-shadow:0 0 0 8px rgba(212,175,55,0)}}@keyframes spin{to{transform:rotate(360deg);}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0a0a0a;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}

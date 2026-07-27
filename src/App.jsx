@@ -2795,7 +2795,8 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
           <GroupCodeCard groupId={groupId}/>
           <p className="section-label" style={{marginTop:14}}><Icon name="guest" size={12}/> ADICIONAR CONVIDADO</p>
-          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<div>
+          {spotsLeft===0&&<div className="guest-locked">🔒 Jogo cheio — convidado vai para lista de espera</div>}
+          <div>
               <div className="add-guest-row" style={{marginBottom:6}}>
                 <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
                 <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
@@ -2804,7 +2805,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
                 <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#16a34a":"#2a2a2a"}`,background:guestPosition==="polivalente"?"rgba(22,163,74,0.15)":"#111",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
                 <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#2a2a2a"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#111",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
               </div>
-            </div>}
+            </div>
         </>}
 
         {adminTab==="dividas"&&<>

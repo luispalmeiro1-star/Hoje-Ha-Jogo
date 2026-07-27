@@ -453,6 +453,30 @@ export default function App() {
     else setView("entrar-convite");
   };
 
+  const leaveGroup = async(groupId)=>{
+    if(!currentUser) return;
+    await supabase.from("player_groups").delete().eq("player_id",currentUser.id).eq("group_id",groupId);
+    const groups = await loadMyGroups(currentUser.id);
+    setMyGroups(groups);
+    showToast("Saíste do grupo ✓");
+    if(groups.length===0) handleLogout();
+  };
+
+  const deleteGroup = async(groupId)=>{
+    await supabase.from("player_groups").delete().eq("group_id",groupId);
+    await supabase.from("game_info").delete().eq("group_id",groupId);
+    await supabase.from("game_history").delete().eq("group_id",groupId);
+    await supabase.from("debts").delete().eq("group_id",groupId);
+    await supabase.from("chat_messages").delete().eq("group_id",groupId);
+    await supabase.from("mvp_votes").delete().eq("group_id",groupId);
+    await supabase.from("game_attendance").delete().eq("group_id",groupId);
+    await supabase.from("groups").delete().eq("id",groupId);
+    const groups = await loadMyGroups(currentUser.id);
+    setMyGroups(groups);
+    showToast("Grupo apagado ✓");
+    if(groups.length===0) handleLogout();
+  };
+
   const selectGroup = async(groupId)=>{
     const gid = Number(groupId);
     localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
@@ -640,7 +664,7 @@ export default function App() {
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
-      {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
+      {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser} onLeave={leaveGroup} onDelete={deleteGroup}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
       {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}
       {view==="entrar-convite" && <EntrarConviteView setView={setView} showToast={showToast} currentUser={currentUser} onGrupoAdicionado={async()=>{
@@ -2954,7 +2978,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
 
 // ── MEUS GRUPOS VIEW ─────────────────────────────────────────────────────────
-function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCodigo, currentUser}) {
+function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCodigo, currentUser, onLeave, onDelete}) {
   const [loading, setLoading] = useState(null);
   return (
     <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
@@ -2980,7 +3004,7 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
           {groups.map((pg,i)=>{
             const group=pg.groups||{id:pg.group_id,name:"Grupo "+pg.group_id,location:"",time:""};
             return (
-              <GroupCard key={i} pg={pg} group={group} loading={loading} onSelect={onSelect} setLoading={setLoading}/>
+              <GroupCard key={i} pg={pg} group={group} loading={loading} onSelect={onSelect} setLoading={setLoading} onLeave={onLeave} onDelete={onDelete}/>
             );
           })}
         </div>
@@ -3303,12 +3327,14 @@ function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupI
 }
 
 // ── GROUP CARD (MEUS GRUPOS) ──────────────────────────────────────────────────
-function GroupCard({pg, group, loading, onSelect, setLoading}) {
+function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}) {
   const [status, setStatus] = useState(null);
+  const [showOptions, setShowOptions] = useState(false);
+  const [showNewAdmin, setShowNewAdmin] = useState(false);
+  const [members, setMembers] = useState([]);
 
   useEffect(()=>{
     if(!pg.group_id) return;
-    // Buscar estado do grupo em tempo real
     (async()=>{
       const{data:gi}=await supabase.from("game_info").select("date,time").eq("group_id",pg.group_id).maybeSingle();
       if(!gi) return;
@@ -3327,25 +3353,82 @@ function GroupCard({pg, group, loading, onSelect, setLoading}) {
     })();
   },[pg.group_id]);
 
+  const handleLeaveAdmin = async() => {
+    // Buscar membros para nomear novo admin
+    const{data}=await supabase.from("player_groups").select("player_id,players(id,name)").eq("group_id",pg.group_id).eq("is_admin",false).neq("player_id",pg.player_id);
+    setMembers((data||[]).map(d=>d.players).filter(Boolean));
+    setShowNewAdmin(true);
+  };
+
+  const handleNewAdmin = async(newAdminId) => {
+    // Promover novo admin
+    await supabase.from("player_groups").update({is_admin:true}).eq("player_id",newAdminId).eq("group_id",pg.group_id);
+    await supabase.from("players").update({is_admin:true}).eq("id",newAdminId);
+    // Remover admin atual
+    if(onLeave) await onLeave(pg.group_id);
+  };
+
   return (
-    <button onClick={async()=>{ setLoading(pg.group_id); await onSelect(pg.group_id); setLoading(null); }} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-      <div style={{width:44,height:44,background:"rgba(22,163,74,0.15)",border:"1px solid #16a34a33",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>
-        ⚽
-      </div>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:3}}>{group.name}</div>
-        <div style={{color:"#4b5563",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-          {group.time&&<span>🕐 {group.time}</span>}
-          {group.location&&<span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>📍 {group.location}</span>}
+    <div style={{background:"#111",border:"1px solid #1f1f1f",borderRadius:14,overflow:"hidden"}}>
+      <button onClick={async()=>{ setLoading(pg.group_id); await onSelect(pg.group_id); setLoading(null); }} style={{width:"100%",background:"transparent",border:"none",padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+        <div style={{width:44,height:44,background:"rgba(22,163,74,0.15)",border:"1px solid #16a34a33",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>
+          ⚽
         </div>
-        {status&&<div style={{marginTop:4,fontSize:11,color:"#9ca3af"}}>{status.msg} · {status.confirmed} confirmados</div>}
-        {pg.is_admin&&<div style={{marginTop:4}}><span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>Admin</span></div>}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:3}}>{group.name}</div>
+          <div style={{color:"#4b5563",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+            {group.time&&<span>🕐 {group.time}</span>}
+            {group.location&&<span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>📍 {group.location}</span>}
+          </div>
+          {status&&<div style={{marginTop:4,fontSize:11,color:"#9ca3af"}}>{status.msg} · {status.confirmed} confirmados</div>}
+          {pg.is_admin&&<div style={{marginTop:4}}><span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>Admin</span></div>}
+        </div>
+        {loading===pg.group_id
+          ?<div style={{width:20,height:20,border:"2px solid #16a34a",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
+          :<Icon name="right" size={16}/>
+        }
+      </button>
+
+      {/* Opções de sair/apagar */}
+      <div style={{borderTop:"1px solid #1a1a1a",padding:"8px 16px",display:"flex",gap:8}}>
+        {pg.is_admin
+          ?<>
+            <button onClick={()=>setShowOptions(v=>!v)} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid #2a2a2a",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer",fontWeight:600}}>
+              ⚙️ Gerir grupo
+            </button>
+          </>
+          :<button onClick={()=>{ if(window.confirm("Tens a certeza que queres sair deste grupo?")) onLeave&&onLeave(pg.group_id); }} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:11,cursor:"pointer",fontWeight:600}}>
+            🚪 Sair do grupo
+          </button>
+        }
       </div>
-      {loading===pg.group_id
-        ?<div style={{width:20,height:20,border:"2px solid #16a34a",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
-        :<Icon name="right" size={16}/>
-      }
-    </button>
+
+      {/* Opções admin */}
+      {showOptions&&pg.is_admin&&<div style={{borderTop:"1px solid #1a1a1a",padding:"10px 16px",display:"flex",flexDirection:"column",gap:6}}>
+        <button onClick={handleLeaveAdmin} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:600}}>
+          🚪 Sair e nomear novo admin
+        </button>
+        <button onClick={()=>{ if(window.confirm("Tens a certeza que queres APAGAR este grupo? Esta ação é irreversível!")) onDelete&&onDelete(pg.group_id); }} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:700}}>
+          🗑️ Apagar grupo
+        </button>
+      </div>}
+
+      {/* Nomear novo admin */}
+      {showNewAdmin&&<div style={{borderTop:"1px solid #1a1a1a",padding:"12px 16px"}}>
+        <div style={{fontSize:12,fontWeight:700,color:"white",marginBottom:8}}>Escolhe o novo admin:</div>
+        {members.length===0
+          ?<div style={{fontSize:12,color:"#6b7280"}}>Não há outros membros no grupo.</div>
+          :<div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {members.map(m=>(
+              <button key={m.id} onClick={()=>handleNewAdmin(m.id)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:12,cursor:"pointer",fontWeight:700,textAlign:"left"}}>
+                👤 {m.name}
+              </button>
+            ))}
+          </div>
+        }
+        <button onClick={()=>setShowNewAdmin(false)} style={{width:"100%",marginTop:8,padding:"6px",borderRadius:8,border:"1px solid #2a2a2a",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer"}}>Cancelar</button>
+      </div>}
+    </div>
   );
 }
 

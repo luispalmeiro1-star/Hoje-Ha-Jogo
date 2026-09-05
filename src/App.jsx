@@ -47,6 +47,8 @@ async function callLogin(username, password, group_id=null) {
   return await res.json();
 }
 
+const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by_id,confirmed_at,avatar_color,total_games,total_paid,position,team,current_streak,best_streak,username,phone,group_id,available,zone,avatar_url,availability_days,availability_notes,zone_contact,email,google_id";
+
 const MAX_PLAYERS = 15;
 const MIN_PLAYERS = 10;
 const COST = 3;
@@ -208,7 +210,7 @@ export default function App() {
     const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin").eq("group_id",gid);
     if(!pg||pg.length===0){ setPlayers([]); return; }
     const pids=pg.map(x=>x.player_id);
-    const{data:playersData}=await supabase.from("players").select("*").in("id",pids).order("id");
+    const{data:playersData}=await supabase.from("players").select(PLAYER_COLS).in("id",pids).order("id");
     if(!playersData) return;
     // Merge: dados do player + status do grupo
     const merged=playersData.map(p=>{
@@ -255,7 +257,7 @@ export default function App() {
           if(grpCheck){
             await reloadAll(gid);
             setActiveGroupId(gid);
-            const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
+            const{data:playerData}=await supabase.from("players").select(PLAYER_COLS).eq("id",saved.playerId).maybeSingle();
             if(playerData){
               setCurrentUser(playerData);
               if(localStorage.getItem("hhb_url_code")){
@@ -270,7 +272,7 @@ export default function App() {
           localStorage.removeItem("hhb_session");
         } else if(saved?.playerId){
           const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",saved.playerId);
-          const{data:playerData}=await supabase.from("players").select("*").eq("id",saved.playerId).maybeSingle();
+          const{data:playerData}=await supabase.from("players").select(PLAYER_COLS).eq("id",saved.playerId).maybeSingle();
           if(pgRaw&&pgRaw.length>0&&playerData){
             const gids=pgRaw.map(x=>Number(x.group_id));
             const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
@@ -358,71 +360,9 @@ export default function App() {
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
 
-  // Fecho automático 3h30 após o jogo
-  useEffect(()=>{
-    if(!gameInfo.date||!gameInfo.time||!currentUser||!activeGroupId) return;
-    const [gy,gm,gd]=gameInfo.date.split("-").map(Number);
-    const [gh,gmin]=gameInfo.time.split(":").map(Number);
-    const gameEnd=new Date(gy,gm-1,gd,gh,gmin);
-    gameEnd.setMinutes(gameEnd.getMinutes()+210);
-    const msUntilClose=gameEnd-new Date();
-    if(msUntilClose<=0) return;
-    const groupId=activeGroupId;
-    const gDate=gameInfo.date;
-    const gCost=gameInfo.cost_per_player||COST;
-    const gId=gameInfo.id;
-    const timer=setTimeout(async()=>{
-      // Buscar players via player_groups (status por grupo)
-      const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid,is_admin").eq("group_id",groupId);
-      if(!pgRows) return;
-      const pids=pgRows.map(x=>x.player_id);
-      const{data:allPlayers}=await supabase.from("players").select("*").in("id",pids);
-      if(!allPlayers) return;
-      const freshPlayers=allPlayers.map(p=>{
-        const pg=pgRows.find(x=>x.player_id===p.id);
-        return {...p,status:pg?.status||"out",paid:pg?.paid||false};
-      });
-      const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
-      const freshMembers=freshPlayers.filter(p=>!p.is_guest);
-      for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
-        await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gCost,description:`Jogo de ${gDate}`,group_id:groupId});
-      for(const p of freshConfirmed.filter(p=>!p.paid&&p.is_guest)){
-        const inviter=freshPlayers.find(m=>m.id===p.invited_by_id);
-        if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gCost,description:`Jogo de ${gDate} — convidado ${p.name}`,group_id:groupId});
-      }
-      for(const p of freshConfirmed.filter(p=>!p.is_guest))
-        await supabase.from("game_attendance").insert({game_date:gDate,player_id:p.id,player_name:p.name,group_id:groupId});
-      for(const p of freshConfirmed.filter(p=>!p.is_guest)){
-        const ns=(p.current_streak||0)+1;
-        await supabase.from("players").update({total_games:(p.total_games||0)+1,total_paid:(p.total_paid||0)+(p.paid?gCost:0),current_streak:ns,best_streak:Math.max(p.best_streak||0,ns)}).eq("id",p.id);
-      }
-      for(const p of freshMembers.filter(m=>!freshConfirmed.find(c=>c.id===m.id)))
-        await supabase.from("players").update({current_streak:0}).eq("id",p.id);
-      const{data:votes}=await supabase.from("mvp_votes").select("*").eq("game_date",gDate).eq("group_id",groupId);
-      let mvpName=null;
-      if(votes&&votes.length>0){const counts={};votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null;}
-      const collected=freshConfirmed.filter(p=>p.paid).length*gCost;
-      if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gDate,players_count:freshConfirmed.length,collected,winner_team:null,mvp_name:mvpName,group_id:groupId});
-      // Remover convidados
-      const guestIds=freshPlayers.filter(p=>p.is_guest).map(p=>p.id);
-      if(guestIds.length>0){
-        await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",groupId);
-        await supabase.from("players").delete().in("id",guestIds);
-      }
-      // Reset status em player_groups
-      await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("group_id",groupId);
-      const{data:grp}=await supabase.from("groups").select("game_days").eq("id",groupId).maybeSingle();
-      const gameDays=(grp?.game_days||[3]).map(Number).sort((a,b)=>a-b);
-      const now2=new Date(); let nextDate=null;
-      for(let i=1;i<=14;i++){const d=new Date(now2);d.setDate(now2.getDate()+i);if(gameDays.includes(d.getDay())){nextDate=d.toISOString().split("T")[0];break;}}
-      if(!nextDate){const fb=new Date(now2);fb.setDate(now2.getDate()+7);nextDate=fb.toISOString().split("T")[0];}
-      await supabase.from("game_info").update({date:nextDate}).eq("id",gId);
-      // Notificações automáticas após fecho
-      await supabase.functions.invoke("send-notification",{body:{title:"🏆 Vota no MVP!",message:"O jogo fechou! Entra na app e vota no melhor jogador de hoje.",url:"https://hojehajogo.pt"}});
-      await reloadAll(groupId);
-    }, msUntilClose);
-    return ()=>clearTimeout(timer);
-  },[gameInfo.date, gameInfo.time, currentUser?.id, activeGroupId]);
+  // Fecho automático do jogo — passou a correr no servidor (Edge Function "close-finished-games"
+  // agendada via cron), em vez de depender de alguém ter a app aberta na hora certa. A subscrição
+  // realtime a "game_info" já existente acima trata de atualizar o ecrã assim que o jogo fecha.
 
   const members   = players.filter(p=>!p.is_guest);
   const guests    = players.filter(p=>p.is_guest);
@@ -626,7 +566,7 @@ export default function App() {
     // Buscar confirmados diretamente da BD para garantir dados frescos
     const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid).eq("status","in");
     const pids=(pgRows||[]).map(x=>x.player_id);
-    const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select("*").in("id",pids):{data:[]};
+    const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select(PLAYER_COLS).in("id",pids):{data:[]};
     const freshPlayers=(freshAllPlayers||[]).map(p=>{
       const pg=(pgRows||[]).find(x=>x.player_id===p.id);
       return {...p,status:pg?.status||"out",paid:pg?.paid||false};
@@ -1308,7 +1248,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     if(!createdGroup) return;
     setLoading(true);
     try {
-      const{data:player}=await supabase.from("players").select("*").eq("username",createdGroup.adminUsername).eq("group_id",createdGroup.id).single();
+      const{data:player}=await supabase.from("players").select(PLAYER_COLS).eq("username",createdGroup.adminUsername).eq("group_id",createdGroup.id).single();
       if(!player){ showToast("Erro ao entrar. Faz login manualmente.","err"); setLoading(false); return; }
       // Guardar sessão + código para mostrar após reload
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:player.group_id}));

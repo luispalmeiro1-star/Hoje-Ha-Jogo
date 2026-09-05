@@ -9,6 +9,16 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_63hRr
 const REGISTER_URL = `${SUPABASE_URL}/functions/v1/smooth-processor`;
 const LOGIN_URL = `${SUPABASE_URL}/functions/v1/auth-login`;
 const VERIFY_URL = `${SUPABASE_URL}/functions/v1/verify-invite`;
+const GOOGLE_URL = `${SUPABASE_URL}/functions/v1/auth-google`;
+
+async function callGoogleAuth(access_token) {
+  const res = await fetch(GOOGLE_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+    body: JSON.stringify({access_token})
+  });
+  return await res.json();
+}
 
 async function callVerifyInvite(code) {
   const res = await fetch(VERIFY_URL, {
@@ -279,6 +289,42 @@ export default function App() {
         }
       } catch(e){ console.error("Session restore error:",e); localStorage.removeItem("hhb_session"); }
       finally{ setLoading(false); }
+      if(!handled){
+        try{
+          const{data:{session}}=await supabase.auth.getSession();
+          if(session?.access_token){
+            const gres=await callGoogleAuth(session.access_token);
+            await supabase.auth.signOut();
+            const p=gres?.player||null;
+            if(p){
+              setCurrentUser(p);
+              localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:p.group_id||null}));
+              if(localStorage.getItem("hhb_url_code")){
+                setView("entrar-convite");
+              } else if(p.group_id){
+                await reloadAll(p.group_id);
+                setActiveGroupId(p.group_id);
+                setView(p.is_admin?"admin":"player");
+              } else {
+                const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",p.id);
+                if(pgRaw&&pgRaw.length>0){
+                  const gids=pgRaw.map(x=>Number(x.group_id));
+                  const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
+                  const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
+                  setMyGroups(enriched);
+                  setView("meus-grupos");
+                } else {
+                  setView("landing");
+                  showToast("Conta criada com o Google! Fala com o administrador do teu grupo para te adicionar.");
+                }
+              }
+              handled=true;
+            } else if(gres?.error){
+              showToast(gres.error,"err");
+            }
+          }
+        }catch(e){ console.error("Google auth bridge error:",e); }
+      }
       if(!handled){
         if(localStorage.getItem("hhb_url_code")){
           setView("entrar-convite");
@@ -1066,6 +1112,7 @@ function LoginView({onLogin, showToast, setView}) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [loading, setLoading]   = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async() => {
     if(!username.trim()||!password.trim()) return;
@@ -1073,6 +1120,12 @@ function LoginView({onLogin, showToast, setView}) {
     const ok = await onLogin(username, password);
     setLoading(false);
     if(!ok){ showToast("Utilizador ou password incorretos!","err"); setPassword(""); }
+  };
+
+  const handleGoogle = async() => {
+    setGoogleLoading(true);
+    const{error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
+    if(error){ showToast("Erro ao ligar ao Google","err"); setGoogleLoading(false); }
   };
 
   return (
@@ -1098,6 +1151,15 @@ function LoginView({onLogin, showToast, setView}) {
         </div>
         <button className="btn-big btn-green" style={{marginBottom:0,marginTop:4}} onClick={handleSubmit} disabled={loading}>
           {loading?"A entrar...":"ENTRAR →"}
+        </button>
+        <div style={{display:"flex",alignItems:"center",gap:10,margin:"2px 0"}}>
+          <div style={{flex:1,height:1,background:"#1f1f1f"}}/>
+          <span style={{color:"#4b5563",fontSize:11}}>ou</span>
+          <div style={{flex:1,height:1,background:"#1f1f1f"}}/>
+        </div>
+        <button type="button" onClick={handleGoogle} disabled={googleLoading} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#fff",border:"none",borderRadius:12,padding:"13px",color:"#111",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+          {googleLoading?"A ligar...":"Continuar com Google"}
         </button>
       </div>
       <button onClick={()=>setView("landing")} style={{marginTop:20,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>

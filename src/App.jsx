@@ -1084,7 +1084,7 @@ function LandingView({setView}) {
                 <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:10,marginBottom:9}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
-                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>Quarta-feira, 5 de Agosto</div>
+                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>Quinta-feira, 6 de Agosto</div>
                       <div style={{fontSize:8,color:"#8a9080",marginTop:3,lineHeight:1.3}}>23:30 · Pavilhão Municipal</div>
                     </div>
                     <div style={{textAlign:"right"}}>
@@ -1097,7 +1097,7 @@ function LandingView({setView}) {
                   </div>
                 </div>
                 <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:8}}>
-                  <div style={{fontSize:8,color:"#565c4d",textAlign:"center"}}>Faltam 4 vagas para o jogo de quarta</div>
+                  <div style={{fontSize:8,color:"#565c4d",textAlign:"center"}}>Faltam 4 vagas para o jogo de quinta</div>
                   <div style={{background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:11,textAlign:"center",padding:11,fontSize:10,fontWeight:800,letterSpacing:0.3,color:"#04240f"}}>✓ CONFIRMAR PRESENÇA</div>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-around",marginTop:9,paddingTop:9,borderTop:"1px solid #23271b"}}>

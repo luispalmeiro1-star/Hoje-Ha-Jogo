@@ -1306,7 +1306,8 @@ function CriarContaView({setView, showToast}) {
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
         <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
-        <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+        <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
+        <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
         <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta"}</button>
       </div>
     </div>
@@ -1451,7 +1452,8 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
-          <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+          <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
+          <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
           <button className="btn-big" style={greenBtn} onClick={handleCreate} disabled={loading}>{loading?"A criar grupo...":"🚀 Criar grupo"}</button>
         </>}
       </div>
@@ -1616,7 +1618,8 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
-          <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+          <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
+          <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
           <button className="btn-big" style={greenBtn} onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
         </>}
 

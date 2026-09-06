@@ -714,7 +714,7 @@ export default function App() {
   const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName};
 
   if(loading) return (
-    <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+    <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
       <style>{getCss()}</style>
       <div style={{fontSize:48}}>⚽</div>
       <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"white",letterSpacing:2}}>HOJE HÁ JOGO</div>
@@ -723,7 +723,7 @@ export default function App() {
   );
 
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
@@ -864,14 +864,14 @@ function HallOfFameMVP({history=[], members=[]}) {
 }
 
 // ── ROTATING HIGHLIGHTS ──────────────────────────────────────────────────────
-function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo}) {
+function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo, maxPlayers=15}) {
   const [idx, setIdx] = useState(0);
   const highlights = [];
   if(history.length>0&&history[0].mvp_name) highlights.push({icon:"⭐",text:`${history[0].mvp_name} foi o MVP do último jogo!`});
   if(history.length>0&&history[0].winner_team) highlights.push({icon:"🏆",text:`Equipa ${history[0].winner_team} venceu o último jogo!`});
   const topPlayer=[...members].sort((a,b)=>(b.total_games||0)-(a.total_games||0))[0];
 
-  const faltam=15-confirmed.length;
+  const faltam=maxPlayers-confirmed.length;
   if(faltam>0&&faltam<=5&&confirmed.length>=8) highlights.push({icon:"🎯",text:`Faltam apenas ${faltam} jogador${faltam!==1?"es":""} para lotação máxima!`});
   const votesHoje=mvpVotes.filter(v=>v.game_date===gameInfo.date);
   if(votesHoje.length>0){const counts={};votesHoje.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];const topMvp=members.find(p=>p.id===Number(topId));if(topMvp) highlights.push({icon:"⭐",text:`${topMvp.name} está a liderar a votação MVP!`});}
@@ -888,13 +888,13 @@ function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo}) {
 }
 
 // ── GROUP STATUS CARD ────────────────────────────────────────────────────────
-function GroupStatusCard({confirmed, notYet, members, players=[]}) {
+function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}) {
   const grs=confirmed.filter(p=>(players.find(pl=>pl.id===p.id))?.position==="GR");
   const msgs=[];
-  if(confirmed.length>=15) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
-  else if(confirmed.length>=12) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${15-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
+  if(confirmed.length>=maxPlayers) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
+  else if(confirmed.length>=maxPlayers-3) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${maxPlayers-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
   if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
-  if(confirmed.length>=10&&grs.length>=2&&confirmed.length<15) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
+  if(confirmed.length>=MIN_PLAYERS&&grs.length>=2&&confirmed.length<maxPlayers) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
   if(notYet.length>0) {} // Removido - já aparece no header
 
   if(msgs.length===0) return null;
@@ -951,14 +951,14 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
           <div style={{fontSize:20,fontWeight:800,color:"white",letterSpacing:0.5}}>{gameInfo.app_name||"Hoje Há Jogo"}</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button style={{background:"#1a1a1a",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/></button>
-          {isViewingHistory&&<button style={{background:"#1a1a1a",border:"1px solid #23271b",borderRadius:10,padding:"5px 10px",cursor:"pointer",color:"#d4af37",fontSize:10,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
-          {canFwd&&<button style={{background:"#1a1a1a",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
+          <button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/></button>
+          {isViewingHistory&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"5px 10px",cursor:"pointer",color:"#d4af37",fontSize:10,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
+          {canFwd&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
           {extraRight}
         </div>
       </div>
       {isViewingHistory?(
-        <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",border:"1px solid #1a1a1a"}}>
+        <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #23271b"}}>
           <div style={{fontSize:11,color:"#6b7280",fontWeight:700,letterSpacing:1,marginBottom:10,textTransform:"capitalize"}}>{formatDisplayDate(effectiveDate)}</div>
           {historyGame?(
             <div>
@@ -969,13 +969,13 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
                 {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>MVP</div></div>}
               </div>
               {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
-                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#1a1a1a",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
               )}
             </div>
           ):<div style={{fontSize:13,color:"#4b5563"}}>Sem registo para esta semana</div>}
         </div>
       ):isLive?(
-        <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",border:"1px solid #1ea85133",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #1ea85133",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{background:"#14160f",border:"1px solid #1ea85155",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
               <div style={{width:6,height:6,borderRadius:"50%",background:"#1ea851"}}/>
@@ -993,8 +993,8 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
           </div>
         </div>
       ):isOver?(
-        <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",border:"1px solid #1a1a1a"}}>
-          <div style={{background:"#1a1a1a",border:"1px solid #23271b",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+        <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #23271b"}}>
+          <div style={{background:"#23271b",border:"1px solid #23271b",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
             <span style={{fontSize:11,color:"#6b7280",fontWeight:800,letterSpacing:1}}>JOGO TERMINADO</span>
           </div>
           <div style={{fontSize:13,color:"#9ca3af",textTransform:"capitalize",marginBottom:4}}>{formatDisplayDate(gameInfo.date)}</div>
@@ -1002,7 +1002,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
         </div>
       ):(
         <>
-          <div style={{background:"#0a0a0a",borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #1a1a1a"}}>
+          <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #23271b"}}>
             <div>
               <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>PRÓXIMO JOGO</div>
               <div style={{fontSize:13,color:"#9ca3af",fontWeight:600,marginBottom:4,textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
@@ -1021,7 +1021,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
               <span style={{fontSize:11,color:"#4b5563",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
               <span style={{fontSize:11,color:pct>=100?"#f87171":"#4b5563",fontWeight:700}}>{confirmed.length} / {maxPlayers}</span>
             </div>
-            <div style={{height:6,background:"#1a1a1a",borderRadius:99,overflow:"hidden"}}>
+            <div style={{height:6,background:"#23271b",borderRadius:99,overflow:"hidden"}}>
               <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:pct>=100?"#dc2626":"#1ea851",borderRadius:99,transition:"width 0.6s"}}/>
             </div>
             {pct>=100&&<div style={{marginTop:8,background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.4)",borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
@@ -1267,7 +1267,7 @@ function CriarContaView({setView, showToast}) {
   };
 
   if(done) return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
       <div style={{fontSize:56,marginBottom:16}}>✅</div>
       <div style={{color:"white",fontSize:20,fontWeight:700,marginBottom:10}}>Conta criada!</div>
       <div style={{color:"#6b7280",fontSize:13,marginBottom:32,maxWidth:300,lineHeight:1.6}}>
@@ -1283,7 +1283,7 @@ function CriarContaView({setView, showToast}) {
   );
 
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
       <div style={{background:"#14160f",padding:"16px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>setView("landing")} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
         <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar conta</span>
@@ -1624,7 +1624,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
     ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}]
     : [{key:"player",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}];
   return (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0a0a",borderTop:"1px solid #1a1a1a",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0b08",borderTop:"1px solid #23271b",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
       {items.map(item=>{
         const isActive=view===item.key;
         return (
@@ -1635,7 +1635,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
             <span style={{fontSize:20}}>{item.icon}</span>
             <span style={{fontSize:9,fontWeight:700,color:isActive?"#d4af37":"#4b5563",letterSpacing:0.5}}>{item.label}</span>
             {isActive&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:"#d4af37",borderRadius:99}}/>}
-            {item.key==="debts"&&hasDebts&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
+            {item.key==="financas"&&hasDebts&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
             {item.key==="chat"&&unreadChat&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
         );
@@ -2064,7 +2064,7 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
       <div style={{marginBottom:10}}>
         <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
         {confirmed.map(p=>(
-          <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #1a1a1a"}}>
+          <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #23271b"}}>
             <Avatar player={p} size={24}/>
             <span style={{flex:1,fontSize:12,color:"white"}}>{p.name}</span>
             <button onClick={()=>handleTogglePaid(p.id)} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${p.paid?"#1ea851":"#23271b"}`,background:p.paid?"rgba(30,168,81,0.15)":"#14160f",color:p.paid?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>
@@ -2075,14 +2075,14 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
       </div>
       {/* Transferir para admin */}
       {(!showTransfer
-        ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+        ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           💸 Registar transferência para o admin
         </button>
         :<div>
           <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>Valor transferido (€)</div>
           <div style={{display:"flex",gap:6}}>
             <input className="text-input" type="number" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} placeholder={String(myCollected)} style={{flex:1,marginBottom:0}}/>
-            <button onClick={handleTransfer} disabled={loading} style={{padding:"8px 14px",background:"#d4af37",border:"none",borderRadius:8,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+            <button onClick={handleTransfer} disabled={loading} style={{padding:"8px 14px",background:"#d4af37",border:"none",borderRadius:8,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>
               {loading?"...":"✓"}
             </button>
             <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#23271b",border:"none",borderRadius:8,color:"#6b7280",fontSize:12,cursor:"pointer"}}>✕</button>
@@ -2258,7 +2258,7 @@ function SeasonStatsCard({player, groupId}) {
               {icon:"🔥",value:s.best_streak,label:"Melhor Série"},
               {icon:"💰",value:s.total_paid+"€",label:"Total Pago"},
             ].map((stat,j)=>(
-              <div key={j} style={{background:"#0a0a0a",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
+              <div key={j} style={{background:"#0a0b08",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
                 <div style={{fontSize:18,marginBottom:4}}>{stat.icon}</div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white"}}>{stat.value}</div>
                 <div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
@@ -2507,10 +2507,10 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
       </div>
       <div className="body">
         {/* Avatar + nome + stats rápidas */}
-        <div style={{textAlign:"center",padding:"24px 0 20px",borderBottom:"1px solid #1a1a1a",marginBottom:16}}>
+        <div style={{textAlign:"center",padding:"24px 0 20px",borderBottom:"1px solid #23271b",marginBottom:16}}>
           <div style={{position:"relative",display:"inline-block",marginBottom:12}}>
             <Avatar player={{...player,avatar_color:color}} size={88}/>
-            <label style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#d4af37",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,border:"2px solid #0a0a0a"}}>
+            <label style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#d4af37",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,border:"2px solid #0a0b08"}}>
               📷
               <input type="file" accept="image/*" style={{display:"none"}} onChange={async(e)=>{
                 const file=e.target.files[0];
@@ -2638,7 +2638,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         </button>
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
         {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
-        <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
+        <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers} maxItems={1}/>
         {/* Botões rápidos */}
         <div style={{display:"flex",gap:8,marginBottom:14}}>
           <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -2857,7 +2857,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
                 <Icon name="copy" size={14}/> Copiar
               </button>
               <button onClick={()=>{if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!
-Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 <Icon name="share" size={14}/> Partilhar
               </button>
             </div>
@@ -2865,7 +2865,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           </div>
         )}
 
-        <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxItems={1}/>
+        <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers} maxItems={1}/>
 
         {/* Botões rápidos Chat e Zona */}
         <div style={{display:"flex",gap:8,marginBottom:8}}>
@@ -2901,7 +2901,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           </div>
         )}
 
-        <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
+        <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players} maxPlayers={maxPlayers}/>
 
         <div className="tabs">
           {[["jogo","⚽ Jogo"],["equipas","🎲 Equipas"],["jogadores","👥 Jogadores"],["gerir","⚙️ Gerir"]].map(([k,l])=>(
@@ -3653,7 +3653,7 @@ function GroupCodeCard({groupId}) {
           <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
             <Icon name="copy" size={13}/>{copied?"Copiado!":"Copiar"}
           </button>
-          <button onClick={handleShare} style={{background:"#d4af37",border:"none",borderRadius:8,padding:"7px 12px",color:"#0a0a0a",fontWeight:800,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+          <button onClick={handleShare} style={{background:"#d4af37",border:"none",borderRadius:8,padding:"7px 12px",color:"#0a0b08",fontWeight:800,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
             <Icon name="share" size={13}/>Partilhar
           </button>
         </div>

@@ -47,6 +47,16 @@ async function callLogin(username, password, group_id=null) {
   return await res.json();
 }
 
+// Troca o token emitido pelo auth-login/smooth-processor por uma sessão real e
+// verificada do Supabase — é isto que permite às regras de acesso da base de
+// dados saber quem está de facto a pedir os dados, em vez de confiarem apenas
+// na chave pública partilhada por toda a gente.
+async function establishSession(session) {
+  if (!session?.token_hash) return;
+  try { await supabase.auth.verifyOtp({type:"magiclink", token_hash: session.token_hash}); }
+  catch(e){ console.error("Erro ao estabelecer sessão:", e); }
+}
+
 const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by_id,confirmed_at,avatar_color,total_games,total_paid,position,team,current_streak,best_streak,username,phone,group_id,available,zone,avatar_url,availability_days,availability_notes,zone_contact,email,google_id";
 
 const MAX_PLAYERS = 15;
@@ -240,6 +250,10 @@ export default function App() {
     (async()=>{
       setLoading(true);
       let handled = false;
+      // Esperar que a sessão persistida (se existir) seja restaurada antes de
+      // fazer qualquer pedido — caso contrário a primeira leitura pode ainda ir
+      // sem identidade e ser bloqueada pelas regras de acesso da base de dados.
+      await supabase.auth.getSession();
       try{
         // Verificar se há código de convite no URL (?code=XXX)
         const urlParams = new URLSearchParams(window.location.search);
@@ -296,7 +310,8 @@ export default function App() {
           const{data:{session}}=await supabase.auth.getSession();
           if(session?.access_token){
             const gres=await callGoogleAuth(session.access_token);
-            await supabase.auth.signOut();
+            // Mantemos a sessão Google — já é uma sessão real e verificada,
+            // usada pela base de dados para saber quem está a pedir os dados.
             const p=gres?.player||null;
             if(p){
               setCurrentUser(p);
@@ -337,13 +352,14 @@ export default function App() {
     })();
 
     const safetyTimer=setTimeout(()=>setLoading(false),8000);
-    // Polling a cada 10s para garantir atualização dos jogadores
-    const pollTimer=setInterval(()=>{ 
+    // Rede de segurança — os canais realtime abaixo já tratam da atualização em tempo
+    // real; isto é só para o caso (raro) de o WebSocket cair sem reconectar sozinho.
+    const pollTimer=setInterval(()=>{
       if(groupIdRef.current){
         loadPlayers(groupIdRef.current);
         supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
       }
-    },5000);
+    },30000);
     const subs=[
       supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) loadGameInfo(groupIdRef.current); }).subscribe(),
@@ -407,6 +423,7 @@ export default function App() {
     }
     const p=result?.player||null;
     if(!p) return false;
+    await establishSession(result.session);
     setCurrentUser(p);
     const groups = await loadMyGroups(p.id);
     if(groups.length>1){
@@ -1121,9 +1138,6 @@ function CriarContaView({setView, showToast}) {
   const handleRegister = async() => {
     if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
     setLoading(true);
-    // Verificar se username já existe (sem group_id)
-    const{data:existing}=await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).is("group_id",null);
-    if(existing&&existing.length>0){showToast("Username já existe","err");setLoading(false);return;}
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
     setLoading(false);
@@ -1200,8 +1214,8 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     while(exists){
       code="HHJ-";
       for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
-      const{data}=await supabase.from("groups").select("id").eq("invite_code",code).maybeSingle();
-      exists=!!data;
+      const check=await callVerifyInvite(code);
+      exists=!check?.error;
     }
     return code;
   };
@@ -1219,10 +1233,11 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       const regResult=await callRegister({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:group.id});
       if(regResult?.error) throw new Error(regResult.error);
       const player=regResult.player;
+      await establishSession(regResult.session);
+      // Registar na tabela player_groups primeiro — o jogo só pode ser criado depois de haver um admin no grupo
+      await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
       await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
-      // Registar na tabela player_groups
-      await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:group.id}));
       localStorage.setItem("hhb_new_group_code",code);
       window.location.reload();
@@ -1357,6 +1372,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     }
     const p=result?.player||null;
     if(!p){showToast("Utilizador ou password incorretos","err");setLoading(false);return;}
+    await establishSession(result.session);
     // Se o player não tem group_id, associa-o agora ao grupo
     if(!p.group_id){
       await supabase.from("players").update({group_id:group.id}).eq("id",p.id);
@@ -1370,13 +1386,12 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
   const handleRegister = async() => {
     if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
     setLoading(true);
-    const{data:existing}=await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).eq("group_id",group.id);
-    if(existing&&existing.length>0){showToast("Username já existe neste grupo","err");setLoading(false);return;}
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:group.id});
     if(regResult?.error){showToast(regResult.error,"err");setLoading(false);return;}
     const inserted=regResult.player;
     showToast("Conta criada! A entrar... 🎉");
+    await establishSession(regResult.session);
     // Registar na tabela player_groups
     await supabase.from("player_groups").upsert({player_id:inserted.id,group_id:group.id,is_admin:false},{onConflict:"player_id,group_id"});
     localStorage.setItem("hhb_session",JSON.stringify({playerId:inserted.id,groupId:group.id}));
@@ -3478,8 +3493,8 @@ function GroupCodeCard({groupId}) {
     while(exists){
       newCode="HHJ-";
       for(let i=0;i<4;i++) newCode+=chars[Math.floor(Math.random()*chars.length)];
-      const{data}=await supabase.from("groups").select("id").eq("invite_code",newCode).maybeSingle();
-      exists=!!data;
+      const check=await callVerifyInvite(newCode);
+      exists=!check?.error;
     }
     await supabase.from("groups").update({invite_code:newCode}).eq("id",groupId);
     setCode(newCode);

@@ -446,8 +446,8 @@ export default function App() {
     return true;
   };
 
-  const handleLogout  = ()=>{ localStorage.removeItem("hhb_session"); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
-  const switchAccount = ()=>{ localStorage.removeItem("hhb_session"); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
+  const handleLogout  = ()=>{ localStorage.removeItem("hhb_session"); supabase.auth.signOut(); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
+  const switchAccount = ()=>{ localStorage.removeItem("hhb_session"); supabase.auth.signOut(); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
 
   const handleMudarGrupo = async()=>{
     if(!currentUser) return;

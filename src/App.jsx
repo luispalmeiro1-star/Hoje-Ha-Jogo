@@ -1122,7 +1122,7 @@ function LandingView({setView}) {
           </div>
 
           <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%",margin:"16px auto 0"}}>
-            <p style={{fontSize:11,color:"#565c5c",margin:0,lineHeight:1.55}}>
+            <p style={{fontSize:11,color:"#8a9080",margin:0,lineHeight:1.55}}>
               💡 Para entrar num grupo precisas de um <strong style={{color:"#8a9080"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
             </p>
           </div>

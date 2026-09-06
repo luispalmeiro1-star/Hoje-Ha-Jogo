@@ -57,6 +57,28 @@ async function establishSession(session) {
   catch(e){ console.error("Erro ao estabelecer sessão:", e); }
 }
 
+// Hashing de password no mesmo formato usado pelo auth-login/smooth-processor
+// (pbkdf2$iterações$sal$hash) — usado quando o próprio cliente escreve
+// diretamente uma nova password (reset pelo admin, alteração no perfil), para
+// nunca guardar a password em texto simples na base de dados.
+const PBKDF2_ITERATIONS = 100000;
+function randomSaltHex() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function pbkdf2Hex(password, saltHex, iterations) {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const saltBytes = new Uint8Array(saltHex.match(/.{2}/g).map(b=>parseInt(b,16)));
+  const bits = await crypto.subtle.deriveBits({name:"PBKDF2", salt:saltBytes, iterations, hash:"SHA-256"}, keyMaterial, 256);
+  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function hashPassword(password) {
+  const salt = randomSaltHex();
+  const hash = await pbkdf2Hex(password, salt, PBKDF2_ITERATIONS);
+  return `pbkdf2$${PBKDF2_ITERATIONS}$${salt}$${hash}`;
+}
+
 const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by_id,confirmed_at,avatar_color,total_games,total_paid,position,team,current_streak,best_streak,username,phone,group_id,available,zone,avatar_url,availability_days,availability_notes,zone_contact,email,google_id";
 
 const MAX_PLAYERS = 15;
@@ -529,7 +551,7 @@ export default function App() {
   const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
   const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("players").delete().eq("id",id); showToast("Jogador removido"); };
-  const changePassword = async(id,pw)=>{ await supabase.from("players").update({password:pw}).eq("id",id); };
+  const changePassword = async(id,pw)=>{ const hashed=await hashPassword(pw); await supabase.from("players").update({password:hashed}).eq("id",id); };
   const addPlayer      = async(name,username,password,phone)=>{
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
@@ -553,11 +575,12 @@ export default function App() {
   const updateProfile  = async(id,newName,newPassword,newColor,newPhone)=>{
     const updates={};
     if(newName?.trim()) updates.name=newName.trim();
-    if(newPassword?.trim()) updates.password=newPassword.trim();
     if(newColor) updates.avatar_color=newColor;
     if(newPhone!==undefined) updates.phone=newPhone?.trim()||null;
+    if(newPassword?.trim()) updates.password=await hashPassword(newPassword.trim());
     if(Object.keys(updates).length===0) return;
-    setPlayers(prev=>prev.map(p=>p.id===id?{...p,...updates}:p));
+    const localUpdates={...updates}; delete localUpdates.password;
+    if(Object.keys(localUpdates).length>0) setPlayers(prev=>prev.map(p=>p.id===id?{...p,...localUpdates}:p));
     await supabase.from("players").update(updates).eq("id",id);
     showToast("Perfil atualizado ✓");
   };
@@ -567,7 +590,11 @@ export default function App() {
     showToast("Posição atualizada ✓");
   };
   const sendPushNotification = async(title,message)=>{
-    try{ await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt",group_id:activeGroupId}}); }catch(e){}
+    try{
+      const{error}=await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt",group_id:activeGroupId}});
+      if(error) throw error;
+      return true;
+    }catch(e){ console.error("Erro ao enviar notificação:",e); return false; }
   };
   const getNextGameDate = (gameDays=[3])=>{
     const days=gameDays.map(Number).sort((a,b)=>a-b);
@@ -3035,10 +3062,10 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           </ExpandableSection>
           <ExpandableSection icon="🔔" title="Notificações" subtitle="Enviar notificações ao grupo">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(30,168,81,0.15)",color:"#4ade80",border:"1px solid rgba(30,168,81,0.4)"}} onClick={async()=>{await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast("Notificação enviada ✓");}}>⚽ Novo jogo disponível</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(34,211,238,0.15)",color:"#22d3ee",border:"1px solid rgba(34,211,238,0.4)"}} onClick={async()=>{await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast("Notificação enviada ✓");}}>⏰ Lembrete — Marcar presença</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.4)"}} onClick={async()=>{await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast("Notificação enviada ✓");}}>💸 Lembrete — Pagamento</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(192,132,252,0.15)",color:"#c084fc",border:"1px solid rgba(192,132,252,0.4)"}} onClick={async()=>{await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!");showToast("Notificação enviada ✓");}}>🏆 MVP aberto para votação</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(30,168,81,0.15)",color:"#4ade80",border:"1px solid rgba(30,168,81,0.4)"}} onClick={async()=>{const ok=await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⚽ Novo jogo disponível</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(34,211,238,0.15)",color:"#22d3ee",border:"1px solid rgba(34,211,238,0.4)"}} onClick={async()=>{const ok=await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⏰ Lembrete — Marcar presença</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.4)"}} onClick={async()=>{const ok=await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>💸 Lembrete — Pagamento</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(192,132,252,0.15)",color:"#c084fc",border:"1px solid rgba(192,132,252,0.4)"}} onClick={async()=>{const ok=await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!");showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>🏆 MVP aberto para votação</button>
             </div>
           </ExpandableSection>
           <ExpandableSection icon="💳" title="Pagamentos" subtitle="Configurar MBWay para receber pagamentos">

@@ -195,6 +195,32 @@ const Icon = ({name,size=18}) => {
   return icons[name]||null;
 };
 
+// Redimensiona e comprime a foto no browser antes de guardar — sem isto, uma
+// foto de telemóvel (vários MB) ia parar em texto puro a players.avatar_url,
+// e essa coluna é lida sempre que se carregam os jogadores do grupo.
+function resizeImageToDataUrl(file, maxSize=256, quality=0.82) {
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=reject;
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=reject;
+      img.onload=()=>{
+        const side=Math.min(img.width,img.height);
+        const sx=(img.width-side)/2, sy=(img.height-side)/2;
+        const size=Math.min(maxSize,side);
+        const canvas=document.createElement("canvas");
+        canvas.width=size; canvas.height=size;
+        const ctx=canvas.getContext("2d");
+        ctx.drawImage(img,sx,sy,side,side,0,0,size,size);
+        resolve(canvas.toDataURL("image/jpeg",quality));
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function Avatar({player={}, size=32, style={}}) {
   const color = getAvatar(player);
   if(player?.avatar_url) return (
@@ -2475,13 +2501,9 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
               <input type="file" accept="image/*" style={{display:"none"}} onChange={async(e)=>{
                 const file=e.target.files[0];
                 if(!file) return;
-                const reader=new FileReader();
-                reader.onload=async(ev)=>{
-                  const dataUrl=ev.target.result;
-                  await supabase.from("players").update({avatar_url:dataUrl}).eq("id",player.id);
-                  window.location.reload();
-                };
-                reader.readAsDataURL(file);
+                const dataUrl=await resizeImageToDataUrl(file);
+                await supabase.from("players").update({avatar_url:dataUrl}).eq("id",player.id);
+                window.location.reload();
               }}/>
             </label>
           </div>
@@ -2538,8 +2560,13 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             </div>
             <label className="field-label">Confirmar password</label>
             <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
-            <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{if(newPw&&newPw!==newPwC){showToast("As passwords não coincidem","err");return;}onUpdateProfile(newName,newPw,color,newPhone);setTimeout(()=>onLogout(),800);}}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
-            <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
+            <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{
+              if(newPw&&newPw!==newPwC){showToast("As passwords não coincidem","err");return;}
+              onUpdateProfile(newName,newPw,color,newPhone);
+              if(newPw) setTimeout(()=>onLogout(),800);
+              else setEditOpen(false);
+            }}><Icon name="check" size={15}/> {newPw?"GUARDAR E SAIR":"GUARDAR"}</button>
+            {newPw&&<p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>}
           </div>}
         </div>
 
@@ -3098,19 +3125,19 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCodigo, currentUser, onLeave, onDelete}) {
   const [loading, setLoading] = useState(null);
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
       {/* Header */}
       <div style={{background:"#14160f",padding:"20px 20px 16px",borderBottom:"1px solid #23271b",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:4}}>BEM-VINDO DE VOLTA</div>
+          <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:4}}>BEM-VINDO DE VOLTA</div>
           <div style={{fontSize:20,fontWeight:800,color:"white"}}>{currentUser?.name}</div>
         </div>
-        <button onClick={onLogout} style={{background:"transparent",border:"none",color:"#6b7280",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600}}>
+        <button onClick={onLogout} style={{background:"transparent",border:"none",color:"#8a9080",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600}}>
           <Icon name="logout" size={14}/> Sair
         </button>
       </div>
 
-      <div style={{flex:1,padding:"20px"}}>
+      <div style={{flex:1,padding:"20px",maxWidth:440,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
         {/* Logo */}
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4af37",letterSpacing:3}}>🏟️ OS MEUS GRUPOS</div>
@@ -3514,7 +3541,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       </button>
 
       {/* Opções de sair/apagar */}
-      <div style={{borderTop:"1px solid #1a1a1a",padding:"8px 16px",display:"flex",gap:8}}>
+      <div style={{borderTop:"1px solid #23271b",padding:"8px 16px",display:"flex",gap:8}}>
         {pg.is_admin
           ?<>
             <button onClick={()=>setShowOptions(v=>!v)} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer",fontWeight:600}}>
@@ -3528,7 +3555,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       </div>
 
       {/* Opções admin */}
-      {showOptions&&pg.is_admin&&<div style={{borderTop:"1px solid #1a1a1a",padding:"10px 16px",display:"flex",flexDirection:"column",gap:6}}>
+      {showOptions&&pg.is_admin&&<div style={{borderTop:"1px solid #23271b",padding:"10px 16px",display:"flex",flexDirection:"column",gap:6}}>
         <button onClick={handleLeaveAdmin} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:600}}>
           🚪 Sair e nomear novo admin
         </button>
@@ -3538,7 +3565,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       </div>}
 
       {/* Nomear novo admin */}
-      {showNewAdmin&&<div style={{borderTop:"1px solid #1a1a1a",padding:"12px 16px"}}>
+      {showNewAdmin&&<div style={{borderTop:"1px solid #23271b",padding:"12px 16px"}}>
         <div style={{fontSize:12,fontWeight:700,color:"white",marginBottom:8}}>Escolhe o novo admin:</div>
         {members.length===0
           ?<div style={{fontSize:12,color:"#6b7280"}}>Não há outros membros no grupo.</div>

@@ -466,6 +466,9 @@ export default function App() {
   };
 
   const deleteGroup = async(groupId)=>{
+    // Limpar a referência ao grupo nos jogadores antes de apagar o grupo,
+    // para não violar a chave estrangeira players.group_id -> groups.id
+    await supabase.from("players").update({group_id:null}).eq("group_id",groupId);
     await supabase.from("player_groups").delete().eq("group_id",groupId);
     await supabase.from("game_info").delete().eq("group_id",groupId);
     await supabase.from("game_history").delete().eq("group_id",groupId);
@@ -516,7 +519,7 @@ export default function App() {
     const gid=activeGroupId||null;
     const isFull = confirmed.length>=maxPlayers;
     const guestStatus = isFull ? "wait" : "in";
-    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select().single();
+    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
     if(inserted){
       await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
       if(!isFull) await reassignAllTeams([...players,inserted]);

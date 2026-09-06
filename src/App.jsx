@@ -57,6 +57,25 @@ async function establishSession(session) {
   catch(e){ console.error("Erro ao estabelecer sessão:", e); }
 }
 
+// Associa este dispositivo ao jogador/grupo no OneSignal, para que as
+// notificações push (enviadas por grupo) o encontrem. Tem de ser chamada em
+// TODOS os pontos onde alguém fica autenticado — login, registo, convite e
+// restauro de sessão — não só no formulário de login.
+function linkOneSignal(playerId, groupId=null) {
+  try{
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      try{
+        if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission();
+        if(OneSignal.Notifications.permission===true){
+          await OneSignal.User.addTag("player_id",String(playerId));
+          if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
+        }
+      }catch(err){}
+    });
+  }catch(e){}
+}
+
 // Hashing de password no mesmo formato usado pelo auth-login/smooth-processor
 // (pbkdf2$iterações$sal$hash) — usado quando o próprio cliente escreve
 // diretamente uma nova password (reset pelo admin, alteração no perfil), para
@@ -322,6 +341,7 @@ export default function App() {
             const{data:playerData}=await supabase.from("players").select(PLAYER_COLS).eq("id",saved.playerId).maybeSingle();
             if(playerData){
               setCurrentUser(playerData);
+              linkOneSignal(playerData.id, gid);
               if(localStorage.getItem("hhb_url_code")){
                 setView("entrar-convite");
               } else {
@@ -340,6 +360,7 @@ export default function App() {
             const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
             const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
             setCurrentUser(playerData);
+            linkOneSignal(playerData.id);
             if(localStorage.getItem("hhb_url_code")){
               setView("entrar-convite");
             } else {
@@ -369,6 +390,7 @@ export default function App() {
               } else if(p.group_id){
                 await reloadAll(p.group_id);
                 setActiveGroupId(p.group_id);
+                linkOneSignal(p.id, p.group_id);
                 setView(p.is_admin?"admin":"player");
               } else {
                 const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",p.id);
@@ -377,6 +399,7 @@ export default function App() {
                   const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
                   const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
                   setMyGroups(enriched);
+                  linkOneSignal(p.id);
                   setView("meus-grupos");
                 } else {
                   setView("landing");
@@ -436,20 +459,6 @@ export default function App() {
   const spotsLeft = Math.max(0,maxPlayers-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
-  const linkOneSignal = (playerId, groupId=null) => {
-    try{
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async function(OneSignal) {
-        try{
-          if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission();
-          if(OneSignal.Notifications.permission===true){
-            await OneSignal.User.addTag("player_id",String(playerId));
-            if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
-          }
-        }catch(err){}
-      });
-    }catch(e){}
-  };
 
   // Função auxiliar para carregar grupos de um player
   const loadMyGroups = async(playerId)=>{
@@ -535,6 +544,7 @@ export default function App() {
     const gid = Number(groupId);
     localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
     setActiveGroupId(gid);
+    linkOneSignal(Number(currentUser?.id), gid);
     await reloadAll(gid);
     // Verificar se é admin neste grupo
     const{data:pg}=await supabase.from("player_groups").select("is_admin").eq("player_id",currentUser.id).eq("group_id",gid).maybeSingle();
@@ -1551,6 +1561,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
               if(error){ showToast("Erro ao adicionar grupo","err"); setLoading(false); return; }
               // Atualizar group_id do player se ainda não tiver
               if(!currentUser.group_id||currentUser.group_id!==group.id) await supabase.from("players").update({group_id:group.id}).eq("id",currentUser.id);
+              linkOneSignal(currentUser.id, group.id);
               showToast(`${group.name} adicionado! 🎉`);
               // Pequena pausa para garantir que a BD atualizou
               await new Promise(r=>setTimeout(r,500));

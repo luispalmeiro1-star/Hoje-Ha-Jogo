@@ -1067,11 +1067,7 @@ function LandingView({setView}) {
         </div>
 
         {/* Hero */}
-        <div style={{padding:"6px 24px 8px",textAlign:"center"}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#d4af37",marginBottom:14}}>
-            <span style={{width:6,height:6,borderRadius:"50%",background:"#22c55e",boxShadow:"0 0 8px #22c55e",display:"inline-block"}}/>
-            QUARTA · 22:30 · PAVILHÃO
-          </div>
+        <div style={{padding:"32px 24px 8px",textAlign:"center"}}>
           <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:46,color:"white",letterSpacing:0.5,lineHeight:0.98,margin:"0 0 14px"}}>
             O teu futsal,<br/><span style={{color:"#d4af37"}}>organizado.</span>
           </h1>

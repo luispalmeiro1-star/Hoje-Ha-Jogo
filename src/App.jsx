@@ -982,86 +982,141 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
   );
 }
 
-// ── LANDING VIEW — 4 botões ───────────────────────────────────────────────────
+// ── LANDING FEATURE ICONS ──────────────────────────────────────────────────────
+const landingIconProps = {viewBox:"0 0 24 24", width:22, height:22, fill:"none", stroke:"#d4af37", strokeWidth:1.6};
+const LandingIcons = {
+  presencas: <svg {...landingIconProps}><path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  pagamentos: <svg {...landingIconProps}><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4" strokeLinecap="round"/></svg>,
+  stats: <svg {...landingIconProps}><path d="M4 20V11M12 20V4M20 20v-7" strokeLinecap="round"/></svg>,
+  mealheiro: <svg {...landingIconProps}><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9Z"/><path d="M9 10V7a3 3 0 0 1 6 0v3" strokeLinecap="round"/></svg>,
+  equipas: <svg {...landingIconProps}><circle cx="9" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M14 15c3 0 5.5 2 5.5 5" strokeLinecap="round"/></svg>,
+  zona: <svg {...landingIconProps}><path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>,
+};
+
+// ── LANDING VIEW ────────────────────────────────────────────────────────────
 function LandingView({setView}) {
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative"}}>
+      <div style={{position:"absolute",top:-120,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"2px solid rgba(212,175,55,0.35)",borderRadius:"50%",opacity:0.25,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",top:340,left:"50%",transform:"translateX(-50%)",width:1400,height:1400,border:"1px solid #23271b",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
 
-      {/* Hero */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"48px 24px 32px",textAlign:"center"}}>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#d4af37",letterSpacing:6,marginBottom:8}}>HOJE HÁ JOGO</div>
-        <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"white",letterSpacing:2,lineHeight:1.1,margin:"0 0 12px"}}>
-          O teu futsal,<br/><span style={{color:"#d4af37"}}>organizado.</span>
-        </h1>
-        <p style={{fontSize:14,color:"#6b7280",marginBottom:32,maxWidth:280,lineHeight:1.6}}>
-          Presenças, pagamentos e stats — tudo num só lugar.
-        </p>
-
-        {/* CTAs */}
-        <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320}}>
-          <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0a0a",fontWeight:800,fontSize:16,cursor:"pointer"}}>
-            ⚽ Criar grupo grátis
-          </button>
-          <button onClick={()=>setView("entrar-convite")} style={{width:"100%",padding:"16px",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
-            📲 Tenho um código de convite
-          </button>
+      <div style={{position:"relative",zIndex:1}}>
+        <div style={{padding:"16px 20px"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,color:"white"}}>HOJE HÁ <span style={{color:"#d4af37",fontWeight:400}}>JOGO</span></div>
         </div>
 
-        {/* Nota convite */}
-        <div style={{marginTop:16,background:"rgba(255,255,255,0.03)",border:"1px solid #1a1a1a",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%"}}>
-          <p style={{fontSize:11,color:"#4b5563",margin:0,lineHeight:1.5}}>
-            💡 Para entrar num grupo precisas de um <strong style={{color:"#6b7280"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
+        {/* Hero */}
+        <div style={{padding:"6px 24px 8px",textAlign:"center"}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#d4af37",marginBottom:14}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:"#22c55e",boxShadow:"0 0 8px #22c55e",display:"inline-block"}}/>
+            QUARTA · 22:30 · PAVILHÃO
+          </div>
+          <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:46,color:"white",letterSpacing:0.5,lineHeight:0.98,margin:"0 0 14px"}}>
+            O teu futsal,<br/><span style={{color:"#d4af37"}}>organizado.</span>
+          </h1>
+          <p style={{fontSize:14.5,color:"#8a9080",maxWidth:300,margin:"0 auto 26px",lineHeight:1.6}}>
+            Presenças, pagamentos e stats do teu grupo — tudo num só lugar, sem grupos de WhatsApp perdidos.
           </p>
-        </div>
 
-        <button onClick={()=>setView("login")} style={{marginTop:12,background:"transparent",border:"none",color:"#4ade80",fontSize:12,cursor:"pointer",fontWeight:700}}>
-          Já tenho conta → Entrar
-        </button>
-      </div>
-
-      {/* Funcionalidades */}
-      <div style={{padding:"28px 24px",borderTop:"1px solid #111"}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:3,textAlign:"center",marginBottom:20}}>FUNCIONALIDADES</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,maxWidth:400,margin:"0 auto"}}>
-          {[
-            {icon:"✅",label:"Presenças"},
-            {icon:"💸",label:"Pagamentos"},
-            {icon:"📊",label:"Stats"},
-            {icon:"💰",label:"Mealheiro"},
-            {icon:"🎲",label:"Equipas"},
-            {icon:"🌍",label:"Zona"},
-          ].map((f,i)=>(
-            <div key={i} style={{textAlign:"center",padding:"14px 8px",background:"#111",border:"1px solid #1a1a1a",borderRadius:12}}>
-              <div style={{fontSize:26,marginBottom:6}}>{f.icon}</div>
-              <div style={{fontSize:11,fontWeight:700,color:"#9ca3af"}}>{f.label}</div>
+          {/* Mockup do telemóvel */}
+          <div style={{display:"flex",justifyContent:"center",marginBottom:26}}>
+            <div style={{width:212,background:"#0d0f0a",border:"2px solid #24291b",borderRadius:26,padding:7,boxShadow:"0 30px 70px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.06)",transform:"rotate(-3deg)"}}>
+              <div style={{background:"#0a0b08",borderRadius:20,overflow:"hidden",aspectRatio:"9/18.5",display:"flex",flexDirection:"column",padding:"14px 12px"}}>
+                <div style={{fontSize:7.5,letterSpacing:1.5,color:"#565c4d",textTransform:"uppercase"}}>GRUPO</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,letterSpacing:0.5,margin:"1px 0 10px",color:"white",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Futebolada de Quinta</div>
+                <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:10,marginBottom:9}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                    <div>
+                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>Quarta-feira, 5 de Agosto</div>
+                      <div style={{fontSize:8,color:"#8a9080",marginTop:3,lineHeight:1.3}}>23:30 · Pavilhão Municipal</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",color:"#d4af37",fontSize:19,lineHeight:1,whiteSpace:"nowrap"}}>2D 5H</div>
+                      <div style={{fontSize:6,color:"#565c4d",textAlign:"right",letterSpacing:1,marginTop:2}}>FALTAM</div>
+                    </div>
+                  </div>
+                  <div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(212,175,55,0.14)",border:"1px solid rgba(212,175,55,0.35)",borderRadius:20,padding:"3px 8px",fontSize:8,fontWeight:700,color:"#d4af37",marginTop:9}}>
+                    <span style={{width:4,height:4,borderRadius:"50%",background:"#d4af37",flexShrink:0,display:"inline-block"}}/> 8 confirmados
+                  </div>
+                </div>
+                <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:8}}>
+                  <div style={{fontSize:8,color:"#565c4d",textAlign:"center"}}>Faltam 4 vagas para o jogo de quarta</div>
+                  <div style={{background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:11,textAlign:"center",padding:11,fontSize:10,fontWeight:800,letterSpacing:0.3,color:"#04240f"}}>✓ CONFIRMAR PRESENÇA</div>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-around",marginTop:9,paddingTop:9,borderTop:"1px solid #23271b"}}>
+                  <span style={{fontSize:12,opacity:1}}>⚽</span><span style={{fontSize:12,opacity:0.35}}>💸</span><span style={{fontSize:12,opacity:0.35}}>📊</span><span style={{fontSize:12,opacity:0.35}}>👤</span>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Como funciona */}
-      <div style={{padding:"28px 24px 48px",borderTop:"1px solid #111"}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:3,textAlign:"center",marginBottom:20}}>COMO FUNCIONA</div>
-        <div style={{display:"flex",flexDirection:"column",gap:12,maxWidth:400,margin:"0 auto"}}>
-          {[
-            {n:"1",icon:"🏟️",text:"Admin cria o grupo em 2 minutos"},
-            {n:"2",icon:"📲",text:"Partilha o código, QR Code ou link"},
-            {n:"3",icon:"✅",text:"Todos gerem presenças, pagamentos e muito mais"},
-          ].map((s,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:14,background:"#111",border:"1px solid #1a1a1a",borderRadius:12,padding:"12px 14px"}}>
-              <div style={{width:32,height:32,background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.3)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#d4af37",flexShrink:0}}>{s.n}</div>
-              <span style={{fontSize:16,flexShrink:0}}>{s.icon}</span>
-              <span style={{fontSize:13,color:"#9ca3af",lineHeight:1.4}}>{s.text}</span>
-            </div>
-          ))}
+          {/* CTAs */}
+          <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320,margin:"0 auto"}}>
+            <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
+              ⚽ Criar grupo grátis
+            </button>
+            <button onClick={()=>setView("entrar-convite")} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              📲 Tenho um código de convite
+            </button>
+          </div>
+
+          <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%",margin:"16px auto 0"}}>
+            <p style={{fontSize:11,color:"#565c5c",margin:0,lineHeight:1.55}}>
+              💡 Para entrar num grupo precisas de um <strong style={{color:"#8a9080"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
+            </p>
+          </div>
+
+          <button onClick={()=>setView("login")} style={{marginTop:14,background:"transparent",border:"none",color:"#22c55e",fontSize:12,cursor:"pointer",fontWeight:700}}>
+            Já tenho conta → Entrar
+          </button>
         </div>
-        <div style={{textAlign:"center",marginTop:24}}>
-          <button onClick={()=>setView("criar-grupo")} style={{padding:"14px 32px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0a0a",fontWeight:800,fontSize:14,cursor:"pointer"}}>
+
+        {/* Funcionalidades */}
+        <div style={{padding:"34px 24px",borderTop:"1px solid #23271b"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#565c4d",textAlign:"center",marginBottom:22}}>FUNCIONALIDADES</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,maxWidth:400,margin:"0 auto"}}>
+            {[
+              {icon:LandingIcons.presencas,label:"Presenças"},
+              {icon:LandingIcons.pagamentos,label:"Pagamentos"},
+              {icon:LandingIcons.stats,label:"Stats"},
+              {icon:LandingIcons.mealheiro,label:"Mealheiro"},
+              {icon:LandingIcons.equipas,label:"Equipas"},
+              {icon:LandingIcons.zona,label:"Zona"},
+            ].map((f,i)=>(
+              <div key={i} style={{textAlign:"center",padding:"16px 6px",background:"#14160f",border:"1px solid #23271b",borderRadius:14}}>
+                <div style={{marginBottom:8,display:"flex",justifyContent:"center"}}>{f.icon}</div>
+                <div style={{fontSize:10.5,fontWeight:700,color:"#c7ccbc",letterSpacing:0.2}}>{f.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Como funciona */}
+        <div style={{padding:"34px 24px 48px",borderTop:"1px solid #23271b"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#565c4d",textAlign:"center",marginBottom:22}}>COMO FUNCIONA</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:400,margin:"0 auto"}}>
+            {[
+              {n:"1",text:"O admin cria o grupo em menos de 2 minutos"},
+              {n:"2",text:"Partilha o código, QR Code ou link com o grupo"},
+              {n:"3",text:"Todos confirmam presença, pagam e acompanham as stats"},
+            ].map((s,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:14,background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"13px 15px"}}>
+                <div style={{width:28,height:28,flexShrink:0,background:"rgba(212,175,55,0.14)",border:"1px solid rgba(212,175,55,0.35)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',cursive",fontSize:15,color:"#d4af37"}}>{s.n}</div>
+                <p style={{margin:0,fontSize:12.5,color:"#8a9080",lineHeight:1.4}}>{s.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA final */}
+        <div style={{textAlign:"center",padding:"38px 24px 48px",borderTop:"1px solid #23271b"}}>
+          <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:"white",margin:"0 0 6px"}}>Pronto para o próximo jogo?</h2>
+          <p style={{color:"#8a9080",fontSize:13,margin:"0 0 22px"}}>Grátis, sem publicidade, sem complicações.</p>
+          <button onClick={()=>setView("criar-grupo")} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>
             Começa agora — é grátis
           </button>
         </div>
       </div>
-
     </div>
   );
 }

@@ -1090,11 +1090,11 @@ function LandingView({setView}) {
             <div style={{width:212,background:"#0d0f0a",border:"2px solid #24291b",borderRadius:26,padding:7,boxShadow:"0 30px 70px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.06)",transform:"rotate(-3deg)"}}>
               <div style={{background:"#0a0b08",borderRadius:20,overflow:"hidden",aspectRatio:"9/18.5",display:"flex",flexDirection:"column",padding:"14px 12px"}}>
                 <div style={{fontSize:7.5,letterSpacing:1.5,color:"#565c4d",textTransform:"uppercase"}}>GRUPO</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,letterSpacing:0.5,margin:"1px 0 10px",color:"white",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Futebolada de Quinta</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,letterSpacing:0.5,margin:"1px 0 10px",color:"white",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Futebolada de Quarta</div>
                 <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:10,marginBottom:9}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
-                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>Quinta-feira, 6 de Agosto</div>
+                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>Quarta-feira, 5 de Agosto</div>
                       <div style={{fontSize:8,color:"#8a9080",marginTop:3,lineHeight:1.3}}>23:30 · Pavilhão Municipal</div>
                     </div>
                     <div style={{textAlign:"right"}}>
@@ -1107,7 +1107,7 @@ function LandingView({setView}) {
                   </div>
                 </div>
                 <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:8}}>
-                  <div style={{fontSize:8,color:"#565c4d",textAlign:"center"}}>Faltam 4 vagas para o jogo de quinta</div>
+                  <div style={{fontSize:8,color:"#565c4d",textAlign:"center"}}>Faltam 4 vagas para o jogo de quarta</div>
                   <div style={{background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:11,textAlign:"center",padding:11,fontSize:10,fontWeight:800,letterSpacing:0.3,color:"#04240f"}}>✓ CONFIRMAR PRESENÇA</div>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-around",marginTop:9,paddingTop:9,borderTop:"1px solid #23271b"}}>

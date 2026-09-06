@@ -1134,7 +1134,7 @@ function LandingView({setView}) {
 
         {/* Funcionalidades */}
         <div style={{padding:"34px 24px",borderTop:"1px solid #23271b"}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#565c4d",textAlign:"center",marginBottom:22}}>FUNCIONALIDADES</div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#8a9080",textAlign:"center",marginBottom:22}}>FUNCIONALIDADES</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,maxWidth:400,margin:"0 auto"}}>
             {[
               {icon:LandingIcons.presencas,label:"Presenças"},
@@ -1154,7 +1154,7 @@ function LandingView({setView}) {
 
         {/* Como funciona */}
         <div style={{padding:"34px 24px 48px",borderTop:"1px solid #23271b"}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#565c4d",textAlign:"center",marginBottom:22}}>COMO FUNCIONA</div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#8a9080",textAlign:"center",marginBottom:22}}>COMO FUNCIONA</div>
           <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:400,margin:"0 auto"}}>
             {[
               {n:"1",text:"O admin cria o grupo em menos de 2 minutos"},

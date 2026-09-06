@@ -28,8 +28,13 @@
           appId: "60b7b224-86fb-4b6e-bc3e-c078cb7bf7c8",
           notifyButton: { enable: false },
           allowLocalhostAsSecureOrigin: true,
-          serviceWorkerParam: { scope: "/" },
-          serviceWorkerPath: "OneSignalSDKWorker.js",
+          // O código da OneSignal já está importado dentro do service worker da
+          // app (via workbox.importScripts em vite.config.js) — se a OneSignal
+          // tentar registar o SEU PRÓPRIO service worker aqui, os dois competem
+          // pelo mesmo scope e nenhum fica de forma fiável responsável por
+          // mostrar a notificação (o servidor reporta "entregue", mas nada
+          // aparece no ecrã).
+          serviceWorkerAutoRegister: false,
           promptOptions: {
             slidedown: {
               prompts: [

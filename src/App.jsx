@@ -1341,49 +1341,51 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
 
   // Passo 3 — sucesso simples, sem mostrar código
   if(step===3) return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
       <div style={{fontSize:64,marginBottom:20}}>🎉</div>
       <div style={{color:"white",fontSize:22,fontWeight:800,marginBottom:10}}>Grupo criado!</div>
-      <div style={{color:"#6b7280",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:40}}>
+      <div style={{color:"#8a9080",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:40}}>
         Para ver o código do grupo e partilhar com os teus jogadores, entra na app.
       </div>
-      <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:300,padding:"16px",background:"#16a34a",border:"none",borderRadius:12,color:"white",fontWeight:800,fontSize:15,cursor:"pointer"}}>
+      <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:300,padding:"16px",background:"linear-gradient(180deg,#2fd66b,#1ea851)",border:"none",borderRadius:12,color:"#04240f",fontWeight:800,fontSize:15,cursor:"pointer"}}>
         {loading?"A entrar...":"Entrar na app →"}
       </button>
     </div>
   );
 
+  const fieldLabel={color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3};
+  const greenBtn={background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",border:"none"};
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
-      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
+      <div style={{background:"#14160f",padding:"16px 20px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
         <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar grupo</span>
-        <span style={{color:"#4b5563",fontSize:12,marginLeft:"auto"}}>Passo {step}/2</span>
+        <span style={{color:"#565c4d",fontSize:12,marginLeft:"auto"}}>Passo {step}/2</span>
       </div>
-      <div style={{padding:"24px 20px"}}>
+      <div style={{padding:"24px 20px",maxWidth:440,margin:"0 auto"}}>
         {step===1&&<>
-          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Informações do grupo</p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>NOME DO GRUPO *</label>
+          <p style={{color:"#8a9080",fontSize:12,marginBottom:20}}>Informações do grupo</p>
+          <label style={fieldLabel}>NOME DO GRUPO *</label>
           <input className="text-input" value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Ex: Futebolada da Quinta" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>LOCAL HABITUAL</label>
+          <label style={fieldLabel}>LOCAL HABITUAL</label>
           <input className="text-input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Ex: Pavilhão Municipal" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>HORA HABITUAL</label>
-          <input className="text-input" type="time" value={time} onChange={e=>setTime(e.target.value)} style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CUSTO POR JOGADOR (€)</label>
-          <input className="text-input" type="number" step="0.5" min="0" value={cost} onChange={e=>setCost(e.target.value)} style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}setStep(2);}}>Continuar →</button>
+          <label style={fieldLabel}>HORA HABITUAL</label>
+          <input className="text-input" type="time" value={time} onChange={e=>setTime(e.target.value)} style={{marginBottom:14,colorScheme:"dark"}}/>
+          <label style={fieldLabel}>CUSTO POR JOGADOR (€)</label>
+          <input className="text-input" type="number" step="0.5" min="0" value={cost} onChange={e=>setCost(e.target.value)} style={{marginBottom:24,colorScheme:"dark"}}/>
+          <button className="btn-big" style={greenBtn} onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}setStep(2);}}>Continuar →</button>
         </>}
         {step===2&&<>
-          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
+          <p style={{color:"#8a9080",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
+          <label style={fieldLabel}>O TEU NOME *</label>
           <input className="text-input" value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
+          <label style={fieldLabel}>USERNAME *</label>
           <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(e.target.value)} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
+          <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
+          <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
           <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={handleCreate} disabled={loading}>{loading?"A criar grupo...":"🚀 Criar grupo"}</button>
+          <button className="btn-big" style={greenBtn} onClick={handleCreate} disabled={loading}>{loading?"A criar grupo...":"🚀 Criar grupo"}</button>
         </>}
       </div>
     </div>

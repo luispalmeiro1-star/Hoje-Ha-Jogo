@@ -636,6 +636,10 @@ export default function App() {
     const gameCost=gameInfo.cost_per_player||COST;
     const gid=activeGroupId||groupIdRef.current||null;
     if(!gid){ showToast("Erro: grupo não identificado","err"); return; }
+    // Impede fechar o mesmo jogo duas vezes (ex: fecho manual e o fecho
+    // automático do servidor a coincidirem) — duplicaria presenças, dívidas e histórico.
+    const{data:alreadyClosed}=await supabase.from("game_history").select("id").eq("group_id",gid).eq("date",gameInfo.date).gt("players_count",0).limit(1);
+    if(alreadyClosed&&alreadyClosed.length>0){ if(!isAuto) showToast("Este jogo já foi fechado.","warn"); return; }
     // Buscar confirmados diretamente da BD para garantir dados frescos
     const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid).eq("status","in");
     const pids=(pgRows||[]).map(x=>x.player_id);
@@ -732,6 +736,10 @@ export default function App() {
           setMyGroups(groups);
           setView("meus-grupos");
         } else setView("landing");
+      }} onBack={()=>{
+        if(!currentUser) return setView("landing");
+        if(activeGroupId) return setView(liveUser?.is_admin?"admin":"player");
+        setView("meus-grupos");
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
@@ -1446,7 +1454,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
 }
 
 // ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
-function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicionado=null}) {
+function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicionado=null, onBack=null}) {
   const [code, setCode]         = useState(()=>{
     const c=localStorage.getItem("hhb_url_code");
     if(c){ localStorage.removeItem("hhb_url_code"); return c; }
@@ -1519,7 +1527,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
   return (
     <div style={{background:"#0a0b08",minHeight:"100vh"}}>
       <div style={{background:"#14160f",padding:"16px 20px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
-        <button onClick={()=>step===1?setView("landing"):setStep(step===4||step===3?2:1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
+        <button onClick={()=>step===1?(onBack?onBack():setView("landing")):setStep(step===4||step===3?2:1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
         <span style={{color:"white",fontWeight:700,fontSize:16}}>Entrar com convite</span>
       </div>
       <div style={{padding:"24px 20px",maxWidth:440,margin:"0 auto"}}>

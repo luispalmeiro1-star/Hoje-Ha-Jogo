@@ -1705,14 +1705,14 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
 }
 
 // ── PIGGYBANK ─────────────────────────────────────────────────────────────────
-function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false}) {
+function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,showHero=true}) {
   const totalReceived=history.filter(g=>Number(g.collected)>0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const totalExpenses=history.filter(g=>Number(g.collected)<0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const gamesPlayed=history.filter(g=>g.players_count>0).length;
   const expenses=history.filter(g=>Number(g.collected)<0);
   return (
     <div style={{marginTop:16}}>
-      <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
+      {showHero&&<div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
         <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.2)"}}>
@@ -1721,7 +1721,13 @@ function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false}) {
           {totalExpenses<0&&<div><div style={{fontSize:9,opacity:0.7}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>{totalExpenses}€</div></div>}
           <div><div style={{fontSize:9,opacity:0.7}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
         </div>
-      </div>
+      </div>}
+      {!showHero&&<div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
+        <div><div style={{fontSize:9,color:"#6b7280"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
+        <div><div style={{fontSize:9,color:"#6b7280"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*RENT}€</div></div>
+        {totalExpenses<0&&<div><div style={{fontSize:9,color:"#6b7280"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
+        <div><div style={{fontSize:9,color:"#6b7280"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
+      </div>}
       <div style={{fontSize:11,color:"#6b7280",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {RENT}€ do aluguer · {cost}€ por jogador</div>
       <TreasurerBalances groupId={groupId} isAdmin={isAdmin}/>
       {expenses.length>0&&<>
@@ -1818,7 +1824,7 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
           </div>
         </>}
         <ExpandableSection icon="💰" title="Mealheiro detalhado" subtitle="Histórico financeiro completo">
-          <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>
+          <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} showHero={false}/>
         </ExpandableSection>
         {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>

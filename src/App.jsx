@@ -1144,40 +1144,42 @@ function LoginView({onLogin, showToast, setView}) {
   };
 
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <div style={{textAlign:"center",marginBottom:36}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:-160,left:"50%",transform:"translateX(-50%)",width:760,height:760,border:"2px solid rgba(212,175,55,0.28)",borderRadius:"50%",opacity:0.3,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-260,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"1px solid #23271b",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
+      <div style={{textAlign:"center",marginBottom:28,position:"relative"}}>
         <div style={{fontSize:20,fontWeight:500,color:"white",letterSpacing:1}}>HOJE HÁ</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:3,lineHeight:1}}>JOGO</div>
       </div>
-      <div style={{width:"100%",maxWidth:360,background:"#111",border:"1px solid #1f1f1f",borderRadius:16,padding:"24px",display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{width:"100%",maxWidth:360,background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"24px",display:"flex",flexDirection:"column",gap:14,position:"relative"}}>
         <div style={{fontSize:14,fontWeight:700,color:"white",textAlign:"center",marginBottom:4}}>Iniciar sessão</div>
         <div>
-          <label style={{color:"#6b7280",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>UTILIZADOR OU TELEMÓVEL</label>
+          <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>UTILIZADOR OU TELEMÓVEL</label>
           <input className="text-input" placeholder="O teu utilizador..." value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
         </div>
         <div>
-          <label style={{color:"#6b7280",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>PASSWORD</label>
+          <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>PASSWORD</label>
           <div style={{position:"relative",display:"flex",alignItems:"center"}}>
             <input className="text-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={{paddingRight:44}}/>
-            <button type="button" onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:12,background:"transparent",border:"none",color:"#6b7280",cursor:"pointer",display:"flex",alignItems:"center"}}>
+            <button type="button" onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:12,background:"transparent",border:"none",color:"#8a9080",cursor:"pointer",display:"flex",alignItems:"center"}}>
               <Icon name={showPw?"eyeoff":"eye"} size={16}/>
             </button>
           </div>
         </div>
-        <button className="btn-big btn-green" style={{marginBottom:0,marginTop:4}} onClick={handleSubmit} disabled={loading}>
+        <button className="btn-big" style={{marginBottom:0,marginTop:4,background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f"}} onClick={handleSubmit} disabled={loading}>
           {loading?"A entrar...":"ENTRAR →"}
         </button>
         <div style={{display:"flex",alignItems:"center",gap:10,margin:"2px 0"}}>
-          <div style={{flex:1,height:1,background:"#1f1f1f"}}/>
-          <span style={{color:"#4b5563",fontSize:11}}>ou</span>
-          <div style={{flex:1,height:1,background:"#1f1f1f"}}/>
+          <div style={{flex:1,height:1,background:"#23271b"}}/>
+          <span style={{color:"#565c4d",fontSize:11}}>ou</span>
+          <div style={{flex:1,height:1,background:"#23271b"}}/>
         </div>
-        <button type="button" onClick={handleGoogle} disabled={googleLoading} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#fff",border:"none",borderRadius:12,padding:"13px",color:"#111",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+        <button type="button" onClick={handleGoogle} disabled={googleLoading} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#1b1e14",border:"1px solid #2e3322",borderRadius:12,padding:"13px",color:"#f4f2e8",fontWeight:700,fontSize:14,cursor:"pointer"}}>
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
           {googleLoading?"A ligar...":"Continuar com Google"}
         </button>
       </div>
-      <button onClick={()=>setView("landing")} style={{marginTop:20,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+      <button onClick={()=>setView("landing")} style={{marginTop:20,background:"transparent",border:"none",color:"#565c4d",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,position:"relative"}}>
         <Icon name="left" size={14}/> Voltar
       </button>
     </div>
@@ -3650,6 +3652,7 @@ body{background:#0a0a0a;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .text-input{background:#0f0f0f;border:2px solid #1f1f1f;border-radius:10px;padding:10px 14px;color:#f0f0f0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;}
 .text-input:focus{border-color:#16a34a;}
 .text-input::placeholder{color:#6b7280;}
+.text-input:-webkit-autofill,.text-input:-webkit-autofill:hover,.text-input:-webkit-autofill:focus{-webkit-text-fill-color:#f0f0f0;-webkit-box-shadow:0 0 0px 1000px #0f0f0f inset;box-shadow:0 0 0px 1000px #0f0f0f inset;transition:background-color 9999s ease-in-out 0s;}
 input[type="date"],input[type="time"]{color-scheme:dark;}
 select.text-input{appearance:none;}
 .game-info-card{background:#111;border:2px solid #1f1f1f;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}

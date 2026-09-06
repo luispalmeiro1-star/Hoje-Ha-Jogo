@@ -715,7 +715,7 @@ export default function App() {
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
-      {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")}/>}
+      {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
     </div>
   );
 }
@@ -755,7 +755,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
         const pPct=totalGames>0?Math.round(((p.total_games||0)/totalGames)*100):0;
         const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
         return (
-          <div key={p.id} style={{background:isMe?"#14160f":"#13201a",border:isMe?"2px solid #1ea851":"1px solid #23271b",borderRadius:12,overflow:"hidden"}}>
+          <div key={p.id} style={{background:"#14160f",border:isMe?"2px solid #1ea851":"1px solid #23271b",borderRadius:12,overflow:"hidden"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",cursor:"pointer"}} onClick={()=>setExpandedId(isOpen?null:p.id)}>
               <span style={{fontSize:12,fontWeight:800,color:i===0?"#fbbf24":i===1?"#cbd5e1":i===2?"#d97706":"#6b7d70",width:18,flexShrink:0}}>{medal}</span>
               <Avatar player={p} size={28}/>
@@ -1861,7 +1861,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
           {[["pessoal","⚽ Pessoal"],["grupo","🏆 Grupo"],["epocas","🏁 Épocas"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
+            <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#04240f":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>
       </div>
@@ -2421,7 +2421,7 @@ function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>CHAT DO GRUPO</span>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",background:"#0a0f0a",display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",background:"#0a0b08",display:"flex",flexDirection:"column",gap:8}}>
         {messages.length===0&&<p className="empty-msg">Sem mensagens ainda. Diz algo! 💬</p>}
         {messages.map(msg=>{
           const isMe=msg.player_id===player.id;
@@ -2439,7 +2439,7 @@ function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
         })}
         <div ref={bottomRef}/>
       </div>
-      <div style={{padding:"10px 16px",background:"#13201a",borderTop:"1px solid #23271b",display:"flex",gap:8,flexShrink:0}}>
+      <div style={{padding:"10px 16px",background:"#14160f",borderTop:"1px solid #23271b",display:"flex",gap:8,flexShrink:0}}>
         <input className="text-input" style={{flex:1}} placeholder="Escreve uma mensagem..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onSendMessage(text),setText(""))}/>
         <button className="btn-add" onClick={()=>{onSendMessage(text);setText("");}}><Icon name="send" size={16}/></button>
       </div>
@@ -2448,7 +2448,7 @@ function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
 }
 
 // ── PROFILE VIEW ─────────────────────────────────────────────────────────────
-function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onMudarGrupo,onEntrarCodigo,activeGroupId=null}) {
+function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onMudarGrupo,onEntrarCodigo,activeGroupId=null,showToast=()=>{}}) {
   const [newName,setNewName]=useState(player.name);
   const [newPhone,setNewPhone]=useState(player.phone||"");
   const [newPw,setNewPw]=useState("");
@@ -2538,7 +2538,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             </div>
             <label className="field-label">Confirmar password</label>
             <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
-            <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{if(newPw&&newPw!==newPwC){alert("As passwords não coincidem!");return;}onUpdateProfile(newName,newPw,color,newPhone);setTimeout(()=>onLogout(),800);}}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
+            <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{if(newPw&&newPw!==newPwC){showToast("As passwords não coincidem","err");return;}onUpdateProfile(newName,newPw,color,newPhone);setTimeout(()=>onLogout(),800);}}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
             <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
           </div>}
         </div>
@@ -2975,9 +2975,9 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         {adminTab==="historico"&&<>
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
-          {history.length===0
+          {history.filter(h=>h.players_count>0).length===0
             ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
-            :history.map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>)
+            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>)
           }
         </>}
         {adminTab==="jogadores"&&(

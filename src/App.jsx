@@ -1461,20 +1461,22 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     window.location.reload();
   };
 
+  const fieldLabel={color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3};
+  const greenBtn={background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",border:"none"};
   return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
-      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
+      <div style={{background:"#14160f",padding:"16px 20px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>step===1?setView("landing"):setStep(step===4||step===3?2:1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
         <span style={{color:"white",fontWeight:700,fontSize:16}}>Entrar com convite</span>
       </div>
-      <div style={{padding:"24px 20px"}}>
+      <div style={{padding:"24px 20px",maxWidth:440,margin:"0 auto"}}>
 
         {/* PASSO 1 — código */}
         {step===1&&<>
-          <p style={{color:"#6b7280",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CÓDIGO DE CONVITE</label>
+          <p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
+          <label style={fieldLabel}>CÓDIGO DE CONVITE</label>
           <input className="text-input" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
-          <button className="btn-big btn-green" onClick={checkCode} disabled={loading}>{loading?"A verificar...":"Verificar código →"}</button>
+          <button className="btn-big" style={greenBtn} onClick={checkCode} disabled={loading}>{loading?"A verificar...":"Verificar código →"}</button>
         </>}
 
         {/* PASSO 2 — escolha (ou adicionar grupo se já autenticado) */}
@@ -1482,7 +1484,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
           <div style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:12,padding:"14px",marginBottom:28,textAlign:"center"}}>
             <div style={{color:"#d4af37",fontSize:12,marginBottom:4}}>GRUPO ENCONTRADO</div>
             <div style={{color:"white",fontSize:18,fontWeight:700}}>{group.name}</div>
-            {group.location&&<div style={{color:"#6b7280",fontSize:12,marginTop:4}}>📍 {group.location}</div>}
+            {group.location&&<div style={{color:"#8a9080",fontSize:12,marginTop:4}}>📍 {group.location}</div>}
           </div>
           {currentUser ? (
             /* Já autenticado — só adicionar grupo */
@@ -1498,28 +1500,28 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
               setLoading(false);
               if(onGrupoAdicionado) onGrupoAdicionado();
               else setView("landing");
-            }} style={{width:"100%",background:"#16a34a",border:"none",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,fontSize:15,fontWeight:800,color:"white"}} disabled={loading}>
+            }} style={{width:"100%",...greenBtn,borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,fontSize:15,fontWeight:800}} disabled={loading}>
               {loading?"A adicionar...":"✅ Adicionar aos meus grupos"}
             </button>
           ) : (
             /* Não autenticado — login ou criar conta */
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <button onClick={()=>setStep(3)} style={{width:"100%",background:"#16a34a",border:"none",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-                <div style={{width:40,height:40,background:"rgba(255,255,255,0.15)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <button onClick={()=>setStep(3)} style={{width:"100%",...greenBtn,borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+                <div style={{width:40,height:40,background:"rgba(4,36,15,0.2)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <Icon name="shield" size={20}/>
                 </div>
                 <div>
-                  <div style={{color:"white",fontSize:14,fontWeight:700}}>Já tenho conta</div>
-                  <div style={{color:"rgba(255,255,255,0.6)",fontSize:12}}>Entrar com username e password</div>
+                  <div style={{fontSize:14,fontWeight:700}}>Já tenho conta</div>
+                  <div style={{color:"rgba(4,36,15,0.7)",fontSize:12}}>Entrar com username e password</div>
                 </div>
               </button>
-              <button onClick={()=>setStep(4)} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-                <div style={{width:40,height:40,background:"rgba(255,255,255,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <button onClick={()=>setStep(4)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+                <div style={{width:40,height:40,background:"rgba(212,175,55,0.1)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <Icon name="plus" size={20}/>
                 </div>
                 <div>
                   <div style={{color:"white",fontSize:14,fontWeight:700}}>Criar conta</div>
-                  <div style={{color:"#4b5563",fontSize:12}}>Primeira vez neste grupo</div>
+                  <div style={{color:"#565c4d",fontSize:12}}>Primeira vez neste grupo</div>
                 </div>
               </button>
             </div>
@@ -1528,26 +1530,26 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 
         {/* PASSO 3 — login */}
         {step===3&&group&&<>
-          <p style={{color:"#6b7280",fontSize:13,marginBottom:20}}>Entra com a tua conta do grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME</label>
+          <p style={{color:"#8a9080",fontSize:13,marginBottom:20}}>Entra com a tua conta do grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
+          <label style={fieldLabel}>USERNAME</label>
           <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="O teu username..." autoCapitalize="none" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD</label>
+          <label style={fieldLabel}>PASSWORD</label>
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={handleLogin} disabled={loading}>{loading?"A entrar...":"Entrar →"}</button>
+          <button className="btn-big" style={greenBtn} onClick={handleLogin} disabled={loading}>{loading?"A entrar...":"Entrar →"}</button>
         </>}
 
         {/* PASSO 4 — registo */}
         {step===4&&group&&<>
-          <p style={{color:"#6b7280",fontSize:13,marginBottom:20}}>Criar conta no grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
+          <p style={{color:"#8a9080",fontSize:13,marginBottom:20}}>Criar conta no grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
+          <label style={fieldLabel}>O TEU NOME *</label>
           <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
+          <label style={fieldLabel}>USERNAME *</label>
           <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
+          <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
+          <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
           <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
+          <button className="btn-big" style={greenBtn} onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
         </>}
 
       </div>

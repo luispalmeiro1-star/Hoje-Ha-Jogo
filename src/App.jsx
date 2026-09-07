@@ -3383,8 +3383,11 @@ function PendingRequestsPanel({groupId, showToast}) {
 
   const load = useCallback(async()=>{
     if(!groupId) return;
-    const{data}=await supabase.from("player_groups").select("player_id,players(name,username,phone,avatar_color)").eq("group_id",groupId).eq("membership_status","pending");
-    setRequests(data||[]);
+    const{data:pg}=await supabase.from("player_groups").select("player_id").eq("group_id",groupId).eq("membership_status","pending");
+    if(!pg||pg.length===0){ setRequests([]); return; }
+    const ids=pg.map(x=>x.player_id);
+    const{data:playersData}=await supabase.from("players").select("id,name,username,phone,avatar_color").in("id",ids);
+    setRequests(pg.map(x=>({player_id:x.player_id, players:playersData?.find(p=>p.id===x.player_id)||null})));
   },[groupId]);
 
   useEffect(()=>{ load(); },[load]);

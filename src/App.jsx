@@ -265,6 +265,7 @@ export default function App() {
   const [activeGroupId, setActiveGroupId] = useState(null);
   const [view, setView]               = useState("landing");
   const [myGroups, setMyGroups]       = useState([]);
+  const [pendingRequest, setPendingRequest] = useState(null); // {status:'pending'|'rejected', groupName}
   const [mbwayNumber, setMbwayNumber]   = useState("");
   const [treasurerId, setTreasurerId]   = useState(null);
   const [treasurerName, setTreasurerName] = useState("");
@@ -284,7 +285,7 @@ export default function App() {
   const loadPlayers    = useCallback(async(gid)=>{
     if(!gid) return;
     // Buscar players via player_groups — status é por grupo
-    const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin").eq("group_id",gid);
+    const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin").eq("group_id",gid).eq("membership_status","active");
     if(!pg||pg.length===0){ setPlayers([]); return; }
     const pids=pg.map(x=>x.player_id);
     const{data:playersData}=await supabase.from("players").select(PLAYER_COLS).in("id",pids).order("id");
@@ -353,12 +354,13 @@ export default function App() {
           }
           localStorage.removeItem("hhb_session");
         } else if(saved?.playerId){
-          const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",saved.playerId);
+          const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin,membership_status").eq("player_id",saved.playerId);
           const{data:playerData}=await supabase.from("players").select(PLAYER_COLS).eq("id",saved.playerId).maybeSingle();
-          if(pgRaw&&pgRaw.length>0&&playerData){
-            const gids=pgRaw.map(x=>Number(x.group_id));
+          const activeRows=(pgRaw||[]).filter(x=>x.membership_status==="active");
+          if(activeRows.length>0&&playerData){
+            const gids=activeRows.map(x=>Number(x.group_id));
             const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
-            const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
+            const enriched=activeRows.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
             setCurrentUser(playerData);
             linkOneSignal(playerData.id);
             if(localStorage.getItem("hhb_url_code")){
@@ -369,6 +371,18 @@ export default function App() {
             }
             handled = true;
             return;
+          }
+          if(playerData&&!localStorage.getItem("hhb_url_code")){
+            const flagRow=(pgRaw||[]).find(x=>x.membership_status==="pending")||(pgRaw||[]).find(x=>x.membership_status==="rejected");
+            if(flagRow){
+              const{data:gInfo}=await supabase.from("groups").select("name").eq("id",flagRow.group_id).maybeSingle();
+              setCurrentUser(playerData);
+              linkOneSignal(playerData.id);
+              setPendingRequest({status:flagRow.membership_status, groupName:gInfo?.name||null});
+              setView("pedido-pendente");
+              handled = true;
+              return;
+            }
           }
           localStorage.removeItem("hhb_session");
         }
@@ -393,14 +407,21 @@ export default function App() {
                 linkOneSignal(p.id, p.group_id);
                 setView(p.is_admin?"admin":"player");
               } else {
-                const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",p.id);
-                if(pgRaw&&pgRaw.length>0){
-                  const gids=pgRaw.map(x=>Number(x.group_id));
+                const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin,membership_status").eq("player_id",p.id);
+                const activeRows=(pgRaw||[]).filter(x=>x.membership_status==="active");
+                const flagRow=(pgRaw||[]).find(x=>x.membership_status==="pending")||(pgRaw||[]).find(x=>x.membership_status==="rejected");
+                if(activeRows.length>0){
+                  const gids=activeRows.map(x=>Number(x.group_id));
                   const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
-                  const enriched=pgRaw.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
+                  const enriched=activeRows.map(x=>({...x,group_id:Number(x.group_id),groups:gData?.find(g=>Number(g.id)===Number(x.group_id))||{id:Number(x.group_id),name:"Grupo "+x.group_id,location:"",time:""}}));
                   setMyGroups(enriched);
                   linkOneSignal(p.id);
                   setView("meus-grupos");
+                } else if(flagRow){
+                  const{data:gInfo}=await supabase.from("groups").select("name").eq("id",flagRow.group_id).maybeSingle();
+                  linkOneSignal(p.id);
+                  setPendingRequest({status:flagRow.membership_status, groupName:gInfo?.name||null});
+                  setView("pedido-pendente");
                 } else {
                   setView("landing");
                   showToast("Conta criada com o Google! Fala com o administrador do teu grupo para te adicionar.");
@@ -460,9 +481,10 @@ export default function App() {
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
 
-  // Função auxiliar para carregar grupos de um player
+  // Função auxiliar para carregar grupos de um player (só membros ativos —
+  // pedidos pendentes/recusados não contam como grupos "reais")
   const loadMyGroups = async(playerId)=>{
-    const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",playerId);
+    const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",playerId).eq("membership_status","active");
     if(!pgRaw||pgRaw.length===0) return [];
     const gids=pgRaw.map(x=>Number(x.group_id));
     const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
@@ -488,14 +510,23 @@ export default function App() {
       setView("meus-grupos");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:null}));
       linkOneSignal(p.id);
+    } else if(groups.length===1){
+      const gid=groups[0].group_id;
+      localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:gid}));
+      linkOneSignal(p.id, gid);
+      setActiveGroupId(gid);
+      await reloadAll(gid);
+      setView(p.is_admin?"admin":"player");
     } else {
-      const gid = groups.length===1 ? groups[0].group_id : (p.group_id||null);
-      if(gid){
-        localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:gid}));
-        linkOneSignal(p.id, gid);
-        setActiveGroupId(gid);
-        await reloadAll(gid);
-        setView(p.is_admin?"admin":"player");
+      // Sem grupos ativos — pode ter um pedido pendente/recusado a mostrar
+      const{data:pgAll}=await supabase.from("player_groups").select("group_id,membership_status").eq("player_id",p.id);
+      const flagRow=(pgAll||[]).find(x=>x.membership_status==="pending")||(pgAll||[]).find(x=>x.membership_status==="rejected");
+      localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id}));
+      linkOneSignal(p.id);
+      if(flagRow){
+        const{data:gInfo}=await supabase.from("groups").select("name").eq("id",flagRow.group_id).maybeSingle();
+        setPendingRequest({status:flagRow.membership_status, groupName:gInfo?.name||null});
+        setView("pedido-pendente");
       } else {
         setView("landing");
       }
@@ -752,6 +783,7 @@ export default function App() {
         setView("meus-grupos");
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
+      {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -1461,6 +1493,28 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
   );
 }
 
+// ── PEDIDO PENDENTE VIEW ──────────────────────────────────────────────────────
+function PedidoPendenteView({groupName=null, status="pending", onTryAnother, onLogout}) {
+  const isRejected = status==="rejected";
+  return (
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+      <div style={{fontSize:64,marginBottom:20}}>{isRejected?"🚫":"⏳"}</div>
+      <div style={{color:"white",fontSize:22,fontWeight:800,marginBottom:10}}>{isRejected?"Pedido não aceite":"Pedido enviado"}</div>
+      <div style={{color:"#8a9080",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:32}}>
+        {isRejected
+          ? <>O teu pedido para entrar {groupName?<>em <strong style={{color:"#d4af37"}}>{groupName}</strong></>:"no grupo"} não foi aceite pelo admin.</>
+          : <>Estás à espera que o admin {groupName?<>de <strong style={{color:"#d4af37"}}>{groupName}</strong></>:""} aprove a tua entrada. Assim que for aceite, avisamos-te.</>}
+      </div>
+      <button onClick={onTryAnother} style={{width:"100%",maxWidth:300,padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>
+        Tentar outro código
+      </button>
+      <button onClick={onLogout} style={{width:"100%",maxWidth:300,padding:"14px",background:"transparent",border:"none",color:"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+        Sair
+      </button>
+    </div>
+  );
+}
+
 // ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
 function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicionado=null, onBack=null}) {
   const [code, setCode]         = useState(()=>{
@@ -1504,13 +1558,21 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const p=result?.player||null;
     if(!p){showToast("Utilizador ou password incorretos","err");setLoading(false);return;}
     await establishSession(result.session);
-    // Se o player não tem group_id, associa-o agora ao grupo
-    if(!p.group_id){
-      await supabase.from("players").update({group_id:group.id}).eq("id",p.id);
+    // Já é membro ativo deste grupo? Só nesse caso entra logo — caso contrário
+    // fica em espera pela aprovação do admin (novo pedido, ou já pendente).
+    const{data:existing}=await supabase.from("player_groups").select("membership_status").eq("player_id",p.id).eq("group_id",group.id).maybeSingle();
+    if(existing?.membership_status==="active"){
+      if(!p.group_id) await supabase.from("players").update({group_id:group.id}).eq("id",p.id);
+      localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:group.id}));
+      window.location.reload();
+      return;
     }
-    // Registar na tabela player_groups
-    await supabase.from("player_groups").upsert({player_id:p.id,group_id:group.id,is_admin:false},{onConflict:"player_id,group_id"});
-    localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:group.id}));
+    if(!existing||existing.membership_status==="rejected"){
+      await supabase.from("player_groups").upsert({player_id:p.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
+      linkOneSignal(p.id);
+      await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+    }
+    localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id}));
     window.location.reload();
   };
 
@@ -1518,14 +1580,17 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
     setLoading(true);
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:group.id});
+    // Cria a conta sem grupo — só fica associada ao grupo quando o admin
+    // aprovar o pedido (ver player_groups.membership_status abaixo).
+    const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
     if(regResult?.error){showToast(regResult.error,"err");setLoading(false);return;}
     const inserted=regResult.player;
-    showToast("Conta criada! A entrar... 🎉");
     await establishSession(regResult.session);
-    // Registar na tabela player_groups
-    await supabase.from("player_groups").upsert({player_id:inserted.id,group_id:group.id,is_admin:false},{onConflict:"player_id,group_id"});
-    localStorage.setItem("hhb_session",JSON.stringify({playerId:inserted.id,groupId:group.id}));
+    await supabase.from("player_groups").upsert({player_id:inserted.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
+    linkOneSignal(inserted.id);
+    await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+    showToast("Conta criada! Pedido enviado ao admin 🎉");
+    localStorage.setItem("hhb_session",JSON.stringify({playerId:inserted.id}));
     await new Promise(r=>setTimeout(r,800));
     window.location.reload();
   };
@@ -1559,19 +1624,29 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
             /* Já autenticado — só adicionar grupo */
             <button onClick={async()=>{
               setLoading(true);
-              const{error}=await supabase.from("player_groups").upsert({player_id:currentUser.id,group_id:group.id,is_admin:false},{onConflict:"player_id,group_id"});
-              if(error){ showToast("Erro ao adicionar grupo","err"); setLoading(false); return; }
-              // Atualizar group_id do player se ainda não tiver
-              if(!currentUser.group_id||currentUser.group_id!==group.id) await supabase.from("players").update({group_id:group.id}).eq("id",currentUser.id);
-              linkOneSignal(currentUser.id, group.id);
-              showToast(`${group.name} adicionado! 🎉`);
-              // Pequena pausa para garantir que a BD atualizou
-              await new Promise(r=>setTimeout(r,500));
+              const{data:existing}=await supabase.from("player_groups").select("membership_status").eq("player_id",currentUser.id).eq("group_id",group.id).maybeSingle();
+              if(existing?.membership_status==="active"){
+                if(!currentUser.group_id||currentUser.group_id!==group.id) await supabase.from("players").update({group_id:group.id}).eq("id",currentUser.id);
+                linkOneSignal(currentUser.id, group.id);
+                showToast(`${group.name} adicionado! 🎉`);
+                await new Promise(r=>setTimeout(r,500));
+                setLoading(false);
+                if(onGrupoAdicionado) onGrupoAdicionado();
+                else setView("landing");
+                return;
+              }
+              if(!existing||existing.membership_status==="rejected"){
+                const{error}=await supabase.from("player_groups").upsert({player_id:currentUser.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
+                if(error){ showToast("Erro ao enviar pedido","err"); setLoading(false); return; }
+                await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+              }
+              showToast("Pedido enviado! Aguarda aprovação do admin.");
+              await new Promise(r=>setTimeout(r,600));
               setLoading(false);
               if(onGrupoAdicionado) onGrupoAdicionado();
               else setView("landing");
             }} style={{width:"100%",...greenBtn,borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,fontSize:15,fontWeight:800}} disabled={loading}>
-              {loading?"A adicionar...":"✅ Adicionar aos meus grupos"}
+              {loading?"A processar...":"✅ Adicionar aos meus grupos"}
             </button>
           ) : (
             /* Não autenticado — login ou criar conta */
@@ -3051,6 +3126,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         )}
 
         {adminTab==="gerir"&&<>
+          <PendingRequestsPanel groupId={groupId||currentUser?.group_id} showToast={showToast}/>
           <ExpandableSection icon="⚙️" title="Configurações" subtitle="Nome, dias habituais e informações do jogo">
             <div style={{marginBottom:12}}>
               <label className="field-label">🏟️ Nome do grupo</label>
@@ -3296,6 +3372,60 @@ function ExpandableSection({icon, title, subtitle, children}) {
         <span style={{color:"#4b5563",fontSize:12}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<div style={{background:"#0f0f0f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── PEDIDOS DE ENTRADA (aprovação do admin) ────────────────────────────────────
+function PendingRequestsPanel({groupId, showToast}) {
+  const [requests, setRequests] = useState([]);
+  const [busyId, setBusyId] = useState(null);
+
+  const load = useCallback(async()=>{
+    if(!groupId) return;
+    const{data}=await supabase.from("player_groups").select("player_id,players(name,username,phone,avatar_color)").eq("group_id",groupId).eq("membership_status","pending");
+    setRequests(data||[]);
+  },[groupId]);
+
+  useEffect(()=>{ load(); },[load]);
+  useEffect(()=>{
+    const ch=supabase.channel("pg_requests_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>load()).subscribe();
+    return()=>supabase.removeChannel(ch);
+  },[load]);
+
+  const respond = async(playerId, approve)=>{
+    setBusyId(playerId);
+    const newStatus = approve?"active":"rejected";
+    const{error}=await supabase.from("player_groups").update({membership_status:newStatus}).eq("player_id",playerId).eq("group_id",groupId);
+    if(error){ showToast("Erro ao processar pedido","err"); setBusyId(null); return; }
+    if(approve){
+      const{data:pl}=await supabase.from("players").select("group_id").eq("id",playerId).maybeSingle();
+      if(!pl?.group_id) await supabase.from("players").update({group_id:groupId}).eq("id",playerId);
+    }
+    supabase.functions.invoke("notify-membership",{body:{action:approve?"approved":"rejected", group_id:groupId, target_player_id:playerId}});
+    showToast(approve?"Pedido aceite ✓":"Pedido recusado");
+    setBusyId(null);
+    load();
+  };
+
+  if(requests.length===0) return null;
+
+  return (
+    <div style={{background:"rgba(212,175,55,0.08)",border:"2px solid #d4af37",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+      <div style={{color:"#d4af37",fontWeight:800,fontSize:13,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>🔔 {requests.length} pedido{requests.length>1?"s":""} de entrada</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {requests.map(r=>(
+          <div key={r.player_id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
+            <Avatar player={r.players} size={34}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{color:"white",fontWeight:700,fontSize:13}}>{r.players?.name}</div>
+              <div style={{color:"#6b7280",fontSize:10.5}}>@{r.players?.username}{r.players?.phone?` · ${r.players.phone}`:""}</div>
+            </div>
+            <button onClick={()=>respond(r.player_id,true)} disabled={busyId===r.player_id} style={{background:"rgba(30,168,81,0.15)",border:"1px solid #1ea851",borderRadius:8,padding:"7px 10px",color:"#4ade80",fontWeight:700,fontSize:11,cursor:"pointer"}}>✓</button>
+            <button onClick={()=>respond(r.player_id,false)} disabled={busyId===r.player_id} style={{background:"rgba(239,68,68,0.12)",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"#f87171",fontWeight:700,fontSize:11,cursor:"pointer"}}>✕</button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

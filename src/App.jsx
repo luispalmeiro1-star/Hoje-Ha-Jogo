@@ -2673,7 +2673,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         </div>
 
         {/* Código do grupo */}
-        <GroupCodeCard groupId={activeGroupId||player.group_id}/>
+        <GroupCodeCard groupId={activeGroupId||player.group_id} isAdmin={!!player.is_admin}/>
 
         {/* Ações */}
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
@@ -3090,7 +3090,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 Equipa {winnerTeam} venceu!</div>}
             </>}
           <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
-          <GroupCodeCard groupId={groupId}/>
+          <GroupCodeCard groupId={groupId} isAdmin={true}/>
         </>}
 
         {adminTab==="dividas"&&<>
@@ -3771,7 +3771,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
 }
 
 // ── GROUP CODE CARD ───────────────────────────────────────────────────────────
-function GroupCodeCard({groupId}) {
+function GroupCodeCard({groupId, isAdmin=false}) {
   const [code, setCode] = useState(null);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -3801,7 +3801,8 @@ function GroupCodeCard({groupId}) {
       const check=await callVerifyInvite(newCode);
       exists=!check?.error;
     }
-    await supabase.from("groups").update({invite_code:newCode}).eq("id",groupId);
+    const{error}=await supabase.from("groups").update({invite_code:newCode}).eq("id",groupId);
+    if(error) return;
     setCode(newCode);
     setShowQR(false);
   };
@@ -3817,9 +3818,9 @@ function GroupCodeCard({groupId}) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0}}>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4af37",letterSpacing:5}}>{code}</div>
         <div style={{display:"flex",gap:6}}>
-          <button onClick={handleRefreshCode} title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          {isAdmin&&<button onClick={handleRefreshCode} title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             🔄
-          </button>
+          </button>}
           <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?"rgba(212,175,55,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#d4af37":"#23271b"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#d4af37":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             QR
           </button>

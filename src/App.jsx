@@ -2895,6 +2895,16 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [editMaxPlayers,setEditMaxPlayers]=useState(12);
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
   const [codeCopied,setCodeCopied]=useState(false);
+  const [pendingCount,setPendingCount]=useState(0);
+
+  const gid=groupId||currentUser?.group_id;
+  useEffect(()=>{
+    if(!gid) return;
+    const loadCount=()=>supabase.from("player_groups").select("player_id").eq("group_id",gid).eq("membership_status","pending").then(({data})=>setPendingCount(data?.length||0));
+    loadCount();
+    const ch=supabase.channel("pg_pending_count_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},loadCount).subscribe();
+    return()=>supabase.removeChannel(ch);
+  },[gid]);
 
   useEffect(()=>{setEditLoc(gameInfo.location);setEditDate(gameInfo.date);setEditTime(gameInfo.time);setEditAppName(gameInfo.app_name||"Hoje Há Jogo");setEditCost(gameInfo.cost_per_player||3);},[gameInfo]);
   useEffect(()=>{
@@ -2993,7 +3003,12 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         <div className="tabs">
           {[["jogo","⚽ Jogo"],["equipas","🎲 Equipas"],["jogadores","👥 Jogadores"],["gerir","⚙️ Gerir"]].map(([k,l])=>(
-            <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)}>{l}</button>
+            <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)} style={{position:"relative"}}>
+              {l}
+              {k==="gerir"&&pendingCount>0&&(
+                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
+              )}
+            </button>
           ))}
         </div>
 
@@ -3129,7 +3144,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
         )}
 
         {adminTab==="gerir"&&<>
-          <PendingRequestsPanel groupId={groupId||currentUser?.group_id} showToast={showToast}/>
+          <PendingRequestsPanel groupId={gid} showToast={showToast}/>
           <ExpandableSection icon="⚙️" title="Configurações" subtitle="Nome, dias habituais e informações do jogo">
             <div style={{marginBottom:12}}>
               <label className="field-label">🏟️ Nome do grupo</label>
@@ -3383,6 +3398,7 @@ function ExpandableSection({icon, title, subtitle, children}) {
 function PendingRequestsPanel({groupId, showToast}) {
   const [requests, setRequests] = useState([]);
   const [busyId, setBusyId] = useState(null);
+  const [confirmRejectId, setConfirmRejectId] = useState(null);
 
   const load = useCallback(async()=>{
     if(!groupId) return;
@@ -3411,6 +3427,7 @@ function PendingRequestsPanel({groupId, showToast}) {
     supabase.functions.invoke("notify-membership",{body:{action:approve?"approved":"rejected", group_id:groupId, target_player_id:playerId}});
     showToast(approve?"Pedido aceite ✓":"Pedido recusado");
     setBusyId(null);
+    setConfirmRejectId(null);
     load();
   };
 
@@ -3427,8 +3444,18 @@ function PendingRequestsPanel({groupId, showToast}) {
               <div style={{color:"white",fontWeight:700,fontSize:13}}>{r.players?.name}</div>
               <div style={{color:"#6b7280",fontSize:10.5}}>@{r.players?.username}{r.players?.phone?` · ${r.players.phone}`:""}</div>
             </div>
-            <button onClick={()=>respond(r.player_id,true)} disabled={busyId===r.player_id} style={{background:"rgba(30,168,81,0.15)",border:"1px solid #1ea851",borderRadius:8,padding:"7px 10px",color:"#4ade80",fontWeight:700,fontSize:11,cursor:"pointer"}}>✓</button>
-            <button onClick={()=>respond(r.player_id,false)} disabled={busyId===r.player_id} style={{background:"rgba(239,68,68,0.12)",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"#f87171",fontWeight:700,fontSize:11,cursor:"pointer"}}>✕</button>
+            {confirmRejectId===r.player_id ? (
+              <>
+                <span style={{color:"#f87171",fontSize:10.5,fontWeight:700}}>Recusar?</span>
+                <button onClick={()=>respond(r.player_id,false)} disabled={busyId===r.player_id} style={{background:"#dc2626",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"white",fontWeight:700,fontSize:11,cursor:"pointer"}}>Sim</button>
+                <button onClick={()=>setConfirmRejectId(null)} disabled={busyId===r.player_id} style={{background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>Não</button>
+              </>
+            ) : (
+              <>
+                <button onClick={()=>respond(r.player_id,true)} disabled={busyId===r.player_id} style={{background:"rgba(30,168,81,0.15)",border:"1px solid #1ea851",borderRadius:8,padding:"7px 10px",color:"#4ade80",fontWeight:700,fontSize:11,cursor:"pointer"}}>✓</button>
+                <button onClick={()=>setConfirmRejectId(r.player_id)} disabled={busyId===r.player_id} style={{background:"rgba(239,68,68,0.12)",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"#f87171",fontWeight:700,fontSize:11,cursor:"pointer"}}>✕</button>
+              </>
+            )}
           </div>
         ))}
       </div>

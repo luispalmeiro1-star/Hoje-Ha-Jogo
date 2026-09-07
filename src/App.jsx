@@ -1609,7 +1609,10 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
         {step===1&&<>
           <p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
           <label style={fieldLabel}>CÓDIGO DE CONVITE</label>
-          <input className="text-input" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
+          <input className="text-input" value={code} onChange={e=>{
+            const clean=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
+            setCode(clean.length>3?clean.slice(0,3)+"-"+clean.slice(3):clean);
+          }} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
           <button className="btn-big" style={greenBtn} onClick={checkCode} disabled={loading}>{loading?"A verificar...":"Verificar código →"}</button>
         </>}
 

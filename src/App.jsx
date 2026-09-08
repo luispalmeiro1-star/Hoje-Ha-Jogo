@@ -3238,7 +3238,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
-              {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30]).map(n=>(
+              {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30,32]).map(n=>(
                 <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#1ea851":"#23271b"}`,background:(editMaxPlayers||12)===n?"#14160f":"#14160f",color:(editMaxPlayers||12)===n?"#4ade80":"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>

@@ -10,6 +10,7 @@ const REGISTER_URL = `${SUPABASE_URL}/functions/v1/smooth-processor`;
 const LOGIN_URL = `${SUPABASE_URL}/functions/v1/auth-login`;
 const VERIFY_URL = `${SUPABASE_URL}/functions/v1/verify-invite`;
 const GOOGLE_URL = `${SUPABASE_URL}/functions/v1/auth-google`;
+const OPEN_JOIN_URL = `${SUPABASE_URL}/functions/v1/join-open-game`;
 
 async function callGoogleAuth(access_token) {
   const res = await fetch(GOOGLE_URL, {
@@ -34,6 +35,15 @@ async function callRegister(data) {
     method: "POST",
     headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
     body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function callOpenJoin(payload) {
+  const res = await fetch(OPEN_JOIN_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+    body: JSON.stringify(payload)
   });
   return await res.json();
 }
@@ -292,7 +302,13 @@ export default function App() {
   const [piggybank, setPiggybank]     = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
   const [activeGroupId, setActiveGroupId] = useState(null);
-  const [view, setView]               = useState("landing");
+  const [view, setView]               = useState(()=>{
+    try{ if(new URLSearchParams(window.location.search).get("vaga")) return "entrar-vaga"; }catch(e){}
+    return "landing";
+  });
+  const [vagaCode]                    = useState(()=>{
+    try{ return new URLSearchParams(window.location.search).get("vaga")||""; }catch(e){ return ""; }
+  });
   const [myGroups, setMyGroups]       = useState([]);
   const [pendingRequest, setPendingRequest] = useState(null); // {status:'pending'|'rejected', groupName}
   const [mbwayNumber, setMbwayNumber]   = useState("");
@@ -819,6 +835,7 @@ export default function App() {
         setView("meus-grupos");
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
+      {view==="entrar-vaga"    && <EntrarVagaView code={vagaCode} setView={setView}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
@@ -1556,6 +1573,91 @@ function PedidoPendenteView({groupName=null, status="pending", onTryAnother, onL
       </button>
     </div>
   );
+}
+
+// ── ENTRAR VAGA ABERTA (sem conta, sem login) ────────────────────────────────
+function EntrarVagaView({code, setView}) {
+  const [phase, setPhase]       = useState("loading"); // loading | error | form | submitting | success
+  const [info, setInfo]         = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [resultStatus, setResultStatus] = useState(null);
+  const [name, setName]         = useState("");
+  const [phone, setPhone]       = useState("");
+  const [position, setPosition] = useState("");
+
+  useEffect(()=>{
+    (async()=>{
+      if(!code){ setErrorMsg("Link inválido."); setPhase("error"); return; }
+      const result = await callOpenJoin({action:"peek", code});
+      if(result?.error){ setErrorMsg(result.error); setPhase("error"); return; }
+      setInfo(result);
+      setPosition(sportConfig(result.sport_type).positions[0]);
+      setPhase("form");
+    })();
+  },[code]);
+
+  const handleJoin = async() => {
+    if(!name.trim()){ return; }
+    setPhase("submitting");
+    const result = await callOpenJoin({action:"join", code, name:name.trim(), phone:phone.trim()||null, position});
+    if(result?.error){ setErrorMsg(result.error); setPhase("error"); return; }
+    setResultStatus(result.status);
+    setPhase("success");
+  };
+
+  const shell = (children) => (
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+      {children}
+    </div>
+  );
+
+  if(phase==="loading") return shell(<div style={{color:"#8a9080",fontSize:14}}>A verificar o link...</div>);
+
+  if(phase==="error") return shell(<>
+    <div style={{fontSize:56,marginBottom:16}}>😕</div>
+    <div style={{color:"white",fontSize:18,fontWeight:800,marginBottom:8}}>Não foi possível continuar</div>
+    <div style={{color:"#8a9080",fontSize:13,lineHeight:1.6,maxWidth:300,marginBottom:24}}>{errorMsg}</div>
+    <button onClick={()=>setView("landing")} style={{padding:"12px 24px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>Ir para a Hoje Há Jogo</button>
+  </>);
+
+  if(phase==="success") return shell(<>
+    <div style={{fontSize:64,marginBottom:16}}>{resultStatus==="in"?"✅":"⏳"}</div>
+    <div style={{color:"white",fontSize:20,fontWeight:800,marginBottom:8}}>{resultStatus==="in"?"Estás dentro!":"Ficaste na lista de espera"}</div>
+    <div style={{color:"#8a9080",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:8}}>
+      {resultStatus==="in"
+        ? <>Aparece em <strong style={{color:"#d4af37"}}>{info.location}</strong> no dia marcado. Boa sorte!</>
+        : <>O jogo já está cheio, mas ficaste em lista de espera — se alguém desistir, entras automaticamente.</>}
+    </div>
+    <div style={{color:"#4b5563",fontSize:12,marginBottom:28}}>{new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
+    <a href="https://hojehajogo.pt" style={{padding:"12px 24px",background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:12,color:"#04240f",fontWeight:800,fontSize:13,textDecoration:"none"}}>Conhecer a Hoje Há Jogo →</a>
+  </>);
+
+  // phase === "form"
+  const cfg = sportConfig(info.sport_type);
+  return shell(<div style={{width:"100%",maxWidth:340}}>
+    <div style={{fontSize:11,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:6}}>VAGA ABERTA</div>
+    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#d4af37",letterSpacing:1,marginBottom:16}}>{info.group_name}</div>
+    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"16px",marginBottom:20,textAlign:"left"}}>
+      <div style={{fontSize:13,color:"white",fontWeight:700,marginBottom:4}}>📅 {new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
+      {info.location&&<div style={{fontSize:12,color:"#8a9080",marginBottom:4}}>📍 {info.location}</div>}
+      <div style={{fontSize:12,color:"#8a9080",marginBottom:4}}>💰 {info.cost_per_player}€ por jogador</div>
+      <div style={{fontSize:12,color:info.spots_left>0?"#4ade80":"#f87171",fontWeight:700}}>{info.spots_left>0?`${info.spots_left} vagas livres`:"Sem vagas — entras em lista de espera"}</div>
+    </div>
+    <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>O TEU NOME *</label>
+    <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
+    <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>TELEMÓVEL (opcional)</label>
+    <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
+    <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>POSIÇÃO</label>
+    <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+      {cfg.positions.map(pos=>(
+        <button key={pos} type="button" onClick={()=>setPosition(pos)} style={{flex:"1 1 auto",minWidth:100,padding:"8px",borderRadius:10,border:`2px solid ${position===pos?"#1ea851":"#23271b"}`,background:position===pos?"rgba(30,168,81,0.15)":"#14160f",color:position===pos?"#4ade80":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>{pos}</button>
+      ))}
+    </div>
+    <button onClick={handleJoin} disabled={!name.trim()} style={{width:"100%",padding:"16px",background:name.trim()?"linear-gradient(180deg,#2fd66b,#1ea851)":"#23271b",border:"none",borderRadius:12,color:name.trim()?"#04240f":"#565c4d",fontWeight:800,fontSize:15,cursor:name.trim()?"pointer":"default"}}>
+      {phase==="submitting"?"A entrar...":"⚽ Quero jogar"}
+    </button>
+    <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginTop:14}}>Não precisas de criar conta. Só te vêem quem vai jogar contigo, nunca dados privados do grupo.</p>
+  </div>);
 }
 
 // ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
@@ -3215,6 +3317,9 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         {adminTab==="gerir"&&<>
           <PendingRequestsPanel groupId={gid} showToast={showToast}/>
+          <ExpandableSection icon="🌐" title="Vaga aberta" subtitle="Link para desconhecidos entrarem sem conta, só para este jogo">
+            <OpenSlotCard gameInfo={gameInfo} groupId={gid} showToast={showToast}/>
+          </ExpandableSection>
           <ExpandableSection icon="⚙️" title="Configurações" subtitle="Nome, dias habituais e informações do jogo">
             <div style={{marginBottom:12}}>
               <label className="field-label">🏟️ Nome do grupo</label>
@@ -3854,6 +3959,67 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
 }
 
 // ── GROUP CODE CARD ───────────────────────────────────────────────────────────
+// ── OPEN SLOT CARD (vaga aberta para este jogo) ──────────────────────────────
+function OpenSlotCard({gameInfo, groupId, showToast}) {
+  const [enabled, setEnabled] = useState(!!gameInfo?.open_join_enabled);
+  const [code, setCode] = useState(gameInfo?.open_join_code||null);
+  const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(()=>{
+    setEnabled(!!gameInfo?.open_join_enabled);
+    setCode(gameInfo?.open_join_code||null);
+  },[gameInfo?.open_join_enabled,gameInfo?.open_join_code]);
+
+  const generateCode = () => {
+    const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let c="VAGA-";
+    for(let i=0;i<4;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+    return c;
+  };
+
+  const handleToggle = async(next) => {
+    if(!gameInfo?.id) return;
+    setSaving(true);
+    const newCode = next ? (code || generateCode()) : code;
+    const{error}=await supabase.from("game_info").update({open_join_enabled:next, open_join_code:newCode}).eq("id",gameInfo.id);
+    setSaving(false);
+    if(error){ showToast("Erro ao atualizar vaga aberta","err"); return; }
+    setEnabled(next);
+    setCode(newCode);
+    showToast(next?"Vaga aberta ativada ✓":"Vaga aberta desativada ✓");
+  };
+
+  const link = code ? `https://hojehajogo.pt?vaga=${code}` : "";
+  const handleShare = () => {
+    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:"Falta gente para o nosso jogo — entra por aqui, sem precisares de conta!",url:link}); }
+    else { navigator.clipboard.writeText(link).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2500); showToast("Link copiado ✓"); }); }
+  };
+
+  return (
+    <div style={{marginBottom:12}}>
+      <label className="field-label">🌐 Vaga aberta para este jogo</label>
+      <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Gera um link que qualquer pessoa pode usar para se juntar a este jogo, sem precisar de conta nem de aprovação — útil quando falta gente para completar.</p>
+      <div style={{display:"flex",gap:8,marginBottom:enabled?12:0}}>
+        {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
+          <button key={l} disabled={saving} onClick={()=>handleToggle(v)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${enabled===v?"#1ea851":"#23271b"}`,background:enabled===v?"rgba(30,168,81,0.15)":"#14160f",color:enabled===v?"#4ade80":"#6b7280",fontWeight:800,fontSize:13,cursor:saving?"default":"pointer"}}>{l}</button>
+        ))}
+      </div>
+      {enabled&&code&&(
+        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37",letterSpacing:3,marginBottom:8,wordBreak:"break-all"}}>{code}</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{navigator.clipboard.writeText(link);setCopied(true);setTimeout(()=>setCopied(false),2500);showToast("Link copiado ✓");}} style={{flex:1,padding:"9px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:copied?"#4ade80":"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              {copied?"Copiado!":"Copiar link"}
+            </button>
+            <button onClick={handleShare} style={{flex:1,padding:"9px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>Partilhar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GroupCodeCard({groupId, isAdmin=false}) {
   const [code, setCode] = useState(null);
   const [copied, setCopied] = useState(false);

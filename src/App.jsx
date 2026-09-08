@@ -300,6 +300,7 @@ export default function App() {
   const [treasurerName, setTreasurerName] = useState("");
   const [maxPlayers, setMaxPlayers]     = useState(12);
   const [sportType, setSportType]       = useState("futsal");
+  const [autoReassignTeams, setAutoReassignTeams] = useState(true);
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
@@ -339,7 +340,7 @@ export default function App() {
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
-    supabase.from("groups").select("mbway_number,max_players,sport_type").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); } });
+    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); } });
     supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
@@ -491,7 +492,7 @@ export default function App() {
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_treasurer_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } }); }).subscribe(),
-      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); } }); }).subscribe(),
+      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); } }); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); clearInterval(pollTimer); };
   },[]);
@@ -634,7 +635,7 @@ export default function App() {
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
     // Atualizar status no player_groups (por grupo)
     await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
-    await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
+    if(autoReassignTeams) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
   };
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
@@ -646,13 +647,13 @@ export default function App() {
     const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
     if(inserted){
       await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
-      if(!isFull) await reassignAllTeams([...players,inserted]);
+      if(!isFull&&autoReassignTeams) await reassignAllTeams([...players,inserted]);
     }
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
+  const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(autoReassignTeams) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
-  const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Jogador removido"); };
+  const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(autoReassignTeams) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Jogador removido"); };
   const changePassword = async(id,pw)=>{ const hashed=await hashPassword(pw); await supabase.from("players").update({password:hashed}).eq("id",id); };
   const addPlayer      = async(name,username,password,phone)=>{
     if(!name.trim()||!username.trim()||!password.trim()) return;
@@ -688,7 +689,7 @@ export default function App() {
   };
   const updatePosition = async(id,pos)=>{
     await supabase.from("players").update({position:pos}).eq("id",id);
-    await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
+    if(autoReassignTeams) await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
     showToast("Posição atualizada ✓");
   };
   const sendPushNotification = async(title,message)=>{
@@ -787,7 +788,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -2928,7 +2929,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",onMovePlayer}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,onMovePlayer}) {
   const cfg=sportConfig(sportType);
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
@@ -2957,6 +2958,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [editMaxPlayers,setEditMaxPlayers]=useState(12);
   const [editSportType,setEditSportType]=useState(sportType);
   useEffect(()=>{ setEditSportType(sportType); },[sportType]);
+  const [editAutoReassign,setEditAutoReassign]=useState(autoReassignTeams);
+  useEffect(()=>{ setEditAutoReassign(autoReassignTeams); },[autoReassignTeams]);
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
   const [codeCopied,setCodeCopied]=useState(false);
   const [pendingCount,setPendingCount]=useState(0);
@@ -3261,9 +3264,16 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
                 </button>
               ))}
             </div>
+            <label className="field-label">🎲 Recolocação automática de equipas</label>
+            <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
+                <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#1ea851":"#23271b"}`,background:editAutoReassign===v?"rgba(30,168,81,0.15)":"#14160f",color:editAutoReassign===v?"#4ade80":"#6b7280",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
+              ))}
+            </div>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType}).eq("id",groupId||currentUser.group_id);
+              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>

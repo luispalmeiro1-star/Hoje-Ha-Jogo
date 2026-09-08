@@ -111,6 +111,27 @@ const TEAM_COLORS = [
   { bg: "rgba(217,119,6,0.15)", border: "#d97706", text: "#fbbf24", name: "EQUIPA C" },
 ];
 
+const SPORT_CONFIG = {
+  futsal: {
+    label: "Futsal",
+    defaultMaxPlayers: 12,
+    teamSize: 5,
+    threeTeamsFrom: 15,
+    gkPosition: "GR",
+    positions: ["Polivalente", "GR"],
+  },
+  futebol11: {
+    label: "Futebol de 11",
+    defaultMaxPlayers: 24,
+    teamSize: 11,
+    threeTeamsFrom: 34,
+    gkPosition: "Guarda-Redes",
+    positions: ["Guarda-Redes", "Defesa Central", "Lateral Direito", "Lateral Esquerdo", "Médio Defensivo", "Médio Centro", "Médio Ofensivo", "Extremo Direito", "Extremo Esquerdo", "Avançado"],
+  },
+};
+function sportConfig(sportType) { return SPORT_CONFIG[sportType] || SPORT_CONFIG.futsal; }
+function numTeamsFor(count, sportType) { return count >= sportConfig(sportType).threeTeamsFrom ? 3 : 2; }
+
 function nextWednesday() {
   const now = new Date();
   const diff = (3 - now.getDay() + 7) % 7 || 7;
@@ -158,26 +179,34 @@ function shuffle(arr) {
   return a;
 }
 function getAvatar(player) { return player?.avatar_color || AVATAR_COLORS[0]; }
-function assignTeams(confirmed) {
+function assignTeams(confirmed, sportType="futsal") {
   const n = confirmed.length;
   if (n === 0) return {};
-  const numTeams = n >= 15 ? 3 : 2;
+  const cfg = sportConfig(sportType);
+  const numTeams = numTeamsFor(n, sportType);
   const teams = Array.from({length: numTeams}, () => []);
   const teamNames = ["A", "B", "C"];
-  const grs = shuffle(confirmed.filter(p => p.position === "GR"));
-  const pols = shuffle(confirmed.filter(p => p.position !== "GR"));
-  grs.slice(0, numTeams).forEach((gr, i) => teams[i].push(gr));
-  const rest = shuffle([...pols, ...grs.slice(numTeams)]);
-  rest.forEach(p => {
-    const minLen = Math.min(...teams.map(t => t.length));
-    const candidates = teams.map((t,i) => ({t,i})).filter(({t}) => t.length === minLen);
-    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-    chosen.t.push(p);
+  // Agrupar por posição (guarda-redes primeiro) para distribuir cada posição
+  // equilibradamente pelas equipas, em vez de deixar tudo ao acaso.
+  const byPosition = {};
+  confirmed.forEach(p => {
+    const pos = p.position || cfg.positions[0];
+    (byPosition[pos] = byPosition[pos] || []).push(p);
+  });
+  const positionOrder = [cfg.gkPosition, ...Object.keys(byPosition).filter(pos => pos !== cfg.gkPosition)];
+  positionOrder.forEach(pos => {
+    if (!byPosition[pos]) return;
+    shuffle(byPosition[pos]).forEach(p => {
+      const minLen = Math.min(...teams.map(t => t.length));
+      const candidates = teams.map((t,i) => ({t,i})).filter(({t}) => t.length === minLen);
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      chosen.t.push(p);
+    });
   });
   const result = {};
   teams.forEach((team, ti) => {
-    team.slice(0, 5).forEach(p => { result[p.id] = teamNames[ti]; });
-    team.slice(5).forEach(p => { result[p.id] = "SUB"; });
+    team.slice(0, cfg.teamSize).forEach(p => { result[p.id] = teamNames[ti]; });
+    team.slice(cfg.teamSize).forEach(p => { result[p.id] = "SUB"; });
   });
   return result;
 }
@@ -270,6 +299,7 @@ export default function App() {
   const [treasurerId, setTreasurerId]   = useState(null);
   const [treasurerName, setTreasurerName] = useState("");
   const [maxPlayers, setMaxPlayers]     = useState(12);
+  const [sportType, setSportType]       = useState("futsal");
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
@@ -309,7 +339,7 @@ export default function App() {
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
-    supabase.from("groups").select("mbway_number,max_players").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); } });
+    supabase.from("groups").select("mbway_number,max_players,sport_type").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); } });
     supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
@@ -461,7 +491,7 @@ export default function App() {
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_treasurer_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } }); }).subscribe(),
-      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); } }); }).subscribe(),
+      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); } }); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); clearInterval(pollTimer); };
   },[]);
@@ -584,7 +614,7 @@ export default function App() {
 
   const reassignAllTeams = async(updatedPlayers) => {
     const newConfirmed=updatedPlayers.filter(pl=>pl.status==="in");
-    const teamMap=assignTeams(newConfirmed);
+    const teamMap=assignTeams(newConfirmed,sportType);
     const finalPlayers=updatedPlayers.map(pl=>({...pl,team:teamMap[pl.id]||null}));
     setPlayers(finalPlayers);
     for(const pl of finalPlayers) await supabase.from("player_groups").update({team:teamMap[pl.id]||null}).eq("player_id",pl.id).eq("group_id",activeGroupId);
@@ -752,7 +782,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -851,7 +881,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
             </div>
             {isOpen&&(
               <div style={{padding:"0 12px 12px 50px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {[{label:"🔥 Série Atual",value:`${p.current_streak||0} jogos`},{label:"🏆 Melhor Série",value:`${p.best_streak||0} jogos`},{label:"💰 Total Pago",value:`${p.total_paid||0}€`},{label:"🧤 Posição",value:p.position==="GR"?"Guarda-Redes":"Polivalente"},{label:"⭐ MVPs",value:`${mvps} vez${mvps!==1?"es":"ez"}`},{label:"📈 Presença",value:`${pPct}%`}]
+                {[{label:"🔥 Série Atual",value:`${p.current_streak||0} jogos`},{label:"🏆 Melhor Série",value:`${p.best_streak||0} jogos`},{label:"💰 Total Pago",value:`${p.total_paid||0}€`},{label:"🧤 Posição",value:p.position||"Polivalente"},{label:"⭐ MVPs",value:`${mvps} vez${mvps!==1?"es":"ez"}`},{label:"📈 Presença",value:`${pPct}%`}]
                   .map((s,si)=>(
                   <div key={si} style={{background:"#0a1a0a",borderRadius:8,padding:"8px 10px"}}>
                     <div style={{fontSize:10,color:"#6b7280",marginBottom:2}}>{s.label}</div>
@@ -931,7 +961,7 @@ function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo, ma
 
 // ── GROUP STATUS CARD ────────────────────────────────────────────────────────
 function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}) {
-  const grs=confirmed.filter(p=>(players.find(pl=>pl.id===p.id))?.position==="GR");
+  const grs=confirmed.filter(p=>["GR","Guarda-Redes"].includes((players.find(pl=>pl.id===p.id))?.position));
   const msgs=[];
   if(confirmed.length>=maxPlayers) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
   else if(confirmed.length>=maxPlayers-3) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${maxPlayers-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
@@ -1353,6 +1383,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     return localStorage.getItem("hhb_pending_code") ? 3 : 1;
   });
   const [groupName, setGroupName]     = useState(()=>localStorage.getItem("hhb_pending_group")||"");
+  const [sportType, setSportType]     = useState("futsal");
   const [location, setLocation]       = useState("");
   const [time, setTime]               = useState("22:30");
   const [cost, setCost]               = useState("3");
@@ -1387,7 +1418,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     setLoading(true);
     try {
       const code=await generateCode();
-      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code}).select().single();
+      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
       if(ge) throw ge;
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
       const regResult=await callRegister({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:group.id});
@@ -1467,6 +1498,12 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
           <p style={{color:"#8a9080",fontSize:12,marginBottom:20}}>Informações do grupo</p>
           <label style={fieldLabel}>NOME DO GRUPO *</label>
           <input className="text-input" value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Ex: Futebolada da Quinta" style={{marginBottom:14}}/>
+          <label style={fieldLabel}>TIPO DE JOGO</label>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            {Object.entries(SPORT_CONFIG).map(([key,cfg])=>(
+              <button key={key} type="button" onClick={()=>setSportType(key)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${sportType===key?"#1ea851":"#23271b"}`,background:sportType===key?"rgba(30,168,81,0.15)":"#14160f",color:sportType===key?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{cfg.label}</button>
+            ))}
+          </div>
           <label style={fieldLabel}>LOCAL HABITUAL</label>
           <input className="text-input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Ex: Pavilhão Municipal" style={{marginBottom:14}}/>
           <label style={fieldLabel}>HORA HABITUAL</label>
@@ -1773,7 +1810,7 @@ function AutoTeamsDisplay({confirmed, players=[]}) {
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       {activeTeams.map((teamName,ti)=>{
         const color=TEAM_COLORS[ti],team=groups[teamName]||[];
-        return <div key={teamName} style={{background:color.bg,border:`2px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:p.position==="GR"?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${p.position==="GR"?"#60a5fa":color.border}`}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{p.position==="GR"&&<span style={{fontSize:11}}>🧤</span>}</div>)}</div></div>;
+        return <div key={teamName} style={{background:color.bg,border:`2px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>;})}</div></div>;
       })}
       {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #4b5563",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#9ca3af",border:"1px solid #2a332a"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>)}</div></div>}
     </div>
@@ -1985,7 +2022,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <Avatar player={player} size={36}/>
-          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
+          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
           {[["pessoal","⚽ Pessoal"],["grupo","🏆 Grupo"],["epocas","🏁 Épocas"]].map(([k,l])=>(
@@ -2610,7 +2647,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             </label>
           </div>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1,marginBottom:2}}>{player.name}</div>
-          <div style={{fontSize:11,color:"#6b7280",marginBottom:16}}>{player.is_admin?"⚡ Admin":player.position==="GR"?"🧤 Guarda-Redes":"⚽ Polivalente"}</div>
+          <div style={{fontSize:11,color:"#6b7280",marginBottom:16}}>{player.is_admin?"⚡ Admin":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}</div>
           {/* Stats rápidas */}
           <div style={{display:"flex",justifyContent:"center",gap:24}}>
             <div style={{textAlign:"center"}}>
@@ -2693,7 +2730,8 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+  const cfg=sportConfig(sportType);
   const isIn=player.status==="in",isWait=player.status==="wait";
   const [confirming,setConfirming]=useState(false);
   const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
@@ -2701,7 +2739,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
   const totalDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const [guestName,setGuestName]=useState("");
-  const [guestPosition,setGuestPosition]=useState("polivalente");
+  const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   return (
     <div className="screen">
       <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
@@ -2736,10 +2774,13 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
             🌍 Zona
           </button>
         </div>
-        <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
-          <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
-          <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#1ea851":"#23271b"}`,background:(player.position||"Polivalente")==="Polivalente"?"rgba(30,168,81,0.2)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#4ade80":"#6b7280"}}>⚽ Polivalente</button>
-          <button onClick={()=>onUpdatePosition("GR")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${player.position==="GR"?"#2563eb":"#23271b"}`,background:player.position==="GR"?"rgba(37,99,235,0.2)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:player.position==="GR"?"#60a5fa":"#6b7280"}}>🧤 Guarda-Redes</button>
+        <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,width:"100%"}}>POSIÇÃO:</span>
+          {cfg.positions.map(pos=>{
+            const active=(player.position||cfg.positions[0])===pos;
+            const isGk=pos===cfg.gkPosition;
+            return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#6b7280"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+          })}
         </div>
         {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id);return pl?.team&&pl.team!=="SUB";})&&(
           <div style={{marginBottom:14}}>
@@ -2781,9 +2822,12 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
                 <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
                 <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
               </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#1ea851":"#23271b"}`,background:guestPosition==="polivalente"?"rgba(30,168,81,0.15)":"#14160f",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
-                <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#23271b"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#14160f",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {cfg.positions.map(pos=>{
+                  const active=guestPosition===pos;
+                  const isGk=pos===cfg.gkPosition;
+                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+                })}
               </div>
             </div>
             {myGuests.map(g=><div key={g.id} className="guest-row"><div className="av-guest">{g.name[0]}</div><span className="guest-row-name">{g.name}</span><span className="tag-guest">convidado</span><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}
@@ -2867,7 +2911,8 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal"}) {
+  const cfg=sportConfig(sportType);
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -2875,7 +2920,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [editPassId,setEditPassId]=useState(null);
   const [editPassVal,setEditPassVal]=useState("");
   const [guestName,setGuestName]=useState("");
-  const [guestPosition,setGuestPosition]=useState("polivalente");
+  const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   const [editLoc,setEditLoc]=useState(gameInfo.location);
   const [editDate,setEditDate]=useState(gameInfo.date);
   const [editTime,setEditTime]=useState(gameInfo.time);
@@ -2893,6 +2938,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [mbwayNumber,setMbwayNumber]=useState("");
   const [mbwaySaved,setMbwaySaved]=useState(false);
   const [editMaxPlayers,setEditMaxPlayers]=useState(12);
+  const [editSportType,setEditSportType]=useState(sportType);
+  useEffect(()=>{ setEditSportType(sportType); },[sportType]);
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
   const [codeCopied,setCodeCopied]=useState(false);
   const [pendingCount,setPendingCount]=useState(0);
@@ -2986,7 +3033,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <div style={{background:"rgba(37,99,235,0.12)",border:"2px solid #2563eb",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
             <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
             <div style={{display:"flex",gap:8}}>
-              {["A","B","C"].slice(0,confirmed.length>=15||maxPlayers>=15?3:2).map(t=>(
+              {["A","B","C"].slice(0,numTeamsFor(history[0].players_count,sportType)).map(t=>(
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",history[0].id);
                   showToast(`Equipa ${t} registada como vencedora ✓`);
@@ -3053,9 +3100,12 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
                 <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>
                 <button className="btn-add" onClick={()=>{onAddGuest(guestName,guestPosition);setGuestName("");}}><Icon name="plus" size={16}/></button>
               </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setGuestPosition("polivalente")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="polivalente"?"#1ea851":"#23271b"}`,background:guestPosition==="polivalente"?"rgba(30,168,81,0.15)":"#14160f",color:guestPosition==="polivalente"?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚽ Polivalente</button>
-                <button onClick={()=>setGuestPosition("GR")} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${guestPosition==="GR"?"#2563eb":"#23271b"}`,background:guestPosition==="GR"?"rgba(37,99,235,0.15)":"#14160f",color:guestPosition==="GR"?"#93c5fd":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧤 Guarda-Redes</button>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {cfg.positions.map(pos=>{
+                  const active=guestPosition===pos;
+                  const isGk=pos===cfg.gkPosition;
+                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+                })}
               </div>
             </div>
           </ExpandableSection>
@@ -3077,11 +3127,11 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           {confirmed.length<MIN_PLAYERS
             ?<div className="guest-locked">⚠️ Precisas de {MIN_PLAYERS} confirmados. ({confirmed.length}/{MIN_PLAYERS})</div>
             :<>
-              <div style={{background:"#14160f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
+              <div style={{background:"#14160f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{numTeamsFor(confirmed.length,sportType)===3?`🏆 3 equipas de ${cfg.teamSize}`:`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
               <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams}/>
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
-                {["A","B","C"].slice(0,confirmed.length>=15?3:2).map(t=>(
+                {["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType)).map(t=>(
                   <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#9ca3af"}}>
                     {winnerTeam===t?"🏆":""} Equipa {t}
                   </button>
@@ -3121,7 +3171,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.filter(h=>h.players_count>0).length===0
             ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
-            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>)
+            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()}/>)
           }
         </>}
         {adminTab==="jogadores"&&(
@@ -3180,17 +3230,23 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
               <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
             </div>
+            <label className="field-label">⚽ Tipo de jogo</label>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {Object.entries(SPORT_CONFIG).map(([key,c])=>(
+                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#1ea851":"#23271b"}`,background:editSportType===key?"rgba(30,168,81,0.15)":"#14160f",color:editSportType===key?"#4ade80":"#6b7280",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
+              ))}
+            </div>
             <label className="field-label">👥 Máximo de jogadores</label>
-            <div style={{display:"flex",gap:8,marginBottom:8}}>
-              {[10,11,12,13,14,15].map(n=>(
-                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:1,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#1ea851":"#23271b"}`,background:(editMaxPlayers||12)===n?"#14160f":"#14160f",color:(editMaxPlayers||12)===n?"#4ade80":"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+            <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+              {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30]).map(n=>(
+                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#1ea851":"#23271b"}`,background:(editMaxPlayers||12)===n?"#14160f":"#14160f",color:(editMaxPlayers||12)===n?"#4ade80":"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
             </div>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if((groupId||currentUser?.group_id)&&editGameDays) await supabase.from("groups").update({game_days:editGameDays,max_players:editMaxPlayers||12}).eq("id",groupId||currentUser.group_id);
+              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>
@@ -3298,7 +3354,7 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
 }
 
 // ── HISTORICO CARD ────────────────────────────────────────────────────────────
-function HistoricoCard({h, groupId, showToast, reloadAll}) {
+function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll}) {
   const [open, setOpen] = useState(false);
   const [jogadores, setJogadores] = useState([]);
   const [loadingJogadores, setLoadingJogadores] = useState(false);
@@ -3348,7 +3404,7 @@ function HistoricoCard({h, groupId, showToast, reloadAll}) {
         {!h.winner_team&&h.players_count>0&&(
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
             <span style={{fontSize:11,color:"#6b7280"}}>Vencedor:</span>
-            {["A","B","C"].slice(0,h.players_count>=15?3:2).map(t=>(
+            {["A","B","C"].slice(0,numTeamsFor(h.players_count,sportType)).map(t=>(
               <button key={t} onClick={async()=>{
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
                 showToast(`Equipa ${t} registada ✓`);

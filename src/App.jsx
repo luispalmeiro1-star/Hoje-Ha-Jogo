@@ -2741,6 +2741,23 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
   const [showPw,setShowPw]=useState(false);
   const [color,setColor]=useState(player.avatar_color||AVATAR_COLORS[0]);
   const [editOpen,setEditOpen]=useState(false);
+  const [bugOpen,setBugOpen]=useState(false);
+  const [bugMsg,setBugMsg]=useState("");
+  const [bugSent,setBugSent]=useState(false);
+
+  const submitBug=async()=>{
+    if(!bugMsg.trim()) return;
+    const {error}=await supabase.from("bug_reports").insert({
+      group_id:activeGroupId||player.group_id,
+      player_id:player.id,
+      player_name:player.name,
+      message:bugMsg.trim(),
+    });
+    if(error){ showToast("Não foi possível enviar. Tenta outra vez.","err"); return; }
+    setBugSent(true);
+    setBugMsg("");
+    setTimeout(()=>{ setBugOpen(false); setBugSent(false); },1800);
+  };
 
   return (
     <div className="screen">
@@ -2843,6 +2860,25 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
           <button onClick={onSwitchAccount} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="logout" size={14}/> Trocar de conta
           </button>
+        </div>
+
+        {/* Reportar problema */}
+        <div style={{marginTop:14}}>
+          <button onClick={()=>setBugOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:13,fontWeight:700,color:"white"}}>🐛 Reportar problema</span>
+            <span style={{fontSize:12,color:"#4b5563"}}>{bugOpen?"▲":"▼"}</span>
+          </button>
+          {bugOpen&&<div style={{background:"#14160f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            {bugSent?(
+              <p style={{fontSize:13,color:"#4ade80",textAlign:"center",fontWeight:700}}>✓ Enviado, obrigado!</p>
+            ):(<>
+              <label className="field-label">O que aconteceu?</label>
+              <textarea className="text-input" rows={4} value={bugMsg} onChange={e=>setBugMsg(e.target.value)} placeholder="Descreve o que viste, o mais detalhado possível..." style={{resize:"vertical",fontFamily:"inherit"}}/>
+              <button className="btn-primary" style={{justifyContent:"center"}} onClick={submitBug} disabled={!bugMsg.trim()}>
+                <Icon name="check" size={15}/> ENVIAR
+              </button>
+            </>)}
+          </div>}
         </div>
       </div>
     </div>

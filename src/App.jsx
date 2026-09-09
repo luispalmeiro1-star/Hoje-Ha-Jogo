@@ -662,7 +662,13 @@ export default function App() {
     const teamMap=assignTeams(newConfirmed,sportType);
     const finalPlayers=updatedPlayers.map(pl=>({...pl,team:teamMap[pl.id]||null}));
     setPlayers(finalPlayers);
-    for(const pl of finalPlayers) await supabase.from("player_groups").update({team:teamMap[pl.id]||null}).eq("player_id",pl.id).eq("group_id",activeGroupId);
+    // Um único pedido em vez de um por jogador: antes, confirmar presença num
+    // grupo de 12 gerava 12 escritas em sequência e 12 eventos em tempo real,
+    // e cada evento fazia todos os telemóveis ligados recarregarem tudo.
+    if(activeGroupId){
+      const{error}=await supabase.rpc("set_player_teams",{gid:activeGroupId,assignments:finalPlayers.map(pl=>({player_id:pl.id,team:teamMap[pl.id]||null}))});
+      if(error) console.error("Erro ao guardar equipas:",error.message);
+    }
     return finalPlayers;
   };
 

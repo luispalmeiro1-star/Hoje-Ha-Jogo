@@ -1219,7 +1219,7 @@ function LandingView({setView}) {
         {/* Hero */}
         <div style={{padding:"32px 24px 8px",textAlign:"center"}}>
           <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:46,color:"white",letterSpacing:0.5,lineHeight:0.98,margin:"0 0 14px"}}>
-            O teu futsal,<br/><span style={{color:"#d4af37"}}>organizado.</span>
+            O teu jogo,<br/><span style={{color:"#d4af37"}}>organizado.</span>
           </h1>
           <p style={{fontSize:14.5,color:"#8a9080",maxWidth:300,margin:"0 auto 26px",lineHeight:1.6}}>
             Presenças, pagamentos e stats do teu grupo — tudo num só lugar, sem grupos de WhatsApp perdidos.

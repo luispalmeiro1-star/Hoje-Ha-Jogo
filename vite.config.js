@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: 'Hoje Há Jogo',
         short_name: 'Hoje Há Jogo',
-        description: 'Gestão do futsal semanal',
+        description: 'Gestão do jogo semanal',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
         display: 'standalone',

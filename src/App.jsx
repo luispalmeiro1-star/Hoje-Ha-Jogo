@@ -11,6 +11,7 @@ const LOGIN_URL = `${SUPABASE_URL}/functions/v1/auth-login`;
 const VERIFY_URL = `${SUPABASE_URL}/functions/v1/verify-invite`;
 const GOOGLE_URL = `${SUPABASE_URL}/functions/v1/auth-google`;
 const OPEN_JOIN_URL = `${SUPABASE_URL}/functions/v1/join-open-game`;
+const RESET_REQUEST_URL = `${SUPABASE_URL}/functions/v1/request-password-reset`;
 
 async function callGoogleAuth(access_token) {
   const res = await fetch(GOOGLE_URL, {
@@ -53,6 +54,15 @@ async function callLogin(username, password, group_id=null) {
     method: "POST",
     headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
     body: JSON.stringify({username, password, group_id})
+  });
+  return await res.json();
+}
+
+async function callRequestPasswordReset(username) {
+  const res = await fetch(RESET_REQUEST_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+    body: JSON.stringify({username})
   });
   return await res.json();
 }
@@ -1335,6 +1345,10 @@ function LoginView({onLogin, showToast, setView}) {
   const [showPw, setShowPw]     = useState(false);
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showReset, setShowReset]         = useState(false);
+  const [resetUsername, setResetUsername] = useState("");
+  const [resetLoading, setResetLoading]   = useState(false);
+  const [resetDone, setResetDone]         = useState(false);
 
   const handleSubmit = async() => {
     if(!username.trim()||!password.trim()) return;
@@ -1348,6 +1362,15 @@ function LoginView({onLogin, showToast, setView}) {
     setGoogleLoading(true);
     const{error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
     if(error){ showToast("Erro ao ligar ao Google","err"); setGoogleLoading(false); }
+  };
+
+  const handleRequestReset = async() => {
+    if(!resetUsername.trim()){ showToast("Insere o teu utilizador","err"); return; }
+    setResetLoading(true);
+    const result = await callRequestPasswordReset(resetUsername.trim());
+    setResetLoading(false);
+    if(result?.error){ showToast(result.error,"err"); return; }
+    setResetDone(true);
   };
 
   return (
@@ -1376,6 +1399,28 @@ function LoginView({onLogin, showToast, setView}) {
         <button className="btn-big" style={{marginBottom:0,marginTop:4,background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f"}} onClick={handleSubmit} disabled={loading}>
           {loading?"A entrar...":"ENTRAR →"}
         </button>
+
+        {!showReset ? (
+          <button type="button" onClick={()=>{setShowReset(true);setResetUsername(username);}} style={{background:"transparent",border:"none",color:"#8a9080",fontSize:12,cursor:"pointer",textDecoration:"underline",margin:"-2px auto 0"}}>
+            Esqueceste-te da password?
+          </button>
+        ) : resetDone ? (
+          <div style={{background:"rgba(30,168,81,0.1)",border:"1px solid #1ea851",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#4ade80",lineHeight:1.5,textAlign:"center"}}>
+            Pedido enviado! O admin do teu grupo vai definir uma password nova e envia-ta.
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:8,background:"#0f100b",border:"1px solid #23271b",borderRadius:12,padding:12}}>
+            <label style={{color:"#8a9080",fontSize:11,fontWeight:700,letterSpacing:0.5}}>O TEU UTILIZADOR</label>
+            <input className="text-input" placeholder="O teu utilizador..." value={resetUsername} onChange={e=>setResetUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleRequestReset()} autoCapitalize="none"/>
+            <div style={{display:"flex",gap:8}}>
+              <button type="button" className="btn-primary" style={{flex:1,justifyContent:"center"}} onClick={handleRequestReset} disabled={resetLoading}>
+                {resetLoading?"A enviar...":"Pedir nova password"}
+              </button>
+              <button type="button" className="icon-ghost" onClick={()=>setShowReset(false)}><Icon name="x" size={16}/></button>
+            </div>
+          </div>
+        )}
+
         <div style={{display:"flex",alignItems:"center",gap:10,margin:"2px 0"}}>
           <div style={{flex:1,height:1,background:"#23271b"}}/>
           <span style={{color:"#565c4d",fontSize:11}}>ou</span>
@@ -3407,6 +3452,8 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           }
         </>}
         {adminTab==="jogadores"&&(
+          <>
+          <PasswordResetRequestsPanel adminId={currentUser.id} showToast={showToast}/>
           <div className="player-list">
             {members.map(p=>(
               <div key={p.id} className="list-row" style={{flexWrap:"wrap",paddingBottom:12,alignItems:"flex-start",gap:8}}>
@@ -3423,6 +3470,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               </div>
             ))}
           </div>
+          </>
         )}
 
         {adminTab==="gerir"&&<>
@@ -3753,6 +3801,62 @@ function PendingRequestsPanel({groupId, showToast}) {
                 <button onClick={()=>respond(r.player_id,true)} disabled={busyId===r.player_id} style={{background:"rgba(30,168,81,0.15)",border:"1px solid #1ea851",borderRadius:8,padding:"7px 10px",color:"#4ade80",fontWeight:700,fontSize:11,cursor:"pointer"}}>✓</button>
                 <button onClick={()=>setConfirmRejectId(r.player_id)} disabled={busyId===r.player_id} style={{background:"rgba(239,68,68,0.12)",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"#f87171",fontWeight:700,fontSize:11,cursor:"pointer"}}>✕</button>
               </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── PEDIDOS DE NOVA PASSWORD ───────────────────────────────────────────────────
+function PasswordResetRequestsPanel({adminId, showToast}) {
+  const [requests, setRequests] = useState([]);
+  const [openId, setOpenId] = useState(null);
+  const [newPass, setNewPass] = useState("");
+  const [busyId, setBusyId] = useState(null);
+
+  const load = useCallback(async()=>{
+    const{data}=await supabase.from("password_reset_requests").select("id,player_id,player_name,created_at").eq("status","pending").order("created_at");
+    setRequests(data||[]);
+  },[]);
+
+  useEffect(()=>{ load(); },[load]);
+  useEffect(()=>{
+    const ch=supabase.channel("pw_reset_requests_ch").on("postgres_changes",{event:"*",schema:"public",table:"password_reset_requests"},()=>load()).subscribe();
+    return()=>supabase.removeChannel(ch);
+  },[load]);
+
+  const resolve = async(req)=>{
+    if(!newPass.trim()){ showToast("Escreve a nova password","err"); return; }
+    setBusyId(req.id);
+    const hashed=await hashPassword(newPass.trim());
+    const{error}=await supabase.from("players").update({password:hashed}).eq("id",req.player_id);
+    if(error){ showToast("Erro ao definir a password","err"); setBusyId(null); return; }
+    await supabase.from("password_reset_requests").update({status:"done",resolved_at:new Date().toISOString(),resolved_by:adminId}).eq("id",req.id);
+    showToast(`Password de ${req.player_name} atualizada — envia-lha ✓`);
+    setOpenId(null); setNewPass(""); setBusyId(null);
+    load();
+  };
+
+  if(requests.length===0) return null;
+
+  return (
+    <div style={{background:"rgba(212,175,55,0.08)",border:"2px solid #d4af37",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+      <div style={{color:"#d4af37",fontWeight:800,fontSize:13,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>🔑 {requests.length} pedido{requests.length>1?"s":""} de nova password</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {requests.map(r=>(
+          <div key={r.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{flex:1,minWidth:0,color:"white",fontWeight:700,fontSize:13}}>{r.player_name}</div>
+              {openId!==r.id && <button onClick={()=>{setOpenId(r.id);setNewPass("");}} style={{background:"rgba(212,175,55,0.15)",border:"1px solid #d4af37",borderRadius:8,padding:"7px 10px",color:"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer"}}>Definir password</button>}
+            </div>
+            {openId===r.id && (
+              <div style={{display:"flex",gap:6,marginTop:8}}>
+                <input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={newPass} onChange={e=>setNewPass(e.target.value)} autoFocus/>
+                <button className="btn-primary" style={{padding:"7px 10px"}} onClick={()=>resolve(r)} disabled={busyId===r.id}><Icon name="check" size={13}/></button>
+                <button className="icon-ghost" onClick={()=>setOpenId(null)}><Icon name="x" size={13}/></button>
+              </div>
             )}
           </div>
         ))}

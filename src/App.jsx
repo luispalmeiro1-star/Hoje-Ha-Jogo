@@ -864,7 +864,13 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
     {icon:"⚖️",title:"Equipas equilibradas",text:`As equipas para ${cfg.label.toLowerCase()} são sorteadas automaticamente por posição, para ficarem justas.`},
     {icon:"💶",title:"Contas sempre em dia",text:"Vês quanto deves e quando pagaste, sem teres de perguntar a ninguém."},
   ];
-  if(isAdmin) slides.push({icon:"⚙️",title:"És admin deste grupo",text:"Em \"Gerir\" convidas jogadores, ajustas configurações e podes até abrir uma vaga para alguém de fora entrar num jogo específico."});
+  if(isAdmin) slides.push(
+    {icon:"🔑",title:"Convida com um código",text:"Cada grupo tem um código único, em \"Gerir\". Partilha-o — quem o usar pede para entrar, e tu aprovas."},
+    {icon:"⚙️",title:"Configura o grupo",text:"Dia e hora do jogo, custo por jogador, tipo de desporto, máximo de jogadores — tudo em Gerir > Configurações."},
+    {icon:"💸",title:"Controla as dívidas",text:"Depois de cada jogo, a app regista sozinha quem ainda não pagou. Marcas como pago assim que receberes."},
+    {icon:"💶",title:"Pagamentos por MBWay",text:"Define o número de MBWay do grupo e cada jogador sabe logo para onde transferir."},
+    {icon:"🌐",title:"Vaga aberta",text:"Falta um jogador? Gera um link só para esse jogo — qualquer pessoa entra sem conta nem convite."},
+  );
   slides.push({icon:"🚀",title:"Pronto a começar!",text:"Podes rever isto sempre que quiseres. Boa sorte e bons jogos!"});
 
   const isLast=step===slides.length-1;

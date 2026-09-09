@@ -328,12 +328,18 @@ export default function App() {
 
   const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
   const groupIdRef = useRef(null);
+  const loadPlayersSeqRef = useRef(0);
 
   const loadPlayers    = useCallback(async(gid)=>{
     if(!gid) return;
+    // Várias subscrições em tempo real chamam loadPlayers ao mesmo tempo; como os
+    // pedidos podem responder fora de ordem, só o pedido mais recente pode aplicar
+    // o resultado — senão uma resposta antiga pode sobrepor um estado mais novo
+    // (ex.: reabrir o onboarding depois de já ter sido marcado como visto).
+    const seq=++loadPlayersSeqRef.current;
     // Buscar players via player_groups — status é por grupo
     const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin").eq("group_id",gid).eq("membership_status","active");
-    if(!pg||pg.length===0){ setPlayers([]); return; }
+    if(!pg||pg.length===0){ if(seq===loadPlayersSeqRef.current) setPlayers([]); return; }
     const pids=pg.map(x=>x.player_id);
     const{data:playersData}=await supabase.from("players").select(PLAYER_COLS).in("id",pids).order("id");
     if(!playersData) return;
@@ -342,7 +348,7 @@ export default function App() {
       const pgRow=pg.find(x=>x.player_id===p.id);
       return {...p, status:pgRow?.status||"out", paid:pgRow?.paid||false, confirmed_at:pgRow?.confirmed_at||null, team:pgRow?.team||null, is_admin:pgRow?.is_admin||false};
     });
-    setPlayers(merged);
+    if(seq===loadPlayersSeqRef.current) setPlayers(merged);
   },[]);
   const loadGameInfo   = useCallback(async(gid)=>{ const{data}=await supabase.from("game_info").select("*").eq("group_id",gid).limit(1).maybeSingle(); if(data)setGameInfo(data); },[]);
   const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));} },[]);

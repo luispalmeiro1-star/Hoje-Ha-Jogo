@@ -67,6 +67,15 @@ async function callRequestPasswordReset(username) {
   return await res.json();
 }
 
+async function callResetPassword(token, new_password) {
+  const res = await fetch(RESET_REQUEST_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+    body: JSON.stringify({action:"reset", token, new_password})
+  });
+  return await res.json();
+}
+
 // Troca o token emitido pelo auth-login/smooth-processor por uma sessão real e
 // verificada do Supabase — é isto que permite às regras de acesso da base de
 // dados saber quem está de facto a pedir os dados, em vez de confiarem apenas
@@ -313,11 +322,18 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeGroupId, setActiveGroupId] = useState(null);
   const [view, setView]               = useState(()=>{
-    try{ if(new URLSearchParams(window.location.search).get("vaga")) return "entrar-vaga"; }catch(e){}
+    try{
+      const q=new URLSearchParams(window.location.search);
+      if(q.get("reset")) return "repor-password";
+      if(q.get("vaga")) return "entrar-vaga";
+    }catch(e){}
     return "landing";
   });
   const [vagaCode]                    = useState(()=>{
     try{ return new URLSearchParams(window.location.search).get("vaga")||""; }catch(e){ return ""; }
+  });
+  const [resetToken]                  = useState(()=>{
+    try{ return new URLSearchParams(window.location.search).get("reset")||""; }catch(e){ return ""; }
   });
   const [myGroups, setMyGroups]       = useState([]);
   const [pendingRequest, setPendingRequest] = useState(null); // {status:'pending'|'rejected', groupName}
@@ -381,6 +397,9 @@ export default function App() {
     (async()=>{
       setLoading(true);
       let handled = false;
+      // Link de reposição de password: fica neste ecrã e não deixa o restauro
+      // de sessão levar a pessoa para outro lado.
+      if(resetToken){ setLoading(false); return; }
       // Esperar que a sessão persistida (se existir) seja restaurada antes de
       // fazer qualquer pedido — caso contrário a primeira leitura pode ainda ir
       // sem identidade e ser bloqueada pelas regras de acesso da base de dados.
@@ -878,6 +897,7 @@ export default function App() {
       }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
       {view==="entrar-vaga"    && <EntrarVagaView code={vagaCode} setView={setView}/>}
+      {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
@@ -1370,7 +1390,7 @@ function LoginView({onLogin, showToast, setView}) {
   const [showReset, setShowReset]         = useState(false);
   const [resetUsername, setResetUsername] = useState("");
   const [resetLoading, setResetLoading]   = useState(false);
-  const [resetDone, setResetDone]         = useState(false);
+  const [resetDone, setResetDone]         = useState(null); // {mode:"admin"|"self", delivered}
 
   const handleSubmit = async() => {
     if(!username.trim()||!password.trim()) return;
@@ -1392,7 +1412,7 @@ function LoginView({onLogin, showToast, setView}) {
     const result = await callRequestPasswordReset(resetUsername.trim());
     setResetLoading(false);
     if(result?.error){ showToast(result.error,"err"); return; }
-    setResetDone(true);
+    setResetDone({mode:result.mode||"admin", delivered:result.delivered!==false});
   };
 
   return (
@@ -1427,9 +1447,22 @@ function LoginView({onLogin, showToast, setView}) {
             Esqueceste-te da password?
           </button>
         ) : resetDone ? (
-          <div style={{background:"rgba(30,168,81,0.1)",border:"1px solid #1ea851",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#4ade80",lineHeight:1.5,textAlign:"center"}}>
-            Pedido enviado! O admin do teu grupo vai definir uma password nova e envia-ta.
-          </div>
+          resetDone.mode==="admin" ? (
+            <div style={{background:"rgba(30,168,81,0.1)",border:"1px solid #1ea851",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#4ade80",lineHeight:1.5,textAlign:"center"}}>
+              Pedido enviado! O admin do teu grupo vai definir uma password nova e envia-ta.
+            </div>
+          ) : resetDone.delivered ? (
+            <div style={{background:"rgba(30,168,81,0.1)",border:"1px solid #1ea851",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#4ade80",lineHeight:1.5,textAlign:"center"}}>
+              Enviámos uma notificação para o teu telemóvel com um link para escolheres uma password nova. Expira em 30 minutos.
+            </div>
+          ) : (
+            // Ninguém acima para repor a password e sem forma de chegar ao
+            // aparelho: dizer a verdade em vez de deixar a pessoa à espera.
+            <div style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#d4af37",lineHeight:1.5,textAlign:"center"}}>
+              Não há mais nenhum admin no teu grupo que possa repor a tua password, e não conseguimos enviar-te a notificação (as notificações podem estar desligadas neste telemóvel).<br/><br/>
+              Escreve para <strong>hojehajogo@gmail.com</strong> a partir do teu email e tratamos disso.
+            </div>
+          )
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:8,background:"#0f100b",border:"1px solid #23271b",borderRadius:12,padding:12}}>
             <label style={{color:"#8a9080",fontSize:11,fontWeight:700,letterSpacing:0.5}}>O TEU UTILIZADOR</label>
@@ -1458,6 +1491,57 @@ function LoginView({onLogin, showToast, setView}) {
       </button>
     </div>
   );
+}
+
+// ── REPOR PASSWORD (link de uso único) ────────────────────────────────────────
+function ReporPasswordView({token, setView, showToast}) {
+  const [pw1, setPw1]       = useState("");
+  const [pw2, setPw2]       = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone]     = useState(null); // {username}
+
+  const submit = async() => {
+    if(pw1.length<4){ showToast("A password tem de ter pelo menos 4 caracteres","err"); return; }
+    if(pw1!==pw2){ showToast("As passwords não coincidem","err"); return; }
+    setLoading(true);
+    const result = await callResetPassword(token, pw1);
+    setLoading(false);
+    if(result?.error){ showToast(result.error,"err"); return; }
+    // Limpar o token do URL para não ficar no histórico do browser
+    try{ window.history.replaceState({}, "", window.location.pathname); }catch(e){}
+    setDone({username:result.username||null});
+  };
+
+  const shell = (children) => (
+    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
+      <div style={{width:"100%",maxWidth:340}}>{children}</div>
+    </div>
+  );
+
+  if(done) return shell(<>
+    <div style={{fontSize:56,marginBottom:16}}>✅</div>
+    <div style={{color:"white",fontSize:20,fontWeight:800,marginBottom:10}}>Password alterada!</div>
+    <p style={{color:"#8a9080",fontSize:13,lineHeight:1.6,marginBottom:24}}>
+      {done.username?<>Já podes entrar com <strong style={{color:"#d4af37"}}>{done.username}</strong> e a password nova.</>:"Já podes entrar com a password nova."}
+    </p>
+    <button className="btn-big" style={{background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f"}} onClick={()=>setView("login")}>ENTRAR →</button>
+  </>);
+
+  return shell(<>
+    <div style={{fontSize:48,marginBottom:12}}>🔑</div>
+    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"white",letterSpacing:1,marginBottom:8}}>NOVA PASSWORD</div>
+    <p style={{color:"#8a9080",fontSize:13,lineHeight:1.6,marginBottom:20}}>Escolhe a password que vais passar a usar para entrar.</p>
+    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:20,textAlign:"left"}}>
+      <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>NOVA PASSWORD</label>
+      <input className="text-input" type="password" value={pw1} onChange={e=>setPw1(e.target.value)} placeholder="••••••" style={{marginBottom:14}} autoFocus/>
+      <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>REPETIR</label>
+      <input className="text-input" type="password" value={pw2} onChange={e=>setPw2(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="••••••" style={{marginBottom:18}}/>
+      <button className="btn-big" style={{marginBottom:0,background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f"}} onClick={submit} disabled={loading}>
+        {loading?"A guardar...":"GUARDAR PASSWORD"}
+      </button>
+    </div>
+    <button onClick={()=>setView("landing")} style={{marginTop:18,background:"transparent",border:"none",color:"#565c4d",fontSize:13,cursor:"pointer"}}>Cancelar</button>
+  </>);
 }
 
 // ── CRIAR CONTA VIEW ──────────────────────────────────────────────────────────

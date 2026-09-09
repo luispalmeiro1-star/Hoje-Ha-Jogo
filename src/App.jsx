@@ -108,7 +108,7 @@ async function hashPassword(password) {
   return `pbkdf2$${PBKDF2_ITERATIONS}$${salt}$${hash}`;
 }
 
-const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by_id,confirmed_at,avatar_color,total_games,total_paid,position,team,current_streak,best_streak,username,phone,group_id,available,zone,avatar_url,availability_days,availability_notes,zone_contact,email,google_id";
+const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by_id,confirmed_at,avatar_color,total_games,total_paid,position,team,current_streak,best_streak,username,phone,group_id,available,zone,avatar_url,availability_days,availability_notes,zone_contact,email,google_id,onboarding_seen";
 
 const MAX_PLAYERS = 15;
 const MIN_PLAYERS = 10;

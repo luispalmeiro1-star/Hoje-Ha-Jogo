@@ -703,6 +703,10 @@ export default function App() {
     await supabase.from("players").update(updates).eq("id",id);
     showToast("Perfil atualizado ✓");
   };
+  const markOnboardingSeen = async(id)=>{
+    setPlayers(prev=>prev.map(p=>p.id===id?{...p,onboarding_seen:true}:p));
+    await supabase.from("players").update({onboarding_seen:true}).eq("id",id);
+  };
   const updatePosition = async(id,pos)=>{
     await supabase.from("players").update({position:pos}).eq("id",id);
     if(autoReassignTeams) await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
@@ -845,6 +849,45 @@ export default function App() {
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
+      {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
+    </div>
+  );
+}
+
+// ── ONBOARDING ────────────────────────────────────────────────────────────────
+function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
+  const cfg=sportConfig(sportType);
+  const [step,setStep]=useState(0);
+  const slides=[
+    {icon:"⚽",title:"Bem-vindo à Hoje Há Jogo!",text:"Em poucos passos mostramos-te o essencial para começares a jogar."},
+    {icon:"✅",title:"Confirma presença",text:"Diz se vais ao próximo jogo com um toque. Todo o grupo vê logo quem confirmou e quantas vagas faltam."},
+    {icon:"⚖️",title:"Equipas equilibradas",text:`As equipas para ${cfg.label.toLowerCase()} são sorteadas automaticamente por posição, para ficarem justas.`},
+    {icon:"💶",title:"Contas sempre em dia",text:"Vês quanto deves e quando pagaste, sem teres de perguntar a ninguém."},
+  ];
+  if(isAdmin) slides.push({icon:"⚙️",title:"És admin deste grupo",text:"Em \"Gerir\" convidas jogadores, ajustas configurações e podes até abrir uma vaga para alguém de fora entrar num jogo específico."});
+  slides.push({icon:"🚀",title:"Pronto a começar!",text:"Podes rever isto sempre que quiseres. Boa sorte e bons jogos!"});
+
+  const isLast=step===slides.length-1;
+  const s=slides[step];
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div style={{width:"100%",maxWidth:480,background:"#0f100b",borderTop:"1px solid #23271b",borderRadius:"20px 20px 0 0",padding:"28px 24px 24px",display:"flex",flexDirection:"column",gap:20}}>
+        <div style={{display:"flex",justifyContent:"flex-end"}}>
+          {!isLast && <button onClick={onDone} style={{background:"none",border:"none",color:"#6b7280",fontSize:13,fontWeight:700,cursor:"pointer"}}>Saltar</button>}
+        </div>
+        <div style={{textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:14,minHeight:180}}>
+          <div style={{fontSize:56}}>{s.icon}</div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1}}>{s.title}</div>
+          <p style={{fontSize:14,color:"#9ca3af",lineHeight:1.5,margin:0,maxWidth:360}}>{s.text}</p>
+        </div>
+        <div style={{display:"flex",justifyContent:"center",gap:6}}>
+          {slides.map((_,i)=><div key={i} style={{width:i===step?18:6,height:6,borderRadius:3,background:i===step?"#d4af37":"#23271b",transition:"width 0.2s"}}/>)}
+        </div>
+        <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>isLast?onDone():setStep(s=>s+1)}>
+          {isLast?"COMEÇAR":"SEGUINTE"} {!isLast&&<Icon name="right" size={14}/>}
+        </button>
+      </div>
     </div>
   );
 }

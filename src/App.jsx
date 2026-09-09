@@ -1952,7 +1952,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 }
 
 // ── BOTTOM NAV ───────────────────────────────────────────────────────────────
-function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
+function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=false, showToast}) {
   const items = isAdmin
     ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}]
     : [{key:"player",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}];
@@ -1970,6 +1970,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, showToast}) {
             {isActive&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:"#d4af37",borderRadius:99}}/>}
             {item.key==="financas"&&hasDebts&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
             {item.key==="chat"&&unreadChat&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
+            {item.key==="admin"&&adminAlert&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#2563eb",borderRadius:"50%"}}/>}
           </button>
         );
       })}
@@ -3205,6 +3206,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
   const [codeCopied,setCodeCopied]=useState(false);
   const [pendingCount,setPendingCount]=useState(0);
+  const [pwResetCount,setPwResetCount]=useState(0);
 
   const gid=groupId||currentUser?.group_id;
   useEffect(()=>{
@@ -3214,6 +3216,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
     const ch=supabase.channel("pg_pending_count_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},loadCount).subscribe();
     return()=>supabase.removeChannel(ch);
   },[gid]);
+
+  useEffect(()=>{
+    const loadPwCount=()=>supabase.from("password_reset_requests").select("id").eq("status","pending").then(({data})=>setPwResetCount(data?.length||0));
+    loadPwCount();
+    const ch=supabase.channel("pw_reset_count_ch").on("postgres_changes",{event:"*",schema:"public",table:"password_reset_requests"},loadPwCount).subscribe();
+    return()=>supabase.removeChannel(ch);
+  },[]);
 
   useEffect(()=>{setEditLoc(gameInfo.location);setEditDate(gameInfo.date);setEditTime(gameInfo.time);setEditAppName(gameInfo.app_name||"Hoje Há Jogo");setEditCost(gameInfo.cost_per_player||3);},[gameInfo]);
   useEffect(()=>{
@@ -3316,6 +3325,9 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               {l}
               {k==="gerir"&&pendingCount>0&&(
                 <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
+              )}
+              {k==="jogadores"&&pwResetCount>0&&(
+                <span style={{position:"absolute",top:4,right:8,width:9,height:9,borderRadius:"50%",background:"#2563eb",boxShadow:"0 0 0 2px #14160f"}}/>
               )}
             </button>
           ))}
@@ -3579,7 +3591,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
 
         <div style={{height:70}}/>
       </div>
-      <BottomNav view={view==="financas"?"financas":"admin"} setView={v=>{ if(v==="admin"){setAdminTab("jogo");setView("admin");} else setView(v); }} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} showToast={showToast}/>
+      <BottomNav view={view==="financas"?"financas":"admin"} setView={v=>{ if(v==="admin"){setAdminTab("jogo");setView("admin");} else setView(v); }} isAdmin={true} hasDebts={debts.length>0} unreadChat={false} adminAlert={pendingCount>0||pwResetCount>0} showToast={showToast}/>
     </div>
   );
 }

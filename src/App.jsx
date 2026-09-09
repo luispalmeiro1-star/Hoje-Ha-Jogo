@@ -123,7 +123,7 @@ const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by
 const MAX_PLAYERS = 15;
 const MIN_PLAYERS = 10;
 const COST = 3;
-const RENT = 22;
+const DEFAULT_RENT = 22;
 const AVATAR_COLORS = ["#1ea851","#2563eb","#7c3aed","#dc2626","#d97706","#0891b2","#be185d","#065f46"];
 const TEAM_COLORS = [
   { bg: "rgba(30,168,81,0.15)", border: "#1ea851", text: "#4ade80", name: "EQUIPA A" },
@@ -309,7 +309,7 @@ export default function App() {
   const [debts, setDebts]             = useState([]);
   const [messages, setMessages]       = useState([]);
   const [mvpVotes, setMvpVotes]       = useState([]);
-  const [piggybank, setPiggybank]     = useState(0);
+  const [rentPerGame, setRentPerGame] = useState(DEFAULT_RENT);
   const [currentUser, setCurrentUser] = useState(null);
   const [activeGroupId, setActiveGroupId] = useState(null);
   const [view, setView]               = useState(()=>{
@@ -361,7 +361,7 @@ export default function App() {
     if(seq===loadPlayersSeqRef.current) setPlayers(merged);
   },[]);
   const loadGameInfo   = useCallback(async(gid)=>{ const{data}=await supabase.from("game_info").select("*").eq("group_id",gid).limit(1).maybeSingle(); if(data)setGameInfo(data); },[]);
-  const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));} },[]);
+  const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data)setHistory(data); },[]);
   const loadDebts      = useCallback(async(gid)=>{ const{data}=await supabase.from("debts").select("*").eq("group_id",gid).order("created_at"); if(data)setDebts(data); },[]);
   const loadMessages   = useCallback(async(gid)=>{ const{data}=await supabase.from("chat_messages").select("*").eq("group_id",gid).order("created_at").limit(100); if(data)setMessages(data); },[]);
   const loadMvp        = useCallback(async(gid)=>{ const{data}=await supabase.from("mvp_votes").select("*").eq("group_id",gid); if(data)setMvpVotes(data); },[]);
@@ -372,7 +372,7 @@ export default function App() {
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
-    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); } });
+    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); } });
     supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
@@ -454,7 +454,14 @@ export default function App() {
       if(!handled){
         try{
           const{data:{session}}=await supabase.auth.getSession();
-          if(session?.access_token){
+          // Só uma sessão realmente vinda do Google pode passar pela ponte do
+          // Google. O login por username/password também cria uma sessão
+          // Supabase (com um email interno sintético) e, se fosse enviada para
+          // aqui, seria tratada como uma conta Google nova — criando um jogador
+          // fantasma chamado a partir desse email interno.
+          const isGoogleSession = session?.user?.app_metadata?.provider==="google"
+            || (session?.user?.app_metadata?.providers||[]).includes("google");
+          if(session?.access_token && isGoogleSession){
             const gres=await callGoogleAuth(session.access_token);
             // Mantemos a sessão Google — já é uma sessão real e verificada,
             // usada pela base de dados para saber quem está a pedir os dados.
@@ -524,7 +531,7 @@ export default function App() {
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_treasurer_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } }); }).subscribe(),
-      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); } }); }).subscribe(),
+      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); } }); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); clearInterval(pollTimer); };
   },[]);
@@ -534,6 +541,11 @@ export default function App() {
   // Fecho automático do jogo — passou a correr no servidor (Edge Function "close-finished-games"
   // agendada via cron), em vez de depender de alguém ter a app aberta na hora certa. A subscrição
   // realtime a "game_info" já existente acima trata de atualizar o ecrã assim que o jogo fecha.
+
+  // Saldo do mealheiro: tudo o que entrou menos o aluguer de cada jogo jogado.
+  // Derivado do histórico em vez de guardado em estado próprio, para acompanhar
+  // sempre o valor de aluguer atual do grupo.
+  const piggybank = history.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?Number(rentPerGame):0),0);
 
   const members   = players.filter(p=>!p.is_guest);
   const guests    = players.filter(p=>p.is_guest);
@@ -824,7 +836,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -2059,7 +2071,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
 }
 
 // ── PIGGYBANK ─────────────────────────────────────────────────────────────────
-function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,showHero=true}) {
+function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,showHero=true,rent=DEFAULT_RENT}) {
   const totalReceived=history.filter(g=>Number(g.collected)>0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const totalExpenses=history.filter(g=>Number(g.collected)<0).reduce((s,g)=>s+(Number(g.collected)||0),0);
   const gamesPlayed=history.filter(g=>g.players_count>0).length;
@@ -2071,18 +2083,18 @@ function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,show
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
         <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.2)"}}>
           <div><div style={{fontSize:9,opacity:0.7}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#86efac"}}>+{totalReceived}€</div></div>
-          <div><div style={{fontSize:9,opacity:0.7}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{gamesPlayed*RENT}€</div></div>
+          <div><div style={{fontSize:9,opacity:0.7}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{gamesPlayed*rent}€</div></div>
           {totalExpenses<0&&<div><div style={{fontSize:9,opacity:0.7}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>{totalExpenses}€</div></div>}
           <div><div style={{fontSize:9,opacity:0.7}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
         </div>
       </div>}
       {!showHero&&<div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
         <div><div style={{fontSize:9,color:"#6b7280"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
-        <div><div style={{fontSize:9,color:"#6b7280"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*RENT}€</div></div>
+        <div><div style={{fontSize:9,color:"#6b7280"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
         {totalExpenses<0&&<div><div style={{fontSize:9,color:"#6b7280"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
         <div><div style={{fontSize:9,color:"#6b7280"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
       </div>}
-      <div style={{fontSize:11,color:"#6b7280",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {RENT}€ do aluguer · {cost}€ por jogador</div>
+      <div style={{fontSize:11,color:"#6b7280",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {rent}€ do aluguer · {cost}€ por jogador</div>
       <TreasurerBalances groupId={groupId} isAdmin={isAdmin}/>
       {expenses.length>0&&<>
         <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
@@ -2125,7 +2137,7 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
 }
 
 // ── FINANCAS VIEW ─────────────────────────────────────────────────────────────
-function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],groupId=null}) {
+function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],groupId=null,rentPerGame=DEFAULT_RENT}) {
   const myDebts=debts.filter(d=>d.player_id===player.id);
   const myTotal=myDebts.reduce((s,d)=>s+Number(d.amount),0);
   const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
@@ -2178,7 +2190,7 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
           </div>
         </>}
         <ExpandableSection icon="💰" title="Mealheiro detalhado" subtitle="Histórico financeiro completo">
-          <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} showHero={false}/>
+          <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} showHero={false} rent={rentPerGame}/>
         </ExpandableSection>
         {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>
@@ -2227,7 +2239,7 @@ function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effect
 }
 
 // ── STATS VIEW ───────────────────────────────────────────────────────────────
-function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3,groupId=null,attendance=[]}) {
+function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3,groupId=null,attendance=[],rentPerGame=DEFAULT_RENT}) {
   const [tab,setTab]=useState("pessoal");
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});
@@ -2272,8 +2284,8 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
             <HallOfFameMVP history={history} members={members}/>
           </ExpandableSection>
           <ExpandableSection icon="💰" title="Mealheiro" subtitle="Saldo financeiro do grupo">
-            <GraficoMealheiro history={history}/>
-            <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false}/>
+            <GraficoMealheiro history={history} rent={rentPerGame}/>
+            <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} rent={rentPerGame}/>
           </ExpandableSection>
         </>}
         {tab==="epocas"&&<SeasonStatsCard player={player} groupId={groupId}/>}
@@ -2485,13 +2497,13 @@ function BadgesCard({player, history=[], attendance=[]}) {
 }
 
 // ── GRÁFICO MEALHEIRO ─────────────────────────────────────────────────────────
-function GraficoMealheiro({history=[]}) {
+function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
   const jogos = history.filter(h=>h.players_count>0).slice().reverse();
   if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
 
   let saldo = 0;
   const data = jogos.map(h=>{
-    saldo += Number(h.collected||0) - RENT;
+    saldo += Number(h.collected||0) - Number(rent);
     return {
       date: new Date(h.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"}),
       saldo: Math.round(saldo*100)/100,
@@ -3168,7 +3180,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,onMovePlayer}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait";
@@ -3201,6 +3213,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [editMaxPlayers,setEditMaxPlayers]=useState(12);
   const [editSportType,setEditSportType]=useState(sportType);
   useEffect(()=>{ setEditSportType(sportType); },[sportType]);
+  const [editRent,setEditRent]=useState(rentPerGame);
+  useEffect(()=>{ setEditRent(rentPerGame); },[rentPerGame]);
   const [editAutoReassign,setEditAutoReassign]=useState(autoReassignTeams);
   useEffect(()=>{ setEditAutoReassign(autoReassignTeams); },[autoReassignTeams]);
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
@@ -3524,6 +3538,9 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
               </div>
               <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
               <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
+              <label className="field-label" style={{marginTop:8}}>🏟️ Custo do aluguer por jogo (€)</label>
+              <p style={{fontSize:11,color:"#6b7280",marginBottom:6}}>Quanto o grupo paga pelo campo em cada jogo. É isto que o mealheiro desconta.</p>
+              <input className="text-input" type="number" step="0.5" min="0" value={editRent} onChange={e=>{setEditRent(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
             </div>
             <label className="field-label">⚽ Tipo de jogo</label>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
@@ -3548,7 +3565,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
             </div>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign}).eq("id",groupId||currentUser.group_id);
+              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,rent_per_game:Number(editRent)||0}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>

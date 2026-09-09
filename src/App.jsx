@@ -639,6 +639,10 @@ export default function App() {
     await supabase.from("chat_messages").delete().eq("group_id",groupId);
     await supabase.from("mvp_votes").delete().eq("group_id",groupId);
     await supabase.from("game_attendance").delete().eq("group_id",groupId);
+    await supabase.from("payments").delete().eq("group_id",groupId);
+    await supabase.from("season_stats").delete().eq("group_id",groupId);
+    await supabase.from("treasurer_balances").delete().eq("group_id",groupId);
+    await supabase.from("bug_reports").delete().eq("group_id",groupId);
     await supabase.from("groups").delete().eq("id",groupId);
     const groups = await loadMyGroups(currentUser.id);
     setMyGroups(groups);
@@ -836,7 +840,7 @@ export default function App() {
   };
   const voteForMvp = async(voterId,votedForId)=>{
     setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date}]);
-    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:activeGroupId||null},{onConflict:"voter_id,game_date"});
+    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:activeGroupId||null},{onConflict:"voter_id,game_date,group_id"});
     showToast("Voto registado ✓");
   };
 
@@ -1559,13 +1563,17 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     setLoading(true);
     try {
       const code=await generateCode();
-      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
-      if(ge) throw ge;
+      // A conta do admin é criada ANTES do grupo. Ao contrário, se o registo
+      // falhasse (username já usado, por exemplo) ficava um grupo sem dono na
+      // base de dados, com o código de convite gasto, a cada tentativa.
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-      const regResult=await callRegister({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:group.id});
+      const regResult=await callRegister({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:null});
       if(regResult?.error) throw new Error(regResult.error);
       const player=regResult.player;
       await establishSession(regResult.session);
+      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
+      if(ge) throw ge;
+      await supabase.from("players").update({group_id:group.id}).eq("id",player.id);
       // Registar na tabela player_groups primeiro — o jogo só pode ser criado depois de haver um admin no grupo
       await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
@@ -1814,8 +1822,10 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     // Usar Edge Function para verificar password (suporta hashed)
     // Primeiro tenta no grupo
     let result=await callLogin(u, password, group.id);
-    // Se não encontrou, tenta sem group_id (conta criada via "Criar conta")
-    if(result?.error){
+    // Se o utilizador não existe NESTE grupo, tenta sem group_id (conta criada
+    // via "Criar conta"). Só nesse caso — repetir com a password errada gastava
+    // duas das cinco tentativas permitidas por cada tentativa real.
+    if(result?.error==="Utilizador não encontrado"){
       result=await callLogin(u, password, null);
     }
     const p=result?.player||null;

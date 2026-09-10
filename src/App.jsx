@@ -3021,7 +3021,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <div style={{marginBottom:12}}>
           <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>COR DO AVATAR</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {AVATAR_COLORS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
+            {AVATAR_COLORS.map(c=><button key={c} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
         </div>
 

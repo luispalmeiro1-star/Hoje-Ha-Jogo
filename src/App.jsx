@@ -1157,9 +1157,10 @@ function buildGameSummary({historyGame, gameInfo, effectiveDate, piggybank=0}) {
   linhas.push("","hojehajogo.pt");
   return linhas.join("\n");
 }
-function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=0}) {
+function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=0, isAdmin=false}) {
   const [copiado,setCopiado]=useState(false);
-  if(!historyGame) return null;
+  // Só o admin partilha o resumo — é ele que fecha o jogo e responde pelas contas.
+  if(!historyGame||!isAdmin) return null;
   const partilhar=async()=>{
     const texto=buildGameSummary({historyGame,gameInfo,effectiveDate,piggybank});
     if(navigator.share){
@@ -1180,7 +1181,7 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
 }
 
 // ── GAME HEADER — design limpo e profissional ────────────────────────────────
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15,piggybank=0}) {
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15,piggybank=0,isAdmin=false}) {
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   const now=new Date();
@@ -1218,7 +1219,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
               {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
               )}
-              <PartilharResumoButton historyGame={historyGame} gameInfo={gameInfo} effectiveDate={effectiveDate} piggybank={piggybank}/>
+              <PartilharResumoButton historyGame={historyGame} gameInfo={gameInfo} effectiveDate={effectiveDate} piggybank={piggybank} isAdmin={isAdmin}/>
             </div>
           ):<div style={{fontSize:13,color:"#4b5563"}}>Sem registo para esta semana</div>}
         </div>
@@ -3157,7 +3158,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers} isAdmin={!!player?.is_admin}
         
       />
       <div className="body">
@@ -3410,7 +3411,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers} isAdmin={!!currentUser?.is_admin}
         
       />
       <div className="body">

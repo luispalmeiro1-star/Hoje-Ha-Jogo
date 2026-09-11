@@ -1192,7 +1192,7 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
 }
 
 // ── GAME HEADER — design limpo e profissional ────────────────────────────────
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15,piggybank=0,isAdmin=false}) {
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   const now=new Date();
@@ -1230,7 +1230,6 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
               {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
               )}
-              <PartilharResumoButton historyGame={historyGame} gameInfo={gameInfo} effectiveDate={effectiveDate} piggybank={piggybank} isAdmin={isAdmin}/>
             </div>
           ):<div style={{fontSize:13,color:"#4b5563"}}>Sem registo para esta semana</div>}
         </div>
@@ -3169,7 +3168,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers} isAdmin={!!player?.is_admin}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
         
       />
       <div className="body">
@@ -3422,7 +3421,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers} isAdmin={!!currentUser?.is_admin}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
         
       />
       <div className="body">
@@ -3632,7 +3631,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.filter(h=>h.players_count>0).length===0
             ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
-            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()}/>)
+            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()} gameInfo={gameInfo} piggybank={piggybank} isAdmin={!!currentUser?.is_admin}/>)
           }
         </>}
         {adminTab==="jogadores"&&(
@@ -3831,7 +3830,7 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
 }
 
 // ── HISTORICO CARD ────────────────────────────────────────────────────────────
-function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll}) {
+function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, gameInfo, piggybank=0, isAdmin=false}) {
   const [open, setOpen] = useState(false);
   const [jogadores, setJogadores] = useState([]);
   const [loadingJogadores, setLoadingJogadores] = useState(false);
@@ -3896,6 +3895,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll}) {
         {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#4b5563",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           {loadingJogadores?"A carregar...":open?"▲ Ocultar jogadores":`▼ Ver ${h.players_count} jogadores`}
         </button>}
+        {h.players_count>0&&<PartilharResumoButton historyGame={h} gameInfo={gameInfo} effectiveDate={h.date} piggybank={piggybank} isAdmin={isAdmin}/>}
       </div>
       {/* Lista de jogadores */}
       {open&&jogadores.length>0&&(

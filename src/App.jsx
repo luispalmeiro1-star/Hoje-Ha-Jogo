@@ -1134,8 +1134,54 @@ function ExpandableList({confirmed, waiting=[]}) {
   );
 }
 
+// ── RESUMO DO JOGO PARA PARTILHAR ────────────────────────────────────────────
+function shortDate(dateStr) {
+  if(!dateStr) return "";
+  const [,m,d]=dateStr.split("-");
+  return `${d}/${m}`;
+}
+// Monta o texto que vai para o WhatsApp. As linhas que dependem de dados que
+// podem não existir — vencedor, MVP, próximo jogo — são omitidas em vez de
+// aparecerem vazias.
+function buildGameSummary({historyGame, gameInfo, effectiveDate, piggybank=0}) {
+  if(!historyGame) return "";
+  const linhas=[`⚽ ${gameInfo?.app_name||"Hoje Há Jogo"} — ${shortDate(effectiveDate)}`,""];
+  linhas.push(`👥 ${historyGame.players_count} ${historyGame.players_count===1?"jogou":"jogaram"}`);
+  if(historyGame.winner_team) linhas.push(`🏆 Equipa ${historyGame.winner_team}`);
+  if(historyGame.mvp_name)    linhas.push(`⭐ MVP: ${historyGame.mvp_name}`);
+  linhas.push(`💰 Mealheiro do grupo: ${piggybank>=0?"+":""}${piggybank}€`);
+  if(gameInfo?.date&&gameInfo.date>effectiveDate){
+    linhas.push("",`📅 Próximo jogo: ${formatDisplayDate(gameInfo.date)}${gameInfo.time?` às ${gameInfo.time}`:""}`);
+    if(gameInfo.location) linhas.push(gameInfo.location);
+  }
+  linhas.push("","hojehajogo.pt");
+  return linhas.join("\n");
+}
+function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=0, isAdmin=false}) {
+  const [copiado,setCopiado]=useState(false);
+  // Só o admin partilha o resumo — é ele que fecha o jogo e responde pelas contas.
+  if(!historyGame||!isAdmin) return null;
+  const partilhar=async()=>{
+    const texto=buildGameSummary({historyGame,gameInfo,effectiveDate,piggybank});
+    if(navigator.share){
+      try { await navigator.share({text:texto}); return; }
+      // Cancelar a partilha não é erro — nesse caso não copiamos nada.
+      catch(e){ if(e&&e.name==="AbortError") return; }
+    }
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true); setTimeout(()=>setCopiado(false),2200);
+    } catch(e){ console.error("Não foi possível copiar o resumo:",e); }
+  };
+  return (
+    <button onClick={partilhar} style={{marginTop:12,width:"100%",background:"rgba(212,175,55,0.12)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"10px 14px",color:"#d4af37",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+      {copiado?"RESUMO COPIADO ✓":"📋 PARTILHAR RESUMO"}
+    </button>
+  );
+}
+
 // ── GAME HEADER — design limpo e profissional ────────────────────────────────
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15,piggybank=0,isAdmin=false}) {
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   const now=new Date();
@@ -1173,6 +1219,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
               {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
               )}
+              <PartilharResumoButton historyGame={historyGame} gameInfo={gameInfo} effectiveDate={effectiveDate} piggybank={piggybank} isAdmin={isAdmin}/>
             </div>
           ):<div style={{fontSize:13,color:"#4b5563"}}>Sem registo para esta semana</div>}
         </div>
@@ -3111,7 +3158,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers} isAdmin={!!player?.is_admin}
         
       />
       <div className="body">
@@ -3364,7 +3411,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,piggybank}} maxPlayers={maxPlayers} isAdmin={!!currentUser?.is_admin}
         
       />
       <div className="body">

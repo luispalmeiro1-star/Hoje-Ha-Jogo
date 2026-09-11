@@ -161,21 +161,32 @@ const SPORT_CONFIG = {
 function sportConfig(sportType) { return SPORT_CONFIG[sportType] || SPORT_CONFIG.futsal; }
 function numTeamsFor(count, sportType) { return count >= sportConfig(sportType).threeTeamsFrom ? 3 : 2; }
 
+// Escreve uma Date como AAAA-MM-DD a partir do dia local. É preciso fazê-lo à
+// mão: toISOString() converte para UTC primeiro e, com Portugal uma hora à
+// frente no verão, a meia-noite de dia 9 passa a 23h de dia 8 — cada salto de
+// semana perdia um dia, e ao fim de algumas semanas o histórico deixava de
+// cair nos dias de jogo.
+function toDateStr(date) {
+  const y=date.getFullYear();
+  const m=String(date.getMonth()+1).padStart(2,"0");
+  const d=String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
 function nextWednesday() {
   const now = new Date();
   const diff = (3 - now.getDay() + 7) % 7 || 7;
   const d = new Date(now); d.setDate(now.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  return toDateStr(d);
 }
 function prevWeek(dateStr) {
   const [y,m,d] = dateStr.split("-").map(Number);
   const date = new Date(y,m-1,d); date.setDate(date.getDate()-7);
-  return date.toISOString().split("T")[0];
+  return toDateStr(date);
 }
 function nextWeek(dateStr) {
   const [y,m,d] = dateStr.split("-").map(Number);
   const date = new Date(y,m-1,d); date.setDate(date.getDate()+7);
-  return date.toISOString().split("T")[0];
+  return toDateStr(date);
 }
 function formatDisplayDate(dateStr) {
   if (!dateStr) return "";
@@ -781,10 +792,10 @@ export default function App() {
     const now=new Date();
     for(let i=1;i<=14;i++){
       const d=new Date(now); d.setDate(now.getDate()+i);
-      if(days.includes(d.getDay())) return d.toISOString().split("T")[0];
+      if(days.includes(d.getDay())) return toDateStr(d);
     }
     const fb=new Date(now); fb.setDate(now.getDate()+7);
-    return fb.toISOString().split("T")[0];
+    return toDateStr(fb);
   };
   const resetGame = async(winnerTeam, isAuto=false)=>{
     const gameCost=gameInfo.cost_per_player||COST;
@@ -1707,7 +1718,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       await supabase.from("players").update({group_id:group.id}).eq("id",player.id);
       // Registar na tabela player_groups primeiro — o jogo só pode ser criado depois de haver um admin no grupo
       await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
-      const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
+      const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return toDateStr(d);};
       await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:group.id}));
       localStorage.setItem("hhb_new_group_code",code);
@@ -4054,7 +4065,7 @@ function RegistarDespesaButton({groupId, showToast, reloadAll}) {
     try {
       // Inserir como valor negativo no histórico (despesa)
       await supabase.from("game_history").insert({
-        date: new Date().toISOString().split("T")[0],
+        date: toDateStr(new Date()),
         players_count: 0,
         collected: -Number(amount),
         winner_team: null,

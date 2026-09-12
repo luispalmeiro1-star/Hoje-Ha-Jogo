@@ -1641,13 +1641,21 @@ function CriarContaView({setView, showToast}) {
     <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
       <div style={{fontSize:56,marginBottom:16}}>✅</div>
       <div style={{color:"white",fontSize:20,fontWeight:700,marginBottom:10}}>Conta criada!</div>
-      <div style={{color:"#6b7280",fontSize:13,marginBottom:32,maxWidth:300,lineHeight:1.6}}>
-        Fala com o administrador do grupo para te adicionar. Depois podes entrar normalmente com o teu username e password.
+      <div style={{color:"#6b7280",fontSize:13,marginBottom:32,maxWidth:320,lineHeight:1.6}}>
+        Falta entrares no teu grupo. Usa o código de convite que o organizador te deu — é o que avisa o admin de que estás à espera.
       </div>
-      <button onClick={()=>setView("login")} style={{background:"#1ea851",border:"none",borderRadius:12,padding:"14px 32px",color:"white",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-        Ir para o login →
+      {/* Antes dizia "fala com o administrador para te adicionar", que era a
+          única coisa que não podia funcionar: o botão de adicionar membro cria
+          sempre uma conta nova, por isso o admin tropeçava no username já
+          ocupado e acabava com duas contas da mesma pessoa. O código de convite
+          é o caminho que gera o pedido e dispara a notificação. */}
+      <button onClick={()=>setView("entrar-convite")} style={{background:"#1ea851",border:"none",borderRadius:12,padding:"14px 32px",color:"white",fontWeight:800,fontSize:14,cursor:"pointer"}}>
+        Entrar com código de convite →
       </button>
-      <button onClick={()=>setView("landing")} style={{marginTop:12,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer"}}>
+      <button onClick={()=>setView("login")} style={{marginTop:12,background:"transparent",border:"none",color:"#8a9080",fontSize:13,cursor:"pointer",textDecoration:"underline"}}>
+        Faço isso depois, ir para o login
+      </button>
+      <button onClick={()=>setView("landing")} style={{marginTop:10,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer"}}>
         Voltar ao início
       </button>
     </div>
@@ -1662,7 +1670,7 @@ function CriarContaView({setView, showToast}) {
       <div style={{padding:"24px 20px"}}>
         <div style={{background:"rgba(37,99,235,0.1)",border:"1px solid #2563eb",borderRadius:12,padding:"12px 14px",marginBottom:24,display:"flex",gap:10,alignItems:"flex-start"}}>
           <span style={{fontSize:16,flexShrink:0}}>ℹ️</span>
-          <p style={{color:"#93c5fd",fontSize:12,lineHeight:1.6}}>Depois de criares a conta, fala com o admin do teu grupo para te adicionar. Só depois consegues entrar na app.</p>
+          <p style={{color:"#93c5fd",fontSize:12,lineHeight:1.6}}>Para entrares num grupo precisas do <strong>código de convite</strong> que o organizador te dá. Podes criar a conta agora e usá-lo logo a seguir.</p>
         </div>
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
         <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>

@@ -49,6 +49,23 @@ async function callOpenJoin(payload) {
   return await res.json();
 }
 
+// Normaliza um username para a única forma que a base de dados aceita:
+// minúsculas, sem acentos, sem espaços, e só letras, números, _ ou -.
+//
+// Foi por falta disto que se perdeu um jogador. Escreveu "joao pedro giro" com
+// espaços: a criação de conta foi recusada, e as tentativas de login seguintes
+// foram procurar o nome com os espaços, que nunca poderia existir. Cada ecrã
+// limpava o username à sua maneira — um tirava espaços, os outros não, e
+// nenhum tirava acentos — por isso agora passam todos por aqui. A mesma função
+// existe igual nas edge functions, que são a autoridade.
+function normalizeUsername(raw) {
+  return (raw || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // "joão" → "joao"
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 20);
+}
+
 async function callLogin(username, password, group_id=null) {
   const res = await fetch(LOGIN_URL, {
     method: "POST",
@@ -742,7 +759,7 @@ export default function App() {
   const addPlayer      = async(name,username,password,phone)=>{
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    const cleanUsername=username.trim().toLowerCase().replace(/\s+/g,"");
+    const cleanUsername=normalizeUsername(username);
     const gid=activeGroupId||null;
     const result=await callRegister({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,password:password.trim(),is_admin:false,avatar_color:color,group_id:gid});
     if(result?.error){showToast(result.error,"err");return;}
@@ -1452,7 +1469,7 @@ function LoginView({onLogin, showToast, setView}) {
   const handleSubmit = async() => {
     if(!username.trim()||!password.trim()) return;
     setLoading(true);
-    const ok = await onLogin(username, password);
+    const ok = await onLogin(normalizeUsername(username), password);
     setLoading(false);
     if(!ok){ showToast("Utilizador ou password incorretos!","err"); setPassword(""); }
   };
@@ -1466,7 +1483,7 @@ function LoginView({onLogin, showToast, setView}) {
   const handleRequestReset = async() => {
     if(!resetUsername.trim()){ showToast("Insere o teu utilizador","err"); return; }
     setResetLoading(true);
-    const result = await callRequestPasswordReset(resetUsername.trim());
+    const result = await callRequestPasswordReset(normalizeUsername(resetUsername));
     setResetLoading(false);
     if(result?.error){ showToast(result.error,"err"); return; }
     setResetDone({mode:result.mode||"admin", delivered:result.delivered!==false});
@@ -1614,9 +1631,9 @@ function CriarContaView({setView, showToast}) {
     if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
     setLoading(true);
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
+    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
     setLoading(false);
-    if(regResult?.error){showToast(regResult.error,"err");return;}
+    if(regResult?.error){showToast(regResult.error,"err");if(regResult.suggestion)setUsername(regResult.suggestion);return;}
     setDone(true);
   };
 
@@ -1650,7 +1667,7 @@ function CriarContaView({setView, showToast}) {
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
         <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
-        <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
+        <input className="text-input" value={username} onChange={e=>setUsername(normalizeUsername(e.target.value))} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
         <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
         <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
@@ -1708,7 +1725,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // falhasse (username já usado, por exemplo) ficava um grupo sem dono na
       // base de dados, com o código de convite gasto, a cada tentativa.
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-      const regResult=await callRegister({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:null});
+      const regResult=await callRegister({name:adminName.trim(),username:normalizeUsername(adminUsername),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:null});
       if(regResult?.error) throw new Error(regResult.error);
       const player=regResult.player;
       await establishSession(regResult.session);
@@ -1807,7 +1824,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
           <label style={fieldLabel}>O TEU NOME *</label>
           <input className="text-input" value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
           <label style={fieldLabel}>USERNAME *</label>
-          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(e.target.value)} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
+          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(normalizeUsername(e.target.value))} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
@@ -1959,7 +1976,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
   const handleLogin = async() => {
     if(!username.trim()||!password.trim()){showToast("Preenche os campos","err");return;}
     setLoading(true);
-    const u=username.trim().toLowerCase();
+    const u=normalizeUsername(username);
     // Usar Edge Function para verificar password (suporta hashed)
     // Primeiro tenta no grupo
     let result=await callLogin(u, password, group.id);
@@ -1996,8 +2013,8 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     // Cria a conta sem grupo — só fica associada ao grupo quando o admin
     // aprovar o pedido (ver player_groups.membership_status abaixo).
-    const regResult=await callRegister({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
-    if(regResult?.error){showToast(regResult.error,"err");setLoading(false);return;}
+    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
+    if(regResult?.error){showToast(regResult.error,"err");if(regResult.suggestion)setUsername(regResult.suggestion);setLoading(false);return;}
     const inserted=regResult.player;
     await establishSession(regResult.session);
     await supabase.from("player_groups").upsert({player_id:inserted.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
@@ -2106,7 +2123,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
           <label style={fieldLabel}>O TEU NOME *</label>
           <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
           <label style={fieldLabel}>USERNAME *</label>
-          <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
+          <input className="text-input" value={username} onChange={e=>setUsername(normalizeUsername(e.target.value))} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
@@ -3730,7 +3747,7 @@ Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboar
           <ExpandableSection icon="👤" title="Adicionar Membro" subtitle="Criar conta para um jogador">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               <input className="text-input" placeholder="Nome..." value={newName} onChange={e=>setNewName(e.target.value)}/>
-              <input className="text-input" placeholder="Utilizador..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
+              <input className="text-input" placeholder="Utilizador..." value={newUsername} onChange={e=>setNewUsername(normalizeUsername(e.target.value))} autoCapitalize="none"/>
               <input className="text-input" placeholder="Telemóvel (opcional)..." value={newPhone} onChange={e=>setNewPhone(e.target.value)}/>
               <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
               <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>

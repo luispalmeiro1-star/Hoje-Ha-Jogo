@@ -923,7 +923,6 @@ export default function App() {
         if(activeGroupId) return setView(liveUser?.is_admin?"admin":"player");
         setView("meus-grupos");
       }}/>}
-      {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
       {view==="entrar-vaga"    && <EntrarVagaView code={vagaCode} setView={setView}/>}
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
@@ -1618,74 +1617,6 @@ function ReporPasswordView({token, setView, showToast}) {
   </>);
 }
 
-// ── CRIAR CONTA VIEW ──────────────────────────────────────────────────────────
-function CriarContaView({setView, showToast}) {
-  const [name, setName]         = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [done, setDone]         = useState(false);
-
-  const handleRegister = async() => {
-    if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
-    setLoading(true);
-    const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
-    setLoading(false);
-    if(regResult?.error){showToast(regResult.error,"err");if(regResult.suggestion)setUsername(regResult.suggestion);return;}
-    setDone(true);
-  };
-
-  if(done) return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
-      <div style={{fontSize:56,marginBottom:16}}>✅</div>
-      <div style={{color:"white",fontSize:20,fontWeight:700,marginBottom:10}}>Conta criada!</div>
-      <div style={{color:"#6b7280",fontSize:13,marginBottom:32,maxWidth:320,lineHeight:1.6}}>
-        Falta entrares no teu grupo. Usa o código de convite que o organizador te deu — é o que avisa o admin de que estás à espera.
-      </div>
-      {/* Antes dizia "fala com o administrador para te adicionar", que era a
-          única coisa que não podia funcionar: o botão de adicionar membro cria
-          sempre uma conta nova, por isso o admin tropeçava no username já
-          ocupado e acabava com duas contas da mesma pessoa. O código de convite
-          é o caminho que gera o pedido e dispara a notificação. */}
-      <button onClick={()=>setView("entrar-convite")} style={{background:"#1ea851",border:"none",borderRadius:12,padding:"14px 32px",color:"white",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-        Entrar com código de convite →
-      </button>
-      <button onClick={()=>setView("login")} style={{marginTop:12,background:"transparent",border:"none",color:"#8a9080",fontSize:13,cursor:"pointer",textDecoration:"underline"}}>
-        Faço isso depois, ir para o login
-      </button>
-      <button onClick={()=>setView("landing")} style={{marginTop:10,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer"}}>
-        Voltar ao início
-      </button>
-    </div>
-  );
-
-  return (
-    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
-      <div style={{background:"#14160f",padding:"16px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
-        <button onClick={()=>setView("landing")} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
-        <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar conta</span>
-      </div>
-      <div style={{padding:"24px 20px"}}>
-        <div style={{background:"rgba(37,99,235,0.1)",border:"1px solid #2563eb",borderRadius:12,padding:"12px 14px",marginBottom:24,display:"flex",gap:10,alignItems:"flex-start"}}>
-          <span style={{fontSize:16,flexShrink:0}}>ℹ️</span>
-          <p style={{color:"#93c5fd",fontSize:12,lineHeight:1.6}}>Para entrares num grupo precisas do <strong>código de convite</strong> que o organizador te dá. Podes criar a conta agora e usá-lo logo a seguir.</p>
-        </div>
-        <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
-        <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
-        <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
-        <input className="text-input" value={username} onChange={e=>setUsername(normalizeUsername(e.target.value))} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
-        <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
-        <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
-        <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
-        <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
-        <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
-        <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta"}</button>
-      </div>
-    </div>
-  );
-}
 
 // ── CRIAR GRUPO VIEW ────────────────────────────────────────────────────────
 function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {

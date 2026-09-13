@@ -1372,8 +1372,42 @@ const LandingIcons = {
   zona: <svg {...landingIconProps}><path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>,
 };
 
+// A data no telemóvel da landing estava escrita à mão ("5 de Agosto"). Em
+// Setembro, a primeira coisa que um visitante via era uma data do verão
+// passado — o sinal mais barato de que uma app está ao abandono. Agora
+// acompanha o calendário sozinha.
+const MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+function proximaQuarta(agora=new Date()){
+  const alvo=new Date(agora);
+  alvo.setHours(23,30,0,0);
+  // 3 = quarta-feira. Se hoje é quarta mas o jogo já começou, salta para a seguinte.
+  let dias=(3-alvo.getDay()+7)%7;
+  if(dias===0&&alvo.getTime()<=agora.getTime()) dias=7;
+  alvo.setDate(alvo.getDate()+dias);
+  return alvo;
+}
+
+function faltaPara(alvo,agora=new Date()){
+  const horas=Math.max(0,Math.floor((alvo.getTime()-agora.getTime())/3600000));
+  return `${Math.floor(horas/24)}D ${horas%24}H`;
+}
+
 // ── LANDING VIEW ────────────────────────────────────────────────────────────
 function LandingView({setView}) {
+  const jogo=proximaQuarta();
+  // Mês abreviado: por extenso, "Quarta-feira, 16 de Setembro" parte-se a meio
+  // da frase na largura do cartão.
+  const dataJogo=`Quarta, ${jogo.getDate()} de ${MESES_PT[jogo.getMonth()].slice(0,3)}`;
+  const contagem=faltaPara(jogo);
+  // O ecrã do telemóvel mostra as contas, não o botão de confirmar presença:
+  // quem cria o grupo é quem anda a cobrar, e é esse problema que o título
+  // promete resolver. Confirmar presença é a tarefa do jogador, não a dele.
+  const contas=[
+    {nome:"Rui M.",iniciais:"RM",cor:"#1ea851",estado:"pago",valor:"3,00 €"},
+    {nome:"Tiago S.",iniciais:"TS",cor:"#b45309",estado:"deve",valor:"6,00 €"},
+    {nome:"Bruno A.",iniciais:"BA",cor:"#4338ca",estado:"deve",valor:"3,00 €"},
+  ];
   return (
     <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative"}}>
       <div style={{position:"absolute",top:-120,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"2px solid rgba(212,175,55,0.35)",borderRadius:"50%",opacity:0.25,pointerEvents:"none"}}/>
@@ -1386,27 +1420,36 @@ function LandingView({setView}) {
 
         {/* Hero */}
         <div style={{padding:"32px 24px 8px",textAlign:"center"}}>
-          <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:46,color:"white",letterSpacing:0.5,lineHeight:0.98,margin:"0 0 14px"}}>
-            O teu jogo,<br/><span style={{color:"#d4af37"}}>organizado.</span>
+          {/* O título continua a frase do cartaz que traz as pessoas até aqui.
+              Antes dizia "O teu jogo, organizado" com o dinheiro reduzido a uma
+              palavra no meio de uma lista: quem clicava numa dor concreta
+              aterrava numa frase que servia a qualquer app, e ia-se embora. */}
+          {/* 40px e não 44: medido na Bebas real, "cobrar 3€ ao pessoal." dá
+              332px a 44px e não cabe num telemóvel de 360px de largura. */}
+          <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,color:"white",letterSpacing:0.5,lineHeight:1.05,margin:"0 0 14px"}}>
+            Nunca mais andes a<br/><span style={{color:"#d4af37"}}>cobrar 3€ ao pessoal.</span>
           </h1>
-          <p style={{fontSize:14.5,color:"#8a9080",maxWidth:300,margin:"0 auto 26px",lineHeight:1.6}}>
-            Presenças, pagamentos e stats do teu grupo — tudo num só lugar, sem grupos de WhatsApp perdidos.
+          <p style={{fontSize:14.5,color:"#8a9080",maxWidth:310,margin:"0 auto 26px",lineHeight:1.6}}>
+            A app diz quem pagou, quem deve e quanto tem o mealheiro do grupo. E ainda trata das presenças e das equipas.
           </p>
 
           {/* Mockup do telemóvel */}
           <div style={{display:"flex",justifyContent:"center",marginBottom:26}}>
             <div style={{width:212,background:"#0d0f0a",border:"2px solid #24291b",borderRadius:26,padding:7,boxShadow:"0 30px 70px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.06)",transform:"rotate(-3deg)"}}>
-              <div style={{background:"#0a0b08",borderRadius:20,overflow:"hidden",aspectRatio:"9/18.5",display:"flex",flexDirection:"column",padding:"14px 12px"}}>
+              {/* O ecrã alinha à esquerda como a app real. Herdava o
+                  textAlign:center do hero, e as linhas das contas ficavam
+                  todas ao meio, como nenhuma lista de dívidas se apresenta. */}
+              <div style={{background:"#0a0b08",borderRadius:20,overflow:"hidden",aspectRatio:"9/18.5",display:"flex",flexDirection:"column",padding:"14px 12px",textAlign:"left"}}>
                 <div style={{fontSize:7.5,letterSpacing:1.5,color:"#565c4d",textTransform:"uppercase"}}>GRUPO</div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,letterSpacing:0.5,margin:"1px 0 10px",color:"white",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Futebolada de Quarta</div>
                 <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:10,marginBottom:9}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
-                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>Quarta-feira, 5 de Agosto</div>
+                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>{dataJogo}</div>
                       <div style={{fontSize:8,color:"#8a9080",marginTop:3,lineHeight:1.3}}>23:30 · Pavilhão Municipal</div>
                     </div>
                     <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",color:"#d4af37",fontSize:19,lineHeight:1,whiteSpace:"nowrap"}}>2D 5H</div>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",color:"#d4af37",fontSize:19,lineHeight:1,whiteSpace:"nowrap"}}>{contagem}</div>
                       <div style={{fontSize:6,color:"#565c4d",textAlign:"right",letterSpacing:1,marginTop:2}}>FALTAM</div>
                     </div>
                   </div>
@@ -1414,12 +1457,34 @@ function LandingView({setView}) {
                     <span style={{width:4,height:4,borderRadius:"50%",background:"#d4af37",flexShrink:0,display:"inline-block"}}/> 8 confirmados
                   </div>
                 </div>
-                <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:8}}>
-                  <div style={{fontSize:8,color:"#565c4d",textAlign:"center"}}>Faltam 4 vagas para o jogo de quarta</div>
-                  <div style={{background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:11,textAlign:"center",padding:11,fontSize:10,fontWeight:800,letterSpacing:0.3,color:"#04240f"}}>✓ CONFIRMAR PRESENÇA</div>
+                <div style={{flex:1,display:"flex",flexDirection:"column",gap:7,minHeight:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:6,background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"9px 10px"}}>
+                    <div>
+                      <div style={{fontSize:6.5,letterSpacing:1.2,color:"#565c4d"}}>MEALHEIRO</div>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#4ade80",lineHeight:1.1,marginTop:1}}>47,50 €</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:6.5,letterSpacing:1.2,color:"#565c4d"}}>POR RECEBER</div>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#f87171",lineHeight:1.1,marginTop:1}}>9,00 €</div>
+                    </div>
+                  </div>
+                  {contas.map((c)=>(
+                    <div key={c.nome} style={{display:"flex",alignItems:"center",gap:7}}>
+                      <div style={{width:17,height:17,borderRadius:"50%",background:c.cor,color:"white",fontSize:6.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.iniciais}</div>
+                      <div style={{fontSize:8.5,color:"#d8d8d8",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.nome}</div>
+                      <div style={{fontSize:8,fontWeight:800,whiteSpace:"nowrap",color:c.estado==="pago"?"#4ade80":"#f87171"}}>
+                        {c.estado==="pago"?`✓ ${c.valor}`:`deve ${c.valor}`}
+                      </div>
+                    </div>
+                  ))}
+                  {/* O que o organizador ganha em troca: deixa de ser ele a
+                      pedir o dinheiro. É isso que fecha o argumento do título. */}
+                  <div style={{marginTop:"auto",background:"rgba(74,222,128,0.12)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:11,textAlign:"center",padding:9,fontSize:8.5,fontWeight:800,color:"#4ade80"}}>
+                    🔔 Lembrar quem deve
+                  </div>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-around",marginTop:9,paddingTop:9,borderTop:"1px solid #23271b"}}>
-                  <span style={{fontSize:12,opacity:1}}>⚽</span><span style={{fontSize:12,opacity:0.35}}>💸</span><span style={{fontSize:12,opacity:0.35}}>📊</span><span style={{fontSize:12,opacity:0.35}}>👤</span>
+                  <span style={{fontSize:12,opacity:0.35}}>⚽</span><span style={{fontSize:12,opacity:1}}>💸</span><span style={{fontSize:12,opacity:0.35}}>📊</span><span style={{fontSize:12,opacity:0.35}}>👤</span>
                 </div>
               </div>
             </div>

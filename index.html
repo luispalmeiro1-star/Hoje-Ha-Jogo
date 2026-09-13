@@ -35,20 +35,22 @@
           // mostrar a notificação (o servidor reporta "entregue", mas nada
           // aparece no ecrã).
           serviceWorkerAutoRegister: false,
+          // autoPrompt desligado: isto disparava três segundos depois de
+          // alguém aterrar na página de entrada — antes do login, antes de
+          // perceber o que a app faz. Quem dizia "agora não" nunca mais era
+          // perguntado, e quem chegava a bloquear no aviso do browser ficava
+          // inalcançável para sempre. O pedido passou para dentro da app, num
+          // cartão que explica ao que vem e só pergunta quando lhe tocam.
           promptOptions: {
             slidedown: {
               prompts: [
                 {
                   type: "push",
-                  autoPrompt: true,
+                  autoPrompt: false,
                   text: {
                     actionMessage: "Recebe notificações sobre os teus jogos!",
                     acceptButton: "Ativar",
                     cancelButton: "Agora não",
-                  },
-                  delay: {
-                    pageViews: 1,
-                    timeDelay: 3
                   }
                 }
               ]

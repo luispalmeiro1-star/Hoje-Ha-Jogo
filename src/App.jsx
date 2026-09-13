@@ -1291,9 +1291,13 @@ function BotaoWhatsApp({code, groupName, texto="Partilhar no WhatsApp", style={}
 // de partilha pessoal de quem copiou o link, não faz parte do endereço da
 // página, e não tem nada que andar dentro de uma app que vai para toda a
 // gente. Aqui fica só o endereço público.
+// O do Facebook é o link curto de partilha da página. É público — qualquer
+// pessoa o pode abrir, ao contrário do código do Instagram — mas é opaco e um
+// dia pode deixar de servir. Se aparecer o endereço direito
+// (facebook.com/nome-da-página), troca-se aqui.
 const REDES_SOCIAIS = {
   instagram: "https://www.instagram.com/hoje.ha.jogo",
-  facebook: "",
+  facebook: "https://www.facebook.com/share/1BJcbw9zHz/",
 };
 
 function InstagramIcon({size=18}) {

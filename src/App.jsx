@@ -103,23 +103,55 @@ async function establishSession(session) {
   catch(e){ console.error("Erro ao estabelecer sessão:", e); }
 }
 
+// Corre uma função com o SDK da OneSignal assim que ele estiver pronto, e
+// desiste ao fim de 10 segundos. A desistência importa: sem ela, um SDK que não
+// carregue (rede em baixo, bloqueador de anúncios) deixava o botão de ativar as
+// notificações preso em "A pedir..." para sempre.
+function comOneSignal(fn) {
+  return new Promise((resolve) => {
+    let terminado = false;
+    const acabar = () => { if(!terminado){ terminado = true; resolve(); } };
+    const relogio = setTimeout(acabar, 10000);
+    try{
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        try{ await fn(OneSignal); }catch(err){}
+        clearTimeout(relogio);
+        acabar();
+      });
+    }catch(e){ clearTimeout(relogio); acabar(); }
+  });
+}
+
 // Associa este dispositivo ao jogador/grupo no OneSignal, para que as
 // notificações push (enviadas por grupo) o encontrem. Tem de ser chamada em
 // TODOS os pontos onde alguém fica autenticado — login, registo, convite e
 // restauro de sessão — não só no formulário de login.
+//
+// NÃO pede a permissão. Antes pedia, no instante do login, e isso custou caro:
+// o aviso do browser aparecia sem contexto nenhum e quem carregava em
+// "Bloquear" ficava inalcançável para sempre — nem esta app nem nenhum código
+// pode voltar a perguntar depois de um bloqueio. A 13/09/2026 só 3 das 20
+// contas vivas conseguiam receber alguma coisa. O pedido passa a ser feito só
+// pelo cartão que explica ao que vem, e só quando a pessoa lhe toca.
 function linkOneSignal(playerId, groupId=null) {
-  try{
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function(OneSignal) {
-      try{
-        if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission();
-        if(OneSignal.Notifications.permission===true){
-          await OneSignal.User.addTag("player_id",String(playerId));
-          if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
-        }
-      }catch(err){}
-    });
-  }catch(e){}
+  return comOneSignal(async (OneSignal) => {
+    if(OneSignal.Notifications.permission!==true) return;
+    await OneSignal.User.addTag("player_id",String(playerId));
+    if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
+  });
+}
+
+// Pede mesmo a permissão e, se for dada, marca logo o dispositivo. Só deve ser
+// chamada a partir de um toque da pessoa — nunca sozinha.
+function pedirPermissaoNotificacoes(playerId, groupId=null) {
+  return comOneSignal(async (OneSignal) => {
+    if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission();
+    if(OneSignal.Notifications.permission===true){
+      await OneSignal.User.addTag("player_id",String(playerId));
+      if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
+    }
+  });
 }
 
 // Hashing de password no mesmo formato usado pelo auth-login/smooth-processor
@@ -1248,6 +1280,107 @@ function BotaoWhatsApp({code, groupName, texto="Partilhar no WhatsApp", style={}
                textDecoration:"none",...style}}>
       <WhatsAppIcon size={19}/> {texto}
     </a>
+  );
+}
+
+// ── AVISO DAS NOTIFICAÇÕES ─────────────────────────────────────────────────
+const NOTIF_ADIADO_KEY = "hhj_notif_adiado";
+const UM_DIA = 24*60*60*1000;
+
+// "granted" | "denied" | "default" | "indisponivel"
+function estadoNotificacoes() {
+  try{
+    // No iPhone o push só existe com a app instalada no ecrã principal: no
+    // Safari normal o objeto Notification nem sequer aparece. Distinguir isto
+    // de um bloqueio importa, porque a solução é completamente diferente.
+    if(typeof window==="undefined"||!("Notification" in window)) return "indisponivel";
+    return Notification.permission;
+  }catch(e){ return "indisponivel"; }
+}
+
+function AvisoNotificacoes({playerId,groupId}) {
+  const [estado,setEstado]=useState(estadoNotificacoes);
+  const [aPedir,setAPedir]=useState(false);
+  const [adiado,setAdiado]=useState(()=>{
+    try{ return Number(localStorage.getItem(NOTIF_ADIADO_KEY)||0)>Date.now(); }
+    catch(e){ return false; }
+  });
+
+  // Quem vai às definições do telemóvel ligar as notificações volta à app sem
+  // recarregar a página. Sem isto, o cartão continuava a dizer que estão
+  // desligadas depois de a pessoa as ter ligado.
+  useEffect(()=>{
+    const rever=()=>setEstado(estadoNotificacoes());
+    document.addEventListener("visibilitychange",rever);
+    window.addEventListener("focus",rever);
+    return ()=>{
+      document.removeEventListener("visibilitychange",rever);
+      window.removeEventListener("focus",rever);
+    };
+  },[]);
+
+  if(estado==="granted"||adiado) return null;
+
+  const adiar=(dias)=>{
+    try{ localStorage.setItem(NOTIF_ADIADO_KEY,String(Date.now()+dias*UM_DIA)); }catch(e){}
+    setAdiado(true);
+  };
+
+  const ativar=async()=>{
+    setAPedir(true);
+    await pedirPermissaoNotificacoes(playerId,groupId);
+    setEstado(estadoNotificacoes());
+    setAPedir(false);
+  };
+
+  const caixa={background:"#14160f",border:"2px solid rgba(212,175,55,0.45)",borderRadius:14,padding:14,marginBottom:14};
+  const titulo={fontSize:13,fontWeight:800,color:"#d4af37",marginBottom:4};
+  const texto={fontSize:12,color:"#8a9080",lineHeight:1.5};
+  const adiarBtn={background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer",marginTop:10,padding:0};
+
+  // Depois de um bloqueio, nenhum código consegue voltar a perguntar — só a
+  // própria pessoa nas definições. Por isso aqui não há botão: há instruções.
+  if(estado==="denied"){
+    return (
+      <div style={caixa}>
+        <div style={titulo}>🔕 As notificações estão bloqueadas</div>
+        <div style={texto}>
+          Não te conseguimos avisar quando abre vaga, quando o jogo é marcado ou quando tens de pagar.
+          Para ligar, tens de o fazer nas definições do telemóvel:
+          <div style={{marginTop:8,color:"#a8ae9c"}}>
+            <strong>Android:</strong> menu do browser → Definições do site → Notificações → Permitir<br/>
+            <strong>iPhone:</strong> Definições → Notificações → Hoje Há Jogo
+          </div>
+        </div>
+        <button onClick={()=>adiar(30)} style={adiarBtn}>Não me lembres</button>
+      </div>
+    );
+  }
+
+  if(estado==="indisponivel"){
+    return (
+      <div style={caixa}>
+        <div style={titulo}>📲 Instala a app para receberes avisos</div>
+        <div style={texto}>
+          Neste telemóvel as notificações só funcionam com a app instalada no ecrã principal.
+          Carrega no botão <strong>Partilhar</strong> do browser e escolhe <strong>"Adicionar ao Ecrã Principal"</strong>.
+        </div>
+        <button onClick={()=>adiar(14)} style={adiarBtn}>Agora não</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={caixa}>
+      <div style={titulo}>🔔 Liga as notificações</div>
+      <div style={{...texto,marginBottom:12}}>
+        Avisamos-te quando <strong style={{color:"#a8ae9c"}}>abrir vaga</strong>, quando o jogo for marcado e quando tiveres contas por acertar. Sem isto, tens de andar a espreitar a app.
+      </div>
+      <button onClick={ativar} disabled={aPedir} style={{width:"100%",padding:"13px",background:aPedir?"#3d3319":"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:aPedir?"default":"pointer"}}>
+        {aPedir?"A pedir...":"Ativar notificações"}
+      </button>
+      <button onClick={()=>adiar(7)} style={adiarBtn}>Agora não</button>
+    </div>
   );
 }
 
@@ -3274,6 +3407,10 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
         </button>
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
         {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
+        {/* Abaixo do botão de confirmar presença de propósito: o aviso é
+            importante, mas não ao ponto de empurrar para fora do ecrã aquilo a
+            que a pessoa vem à app. */}
+        <AvisoNotificacoes playerId={player.id} groupId={gameInfo.group_id}/>
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers} maxItems={1}/>
         {/* Botões rápidos */}
         <div style={{display:"flex",gap:8,marginBottom:14}}>
@@ -3554,6 +3691,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             {!grupoVazio&&<button onClick={()=>{setNewGroupCode(null);setConviteFechado(true);}} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>Fechar</button>}
           </div>
         )}
+
+        {/* Depois do cartão de convite: com o grupo vazio, chamar a malta vem
+            primeiro. */}
+        <AvisoNotificacoes playerId={currentUser.id} groupId={gameInfo?.group_id}/>
 
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers} maxItems={1}/>
 

@@ -1283,6 +1283,58 @@ function BotaoWhatsApp({code, groupName, texto="Partilhar no WhatsApp", style={}
   );
 }
 
+// ── REDES SOCIAIS ──────────────────────────────────────────────────────────
+// Endereços públicos das páginas da app. Deixar vazio esconde o botão — mais
+// vale não haver botão nenhum do que um que leva a lado nenhum.
+//
+// O endereço do Instagram chegou com um "?stkn=..." no fim: isso é um código
+// de partilha pessoal de quem copiou o link, não faz parte do endereço da
+// página, e não tem nada que andar dentro de uma app que vai para toda a
+// gente. Aqui fica só o endereço público.
+const REDES_SOCIAIS = {
+  instagram: "https://www.instagram.com/hoje.ha.jogo",
+  facebook: "",
+};
+
+function InstagramIcon({size=18}) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.9">
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/>
+      <circle cx="12" cy="12" r="4.2"/>
+      <circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/>
+    </svg>
+  );
+}
+
+function FacebookIcon({size=18}) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
+      <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/>
+    </svg>
+  );
+}
+
+function SegueNos() {
+  const redes=[
+    REDES_SOCIAIS.instagram&&{chave:"ig",nome:"Instagram",href:REDES_SOCIAIS.instagram,icone:<InstagramIcon size={17}/>,cor:"#e1306c"},
+    REDES_SOCIAIS.facebook&&{chave:"fb",nome:"Facebook",href:REDES_SOCIAIS.facebook,icone:<FacebookIcon size={17}/>,cor:"#1877f2"},
+  ].filter(Boolean);
+  if(!redes.length) return null;
+  return (
+    <div style={{marginTop:14}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>SEGUE-NOS</div>
+      <div style={{display:"flex",gap:8}}>
+        {redes.map(r=>(
+          <a key={r.chave} href={r.href} target="_blank" rel="noopener noreferrer"
+             style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px",color:r.cor,fontSize:13,fontWeight:700,textDecoration:"none"}}>
+            {r.icone}<span style={{color:"white"}}>{r.nome}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── AVISO DAS NOTIFICAÇÕES ─────────────────────────────────────────────────
 const NOTIF_ADIADO_KEY = "hhj_notif_adiado";
 const UM_DIA = 24*60*60*1000;
@@ -3367,6 +3419,10 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             </>)}
           </div>}
         </div>
+
+        {/* No fim do Perfil de propósito: quem chega aqui está a explorar a
+            app, não está a meio de confirmar presença. */}
+        <SegueNos/>
       </div>
     </div>
   );

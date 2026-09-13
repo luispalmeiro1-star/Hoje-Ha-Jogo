@@ -950,7 +950,7 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
     {icon:"💶",title:"Contas sempre em dia",text:"Vês quanto deves e quando pagaste, sem teres de perguntar a ninguém."},
   ];
   if(isAdmin) slides.push(
-    {icon:"🔑",title:"Convida com um código",text:"Cada grupo tem um código único, em \"Gerir\". Partilha-o — quem o usar pede para entrar, e tu aprovas."},
+    {icon:"🔑",title:"Começa por convidar",text:"O convite do teu grupo está no ecrã principal enquanto estiveres sozinho — partilha-o no WhatsApp e quem tocar no link entra direto. Depois fica sempre em \"Gerir\"."},
     {icon:"⚙️",title:"Configura o grupo",text:"Dia e hora do jogo, custo por jogador, tipo de desporto, máximo de jogadores — tudo em Gerir > Configurações."},
     {icon:"💸",title:"Controla as dívidas",text:"Depois de cada jogo, a app regista sozinha quem ainda não pagou. Marcas como pago assim que receberes."},
     {icon:"💶",title:"Pagamentos por MBWay",text:"Define o número de MBWay do grupo e cada jogador sabe logo para onde transferir."},
@@ -1208,6 +1208,49 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
 }
 
 // ── GAME HEADER — design limpo e profissional ────────────────────────────────
+// ── CONVIDAR PARA O GRUPO ────────────────────────────────────────────────────
+// Um grupo acabado de criar não vale nada sem gente lá dentro, e é logo a
+// seguir a criá-lo que a pessoa está mais disposta a convidar. Estas peças são
+// usadas nos dois sítios onde isso acontece: no ecrã de "Grupo criado!" e no
+// cartão que fica no topo do admin enquanto o grupo estiver vazio.
+
+// O link leva o código com ele: quem tocar entra direto, sem ter de copiar nada
+// nem perceber onde se escreve um código.
+function inviteLink(code) {
+  return `https://hojehajogo.pt?code=${code}`;
+}
+
+function inviteMessage(code, groupName) {
+  const nome = groupName ? ` "${groupName}"` : "";
+  return `Bora jogar! ⚽\n\nJunta-te ao nosso grupo${nome} na Hoje Há Jogo — confirmas presença, vês as equipas e as contas ficam todas certas.\n\n👉 ${inviteLink(code)}\n\n(ou usa o código ${code} na app)`;
+}
+
+// Ícone do WhatsApp. Desenhado à mão em SVG porque não podemos carregar imagens
+// de fora — e fica nítido em qualquer tamanho.
+function WhatsAppIcon({size=18}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.42-.07-.12-.27-.2-.57-.35z"/>
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.86 9.86 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.13h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.36c0-4.54 3.7-8.23 8.25-8.23a8.2 8.2 0 0 1 8.24 8.24c0 4.54-3.7 8.23-8.24 8.23z"/>
+    </svg>
+  );
+}
+
+// Abre o WhatsApp com a mensagem já escrita e deixa a pessoa escolher a
+// conversa. O wa.me funciona no telemóvel e no computador.
+function BotaoWhatsApp({code, groupName, texto="Partilhar no WhatsApp", style={}}) {
+  if(!code) return null;
+  const href=`https://wa.me/?text=${encodeURIComponent(inviteMessage(code,groupName))}`;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+       style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px",
+               background:"#25D366",color:"#052e16",borderRadius:12,fontWeight:800,fontSize:14,
+               textDecoration:"none",...style}}>
+      <WhatsAppIcon size={19}/> {texto}
+    </a>
+  );
+}
+
 function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
@@ -1716,17 +1759,37 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     }
   };
 
-  // Passo 3 — sucesso simples, sem mostrar código
+  // Passo 3 — sucesso. O código aparece AQUI, e o convite é o botão principal.
+  //
+  // Antes este ecrã escondia o código e dizia "entra na app para o veres". Era
+  // desperdiçar o único momento em que se tem a atenção garantida de quem
+  // acabou de criar o grupo: sozinho, um grupo não serve para nada, e quanto
+  // mais passos houver entre criar e convidar, mais gente fica pelo caminho.
   if(step===3) return (
     <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
-      <div style={{fontSize:64,marginBottom:20}}>🎉</div>
-      <div style={{color:"white",fontSize:22,fontWeight:800,marginBottom:10}}>Grupo criado!</div>
-      <div style={{color:"#8a9080",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:40}}>
-        Para ver o código do grupo e partilhar com os teus jogadores, entra na app.
+      <div style={{fontSize:56,marginBottom:14}}>🎉</div>
+      <div style={{color:"white",fontSize:22,fontWeight:800,marginBottom:6}}>Grupo criado!</div>
+      <div style={{color:"#8a9080",fontSize:14,lineHeight:1.6,maxWidth:320,marginBottom:24}}>
+        Falta o mais importante: <strong style={{color:"#d4af37"}}>chamar a malta</strong>.
       </div>
-      <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:300,padding:"16px",background:"linear-gradient(180deg,#2fd66b,#1ea851)",border:"none",borderRadius:12,color:"#04240f",fontWeight:800,fontSize:15,cursor:"pointer"}}>
+
+      <div style={{width:"100%",maxWidth:340,background:"#14160f",border:"2px solid #d4af37",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:6}}>CÓDIGO DO GRUPO</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,color:"#d4af37",letterSpacing:8,marginBottom:14}}>{inviteCode}</div>
+        <BotaoWhatsApp code={inviteCode} groupName={groupName} style={{marginBottom:8}}/>
+        <button onClick={()=>{navigator.clipboard.writeText(inviteMessage(inviteCode,groupName)).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);showToast("Convite copiado ✓");});}} style={{width:"100%",padding:"12px",background:"transparent",border:"1px solid #23271b",borderRadius:12,color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+          {copied?"Copiado ✓":"Copiar convite"}
+        </button>
+      </div>
+
+      {/* Discreto de propósito: o verde forte fica reservado ao convite, senão
+          os dois botões competem e o olho não sabe qual é o principal. */}
+      <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:340,padding:"15px",background:"transparent",border:"1px solid #23271b",borderRadius:12,color:"#8a9080",fontWeight:700,fontSize:14,cursor:"pointer"}}>
         {loading?"A entrar...":"Entrar na app →"}
       </button>
+      <div style={{color:"#4b5563",fontSize:11.5,marginTop:12,maxWidth:300,lineHeight:1.5}}>
+        O código fica sempre disponível dentro da app.
+      </div>
     </div>
   );
 
@@ -3330,7 +3393,20 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   useEffect(()=>{ setEditRent(rentPerGame); },[rentPerGame]);
   const [editAutoReassign,setEditAutoReassign]=useState(autoReassignTeams);
   useEffect(()=>{ setEditAutoReassign(autoReassignTeams); },[autoReassignTeams]);
+  // O cartão do convite dependia de uma marca guardada no telemóvel, lida e
+  // apagada no mesmo instante: bastava recarregar a página uma vez e nunca mais
+  // se via o código. Pior ainda, aparecia por baixo do tutorial de boas-vindas,
+  // que para um admin tem dez ecrãs — a pessoa saltava-o e o convite já lá não
+  // estava.
+  //
+  // Agora a regra é o próprio estado do grupo: enquanto o admin for o único lá
+  // dentro, o convite fica à vista. Desaparece sozinho quando entrar alguém,
+  // que é exactamente quando deixa de ser preciso.
   const [newGroupCode,setNewGroupCode]=useState(()=>{ const c=localStorage.getItem("hhb_new_group_code"); if(c) localStorage.removeItem("hhb_new_group_code"); return c||null; });
+  const [conviteFechado,setConviteFechado]=useState(false);
+  const grupoVazio=members.length<=1;
+  const codigoParaConvidar=newGroupCode||inviteCode;
+  const mostrarConvite=!conviteFechado&&!!codigoParaConvidar&&(grupoVazio||!!newGroupCode);
   const [codeCopied,setCodeCopied]=useState(false);
   const [pendingCount,setPendingCount]=useState(0);
   const [pwResetCount,setPwResetCount]=useState(0);
@@ -3390,21 +3466,27 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
 
         {/* Banner código novo grupo — aparece só quando se cria um grupo */}
-        {newGroupCode&&(
+        {mostrarConvite&&(
           <div style={{background:"#14160f",border:"2px solid #d4af37",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:8}}>O CÓDIGO DO TEU GRUPO É</div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:8,marginBottom:4}}>{newGroupCode}</div>
-            <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Partilha com os teus jogadores para entrarem</div>
+            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:8}}>
+              {grupoVazio?"ESTÁS SOZINHO NESTE GRUPO":"O CÓDIGO DO TEU GRUPO É"}
+            </div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:8,marginBottom:4}}>{codigoParaConvidar}</div>
+            <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>
+              {grupoVazio?"Chama a malta — sem jogadores não há jogo":"Partilha com os teus jogadores para entrarem"}
+            </div>
+            <BotaoWhatsApp code={codigoParaConvidar} groupName={gameInfo?.app_name} style={{marginBottom:8}}/>
             <div style={{display:"flex",gap:8,marginBottom:10}}>
-              <button onClick={()=>{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}} style={{flex:1,padding:"10px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <button onClick={()=>{navigator.clipboard.writeText(inviteMessage(codigoParaConvidar,gameInfo?.app_name));showToast("Convite copiado ✓");}} style={{flex:1,padding:"10px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 <Icon name="copy" size={14}/> Copiar
               </button>
-              <button onClick={()=>{if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!
-Código: ${newGroupCode}`,url:"https://hojehajogo.pt"});}else{navigator.clipboard.writeText(newGroupCode);showToast("Código copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <Icon name="share" size={14}/> Partilhar
+              <button onClick={()=>{const t=inviteMessage(codigoParaConvidar,gameInfo?.app_name);if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:t}).catch(()=>{});}else{navigator.clipboard.writeText(t);showToast("Convite copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <Icon name="share" size={14}/> Outras apps
               </button>
             </div>
-            <button onClick={()=>setNewGroupCode(null)} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>Fechar</button>
+            {/* Só deixamos fechar quando já há gente no grupo. Com o grupo
+                vazio, este cartão é a coisa mais útil do ecrã. */}
+            {!grupoVazio&&<button onClick={()=>{setNewGroupCode(null);setConviteFechado(true);}} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>Fechar</button>}
           </div>
         )}
 

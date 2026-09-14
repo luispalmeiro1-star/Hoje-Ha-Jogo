@@ -1,0 +1,14 @@
+# Hoje Há Jogo — hojehajogo.pt
+
+User-agent: *
+Allow: /
+
+# Endereços que só fazem sentido para quem tem conta ou convite. Não são
+# segredo — a segurança está nas regras da base de dados, não aqui — mas não
+# há nada neles para indexar, e um código de convite não deve andar a passear
+# nos resultados de pesquisa.
+Disallow: /*?code=
+Disallow: /*?reset=
+Disallow: /*?vaga=
+
+Sitemap: https://hojehajogo.pt/sitemap.xml

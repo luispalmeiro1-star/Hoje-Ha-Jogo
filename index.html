@@ -18,7 +18,34 @@
       #splash-ha{font-family:'Arial Black',Arial,sans-serif;font-size:28px;font-weight:900;color:white;letter-spacing:2px;}
       #splash-jogo{font-family:'Arial Black',Arial,sans-serif;font-size:52px;font-weight:900;color:#d4af37;letter-spacing:3px;margin-top:4px;}
     </style>
-    <title>Hoje Há Jogo</title>
+    <!-- Quem tem o JavaScript desligado ficava a olhar para o ecrã de arranque
+         para sempre, porque é JavaScript que o remove. O conteúdo estava lá
+         por baixo, tapado. Isto tira-o do caminho sem depender de script. -->
+    <noscript><style>#splash{display:none !important;}</style></noscript>
+    <!-- O título antes era só "Hoje Há Jogo": não continha uma única palavra
+         que alguém escreva na pesquisa. O nome fica no fim porque a marca não
+         é o que as pessoas procuram — é o que encontram depois. -->
+    <title>App para organizar futebol e futsal entre amigos · Hoje Há Jogo</title>
+    <meta name="description" content="Marca o jogo, vê quem confirmou, sorteia as equipas e mantém as contas do grupo em dia. Sem instalar nada, sem publicidade. Grátis." />
+    <link rel="canonical" href="https://hojehajogo.pt/" />
+
+    <!-- Sem estas etiquetas, um link partilhado no Facebook ou no WhatsApp
+         aparecia como um retângulo cinzento, sem imagem nem texto. É por aí
+         que vem quase todo o tráfego, por isso isto vale mais do que parece. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hoje Há Jogo" />
+    <meta property="og:locale" content="pt_PT" />
+    <meta property="og:url" content="https://hojehajogo.pt/" />
+    <meta property="og:title" content="Nunca mais andes a cobrar 3€ ao pessoal" />
+    <meta property="og:description" content="Presenças, equipas e as contas do grupo — tudo num sítio só. Grátis, sem instalar nada." />
+    <meta property="og:image" content="https://hojehajogo.pt/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Hoje Há Jogo — o mealheiro do grupo, quem pagou e quem deve." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nunca mais andes a cobrar 3€ ao pessoal" />
+    <meta name="twitter:description" content="Presenças, equipas e as contas do grupo — tudo num sítio só. Grátis, sem instalar nada." />
+    <meta name="twitter:image" content="https://hojehajogo.pt/og.png" />
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
@@ -65,7 +92,55 @@
       <div id="splash-hoje">HOJE HÁ</div>
       <div id="splash-jogo">JOGO</div>
     </div>
-    <div id="root"></div>
+    <!--
+      Este texto existe para quem lê a página SEM executar JavaScript: os
+      motores de busca, e o cartão de pré-visualização de algumas apps. Até
+      aqui o Google recebia 25 caracteres ("Hoje Há Jogo HOJE HÁ JOGO") porque
+      todo o conteúdo da página de entrada vive dentro do pacote de JavaScript.
+
+      O React limpa este conteúdo quando monta, e o ecrã de arranque tapa a
+      troca. Se o pacote de JavaScript não carregar, o ecrã de arranque
+      desaparece à mesma (o script que o remove é separado do pacote) e fica
+      isto à vista. Com o JavaScript desligado de todo, é a regra dentro do
+      <noscript> lá em cima que tira o arranque do caminho.
+
+      Tem de dizer o MESMO que a app mostra depois de carregar. Se um dia o
+      texto da página de entrada mudar, este muda com ele.
+    -->
+    <div id="root">
+      <div style="max-width:640px;margin:0 auto;padding:32px 24px 64px;color:#d8dbd2;font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;line-height:1.6;">
+        <h1 style="font-size:30px;line-height:1.15;color:#fff;margin:0 0 12px;">
+          Nunca mais andes a <span style="color:#d4af37;">cobrar 3€ ao pessoal.</span>
+        </h1>
+        <p style="color:#8a9080;margin:0 0 26px;">
+          A <strong>Hoje Há Jogo</strong> é uma app grátis para organizar jogos de futebol e futsal entre amigos.
+          Diz quem pagou, quem deve e quanto tem o mealheiro do grupo. E ainda trata das presenças e das equipas.
+        </p>
+
+        <h2 style="font-size:16px;color:#d4af37;margin:0 0 10px;">O que faz</h2>
+        <ul style="margin:0 0 26px;padding-left:20px;color:#8a9080;">
+          <li><strong style="color:#d8dbd2;">Presenças</strong> — quem vai, quem falta e lista de espera automática.</li>
+          <li><strong style="color:#d8dbd2;">Pagamentos</strong> — quem pagou, quem deve, e pagamento por MB WAY.</li>
+          <li><strong style="color:#d8dbd2;">Mealheiro</strong> — o dinheiro do grupo sempre à vista.</li>
+          <li><strong style="color:#d8dbd2;">Equipas</strong> — sorteadas pela app, ajustadas à mão por quem organiza.</li>
+          <li><strong style="color:#d8dbd2;">Estatísticas</strong> — jogos, séries e votação para MVP.</li>
+          <li><strong style="color:#d8dbd2;">Zona</strong> — encontrar jogos perto de ti.</li>
+        </ul>
+
+        <h2 style="font-size:16px;color:#d4af37;margin:0 0 10px;">Como funciona</h2>
+        <ol style="margin:0 0 26px;padding-left:20px;color:#8a9080;">
+          <li>Crias o grupo em menos de dois minutos.</li>
+          <li>Partilhas o código de convite com a malta.</li>
+          <li>Cada um confirma presença no telemóvel.</li>
+          <li>A app trata das equipas e das contas.</li>
+        </ol>
+
+        <p style="color:#565c4d;font-size:13px;margin:0;">
+          Grátis, sem publicidade e sem instalar nada da loja.
+          <a href="/privacidade" style="color:#8a9080;">Política de Privacidade</a>.
+        </p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
       window.addEventListener('load', function() {

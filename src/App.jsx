@@ -815,9 +815,58 @@ export default function App() {
     setView(pg?.is_admin?"admin":"player");
   };
 
-  const reassignAllTeams = async(updatedPlayers) => {
+  // Só o admin do grupo mexe nas equipas. Do lado do servidor isto já está
+  // garantido (o set_player_teams exige is_admin, e há um trigger no
+  // player_groups), mas não vale a pena chegar a tentar: um jogador a
+  // confirmar presença não pode disparar um sorteio que o servidor recusa.
+  const souAdminDoGrupo = () => {
+    if(!currentUser) return false;
+    const eu=players.find(p=>p.id===currentUser.id);
+    return !!(eu ? eu.is_admin : currentUser.is_admin);
+  };
+  // Enquanto ninguém sorteou não há equipas para manter em dia — e criá-las
+  // por trás das costas fazia desaparecer o botão "REVELAR EQUIPAS" antes de
+  // alguém lhe tocar.
+  const haEquipasSorteadas = () => players.some(p=>!!p.team);
+  const podeAjustarEquipas = () => autoReassignTeams&&souAdminDoGrupo()&&haEquipasSorteadas();
+
+  // Só há um caminho que baralha as equipas todas: o admin carregar em
+  // "REVELAR EQUIPAS" ou "Sortear novamente" — é isso que "forcado" quer dizer.
+  //
+  // Tudo o resto (alguém confirmar presença, sair, mudar de posição) apenas
+  // encaixa quem ficou sem equipa na que tiver menos gente, sem tocar em quem
+  // já lá estava. Antes qualquer destas coisas re-sorteava tudo, e bastava um
+  // jogador confirmar presença para o trabalho do admin desaparecer sem aviso.
+  const reassignAllTeams = async(updatedPlayers, {forcado=false}={}) => {
     const newConfirmed=updatedPlayers.filter(pl=>pl.status==="in");
-    const teamMap=assignTeams(newConfirmed,sportType);
+    let teamMap;
+
+    if(!forcado){
+      teamMap={};
+      const contagem={};
+      // "SUB" (suplente) é uma equipa como as outras para efeitos de quem já
+      // está colocado — é o que o sorteio dá a quem sobra e o que o admin
+      // escolhe quando manda alguém para suplente. Só não conta para o
+      // equilíbrio das equipas que jogam.
+      newConfirmed.forEach(pl=>{
+        if(!pl.team) return;
+        teamMap[pl.id]=pl.team;
+        if(pl.team!=="SUB") contagem[pl.team]=(contagem[pl.team]||0)+1;
+      });
+      const equipas=Object.keys(contagem).length?Object.keys(contagem).sort():["A","B"];
+      equipas.forEach(t=>{ if(contagem[t]===undefined) contagem[t]=0; });
+      const lotacao=sportConfig(sportType).teamSize;
+      newConfirmed.filter(pl=>!teamMap[pl.id]).forEach(pl=>{
+        const menor=equipas.reduce((a,b)=>contagem[a]<=contagem[b]?a:b);
+        // Se as equipas já estão cheias, quem chega fica suplente em vez de
+        // fazer um 7 contra 6.
+        if(contagem[menor]>=lotacao){ teamMap[pl.id]="SUB"; return; }
+        teamMap[pl.id]=menor; contagem[menor]++;
+      });
+    } else {
+      teamMap=assignTeams(newConfirmed,sportType);
+    }
+
     const finalPlayers=updatedPlayers.map(pl=>({...pl,team:teamMap[pl.id]||null}));
     setPlayers(finalPlayers);
     // Um único pedido em vez de um por jogador: antes, confirmar presença num
@@ -825,14 +874,19 @@ export default function App() {
     // e cada evento fazia todos os telemóveis ligados recarregarem tudo.
     if(activeGroupId){
       const{error}=await supabase.rpc("set_player_teams",{gid:activeGroupId,assignments:finalPlayers.map(pl=>({player_id:pl.id,team:teamMap[pl.id]||null}))});
-      if(error) console.error("Erro ao guardar equipas:",error.message);
+      if(error){ console.error("Erro ao guardar equipas:",error.message); showToast("Não foi possível guardar as equipas","err"); }
     }
     return finalPlayers;
   };
 
   const movePlayerToTeam = async(playerId, newTeam) => {
+    const antes=players;
     setPlayers(prev=>prev.map(p=>p.id===playerId?{...p,team:newTeam}:p));
-    await supabase.from("player_groups").update({team:newTeam}).eq("player_id",playerId).eq("group_id",activeGroupId);
+    const{error}=await supabase.from("player_groups").update({team:newTeam}).eq("player_id",playerId).eq("group_id",activeGroupId);
+    // Sem isto a troca aparecia no ecrã mesmo quando a base de dados a
+    // recusava, e só desaparecia no recarregamento seguinte — foi assim que
+    // pareceu que "as equipas não gravam".
+    if(error){ setPlayers(antes); showToast("Não foi possível mover o jogador","err"); }
   };
 
   const togglePresence = async(playerId)=>{
@@ -843,7 +897,7 @@ export default function App() {
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
     // Atualizar status no player_groups (por grupo)
     await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
-    if(autoReassignTeams) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
+    if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
   };
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
@@ -855,13 +909,13 @@ export default function App() {
     const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
     if(inserted){
       await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
-      if(!isFull&&autoReassignTeams) await reassignAllTeams([...players,inserted]);
+      if(!isFull&&podeAjustarEquipas()) await reassignAllTeams([...players,inserted]);
     }
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(autoReassignTeams) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
+  const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
-  const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(autoReassignTeams) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Jogador removido"); };
+  const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Jogador removido"); };
   // Devolve a password que ficou guardada (para o admin a poder copiar), ou
   // null se falhou. Antes não devolvia nada e não olhava sequer para o erro.
   const changePassword = async(id,pw)=>{
@@ -910,7 +964,7 @@ export default function App() {
   };
   const updatePosition = async(id,pos)=>{
     await supabase.from("players").update({position:pos}).eq("id",id);
-    if(autoReassignTeams) await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
+    if(podeAjustarEquipas()) await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
     showToast("Posição atualizada ✓");
   };
   const sendPushNotification = async(title,message)=>{
@@ -2541,14 +2595,58 @@ function ExpandableCard({title, children, defaultOpen=false}) {
 
 // ── TEAMS REVEAL ─────────────────────────────────────────────────────────────
 function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isAdmin=false, onMovePlayer}) {
-  const [phase, setPhase] = useState("idle");
+  // As equipas já sorteadas estão guardadas na base de dados. Antes isto não
+  // olhava para elas: o estado começava sempre em "idle", por isso bastava
+  // recarregar a app (ou o ecrã voltar a montar) para reaparecer o botão
+  // "REVELAR EQUIPAS" como se nada tivesse sido sorteado.
+  const jaHaEquipas = confirmed.some(p=>{
+    const pl=players.find(x=>x.id===p.id)||p;
+    return !!pl.team;
+  });
+  // Só guardamos o que o utilizador forçou nesta sessão; o resto vem dos dados.
+  const [forcado, setForcado] = useState(null);
+  const phase = forcado ?? (jaHaEquipas?"revealed":"idle");
+  const setPhase = setForcado;
   const [displayNames, setDisplayNames] = useState([]);
   const intervalRef = useRef(null);
   const startReveal = () => {
     setPhase("animating"); let ticks=0;
-    intervalRef.current=setInterval(()=>{ setDisplayNames([...confirmed].sort(()=>Math.random()-0.5).slice(0,4).map(p=>p.name)); ticks++; if(ticks>=20){clearInterval(intervalRef.current);if(onReassign)onReassign(confirmed);setPhase("revealed");}},100);
+    intervalRef.current=setInterval(()=>{
+      setDisplayNames([...confirmed].sort(()=>Math.random()-0.5).slice(0,4).map(p=>p.name));
+      ticks++;
+      if(ticks>=20){
+        clearInterval(intervalRef.current);
+        // Passar a lista TODA e não só os confirmados: quem recebe isto
+        // substitui a lista de jogadores pelo que lhe der, e com só os
+        // confirmados os restantes desapareciam do ecrã até ao recarregamento
+        // seguinte.
+        //
+        // forcado: foi o admin a pedir o sorteio, por isso baralha mesmo tudo
+        // — incluindo as equipas que ele tivesse arrumado à mão.
+        if(onReassign) onReassign(players.length?players:confirmed,{forcado:true});
+        setPhase("revealed");
+      }
+    },100);
   };
   useEffect(()=>()=>clearInterval(intervalRef.current),[]);
+
+  // Quem confirma presença já não mexe nas equipas (só o admin pode), por isso
+  // quem chega depois do sorteio fica sem equipa nenhuma e desaparecia do
+  // quadro. Quando o admin abre este ecrã, encaixam-se os que faltam na equipa
+  // com menos gente — sem baralhar quem já lá estava.
+  const semEquipa = confirmed.filter(p=>{
+    const pl=players.find(x=>x.id===p.id)||p;
+    return !pl.team;
+  }).map(p=>p.id);
+  const assinatura = semEquipa.join(",");
+  const encaixadosRef = useRef("");
+  useEffect(()=>{
+    if(phase!=="revealed"||!isAdmin||!onReassign) return;
+    if(!assinatura||encaixadosRef.current===assinatura) return;
+    encaixadosRef.current=assinatura;
+    onReassign(players.length?players:confirmed,{forcado:false});
+  },[phase,isAdmin,assinatura]);
+
   if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid #1ea851",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
   if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"2px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
   return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;

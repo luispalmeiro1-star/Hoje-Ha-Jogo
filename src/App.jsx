@@ -93,6 +93,50 @@ async function callResetPassword(token, new_password) {
   return await res.json();
 }
 
+// Pede ao servidor um link de uso único para o admin mandar à pessoa.
+//
+// Vai com a SESSÃO do admin e não com a chave pública: é assim que o servidor
+// confirma que quem pede é mesmo admin do grupo daquele jogador. Com a chave
+// pública, qualquer pessoa podia gerar um link de reposição para qualquer
+// conta.
+async function callAdminResetLink(playerId) {
+  const {data:{session}} = await supabase.auth.getSession();
+  if(!session?.access_token) return {error:"A tua sessão expirou. Volta a entrar."};
+  const res = await fetch(RESET_REQUEST_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}`},
+    body: JSON.stringify({action:"admin_link", player_id: playerId})
+  });
+  return await res.json();
+}
+
+function mensagemReposicao(nome, link) {
+  return `Olá${nome?" "+nome.split(" ")[0]:""}! Aqui tens o link para escolheres uma password nova na Hoje Há Jogo:\n\n${link}\n\nO link só funciona uma vez e expira em 30 minutos.`;
+}
+
+// Botão que abre o WhatsApp com o link já escrito. Se a pessoa não tiver
+// telemóvel na ficha, abre o WhatsApp à mesma e a mensagem fica pronta para o
+// admin escolher o contacto.
+function BotaoEnviarLink({playerId, nome, showToast}) {
+  const [aGerar,setAGerar]=useState(false);
+  const enviar=async()=>{
+    setAGerar(true);
+    const r=await callAdminResetLink(playerId);
+    setAGerar(false);
+    if(r?.error||!r?.link){ showToast(r?.error||"Não foi possível gerar o link","err"); return; }
+    const texto=encodeURIComponent(mensagemReposicao(r.name||nome, r.link));
+    const numero=(r.phone||"").replace(/\D/g,"");
+    // Números portugueses vêm sem indicativo; o WhatsApp precisa dele.
+    const destino=numero?(numero.length===9?`351${numero}`:numero):"";
+    window.open(destino?`https://wa.me/${destino}?text=${texto}`:`https://wa.me/?text=${texto}`,"_blank","noopener");
+  };
+  return (
+    <button onClick={enviar} disabled={aGerar} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:7,padding:"9px 12px",background:aGerar?"#1c3d2a":"#25D366",border:"none",borderRadius:9,color:"#052e16",fontWeight:800,fontSize:12,cursor:aGerar?"default":"pointer",whiteSpace:"nowrap"}}>
+      <WhatsAppIcon size={15}/> {aGerar?"A gerar...":"Enviar link"}
+    </button>
+  );
+}
+
 // Troca o token emitido pelo auth-login/smooth-processor por uma sessão real e
 // verificada do Supabase — é isto que permite às regras de acesso da base de
 // dados saber quem está de facto a pedir os dados, em vez de confiarem apenas
@@ -4010,7 +4054,20 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":"❌ Fora"}</button>
                 {!p.is_admin&&<button className="icon-danger" onClick={()=>onRemovePlayer(p.id)}><Icon name="trash" size={13}/></button>}
                 {editPassId===p.id
-                  ?<div style={{width:"100%",display:"flex",gap:6,marginTop:4}}><input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)} autoFocus/><button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}}><Icon name="check" size={13}/></button><button className="icon-ghost" onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button></div>
+                  ?<div style={{width:"100%",marginTop:6}}>
+                      {/* A via recomendada: a pessoa escolhe a sua própria
+                          password e o admin nunca lhe toca. */}
+                      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
+                        <BotaoEnviarLink playerId={p.id} nome={p.name} showToast={showToast}/>
+                        <span style={{fontSize:11,color:"#8a9080"}}>ele escolhe a dele</span>
+                        <button className="icon-ghost" style={{marginLeft:"auto"}} onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button>
+                      </div>
+                      <div style={{fontSize:10.5,color:"#565c4d",marginBottom:6}}>ou escreve tu uma:</div>
+                      <div style={{display:"flex",gap:6}}>
+                        <input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)}/>
+                        <button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}}><Icon name="check" size={13}/></button>
+                      </div>
+                    </div>
                   :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}}><Icon name="key" size={14}/></button>}
                 {passDefinida?.nome===p.name&&<PasswordDefinida nome={passDefinida.nome} valor={passDefinida.valor} onFechar={()=>setPassDefinida(null)} showToast={showToast}/>}
               </div>
@@ -4406,9 +4463,15 @@ function PasswordResetRequestsPanel({adminId, showToast}) {
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {requests.map(r=>(
           <div key={r.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{flex:1,minWidth:0,color:"white",fontWeight:700,fontSize:13}}>{r.player_name}</div>
-              {openId!==r.id && <button onClick={()=>{setOpenId(r.id);setNewPass("");}} style={{background:"rgba(212,175,55,0.15)",border:"1px solid #d4af37",borderRadius:8,padding:"7px 10px",color:"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer"}}>Definir password</button>}
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:100,color:"white",fontWeight:700,fontSize:13}}>{r.player_name}</div>
+              {openId!==r.id && <>
+                {/* Primeiro o link: assim o próprio escolhe a password e tu
+                    nunca a escreves nem a vês. Escrever à mão fica como
+                    alternativa, para quem não tem WhatsApp. */}
+                <BotaoEnviarLink playerId={r.player_id} nome={r.player_name} showToast={showToast}/>
+                <button onClick={()=>{setOpenId(r.id);setNewPass("");}} style={{background:"transparent",border:"1px solid #3a4030",borderRadius:9,padding:"9px 12px",color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>Escrever eu</button>
+              </>}
             </div>
             {openId===r.id && (
               <div style={{display:"flex",gap:6,marginTop:8}}>

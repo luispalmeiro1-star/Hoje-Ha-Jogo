@@ -22,7 +22,13 @@ export default defineConfig({
         ]
       },
       workbox: {
-        importScripts: ['OneSignalSDKWorker.js']
+        importScripts: ['OneSignalSDKWorker.js'],
+        // A /privacidade é uma página à parte, em HTML simples. Sem esta
+        // exceção o service worker responderia com a app a qualquer navegação,
+        // e quem já tem a app instalada nunca veria a página — veria o ecrã de
+        // entrada. Vale para quem partilha o link e para quem o vai buscar de
+        // fora (a Play Store, por exemplo).
+        navigateFallbackDenylist: [/^\/privacidade/]
       }
     })
   ]

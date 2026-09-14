@@ -1744,6 +1744,14 @@ function LandingView({setView}) {
           <button onClick={()=>setView("criar-grupo")} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>
             Começa agora — é grátis
           </button>
+          {/* A seguir a este botão pedimos o nome e o telemóvel a um
+              desconhecido. É o momento exato em que faz falta poder ver quem
+              está do outro lado e o que acontece aos dados. */}
+          <div style={{marginTop:26,fontSize:11.5,color:"#565c4d"}}>
+            <a href="/privacidade" style={{color:"#8a9080",textDecoration:"underline"}}>Política de Privacidade</a>
+            <span style={{margin:"0 8px"}}>·</span>
+            Sem publicidade. Não vendemos os teus dados.
+          </div>
         </div>
       </div>
     </div>
@@ -3427,6 +3435,12 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         {/* No fim do Perfil de propósito: quem chega aqui está a explorar a
             app, não está a meio de confirmar presença. */}
         <SegueNos/>
+
+        <div style={{marginTop:18,textAlign:"center"}}>
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{fontSize:11.5,color:"#4b5563",textDecoration:"underline"}}>
+            Política de Privacidade
+          </a>
+        </div>
       </div>
     </div>
   );

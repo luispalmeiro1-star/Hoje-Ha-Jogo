@@ -176,6 +176,37 @@ async function hashPassword(password) {
   return `pbkdf2$${PBKDF2_ITERATIONS}$${salt}$${hash}`;
 }
 
+// Tira TODOS os espaços, não só os das pontas.
+//
+// A 14/09/2026 isto deixou um jogador de fora na véspera do jogo: o admin
+// escreveu "Patarra1!" no telemóvel, o teclado acrescentou um espaço depois da
+// palavra sugerida, e ficou guardado "Patarra 1!". A app dizia "atualizada ✓",
+// o jogador tentava entrar e falhava, e ninguém tinha como ver a diferença —
+// uma password nunca se mostra a ninguém depois de guardada.
+function limparPassword(raw) {
+  return (raw || "").replace(/\s+/g, "");
+}
+
+// Mostra ao admin a password que FICOU MESMO GUARDADA, para ele copiar em vez
+// de a reescrever de cabeça. É a outra metade da correção: sem isto, continua
+// a definir uma password às cegas.
+function PasswordDefinida({nome, valor, onFechar, showToast}) {
+  if(!valor) return null;
+  return (
+    <div style={{width:"100%",marginTop:8,background:"rgba(74,222,128,0.09)",border:"1px solid rgba(74,222,128,0.42)",borderRadius:10,padding:"10px 12px"}}>
+      <div style={{fontSize:11,color:"#4ade80",fontWeight:800,marginBottom:6}}>✓ Password de {nome} definida</div>
+      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <code style={{flex:1,minWidth:0,background:"#0a0b08",border:"1px solid #23271b",borderRadius:8,padding:"8px 10px",fontSize:14,color:"#fff",fontFamily:"monospace",wordBreak:"break-all"}}>{valor}</code>
+        <button onClick={()=>{navigator.clipboard.writeText(valor);showToast("Password copiada ✓");}} style={{background:"rgba(212,175,55,0.15)",border:"1px solid #d4af37",borderRadius:8,padding:"8px 10px",color:"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>
+          <Icon name="copy" size={13}/> Copiar
+        </button>
+        <button className="icon-ghost" onClick={onFechar}><Icon name="x" size={13}/></button>
+      </div>
+      <div style={{fontSize:10.5,color:"#8a9080",marginTop:6}}>Copia e envia-lha tal e qual. É esta que funciona.</div>
+    </div>
+  );
+}
+
 const PLAYER_COLS = "id,name,is_admin,paid,status,is_guest,invited_by,invited_by_id,confirmed_at,avatar_color,total_games,total_paid,position,team,current_streak,best_streak,username,phone,group_id,available,zone,avatar_url,availability_days,availability_notes,zone_contact,email,google_id,onboarding_seen";
 
 const MAX_PLAYERS = 15;
@@ -787,7 +818,16 @@ export default function App() {
   const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(autoReassignTeams) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
   const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(autoReassignTeams) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Jogador removido"); };
-  const changePassword = async(id,pw)=>{ const hashed=await hashPassword(pw); await supabase.from("players").update({password:hashed}).eq("id",id); };
+  // Devolve a password que ficou guardada (para o admin a poder copiar), ou
+  // null se falhou. Antes não devolvia nada e não olhava sequer para o erro.
+  const changePassword = async(id,pw)=>{
+    const limpa=limparPassword(pw);
+    if(limpa.length<4){ showToast("A password tem de ter pelo menos 4 caracteres","err"); return null; }
+    const hashed=await hashPassword(limpa);
+    const{error}=await supabase.from("players").update({password:hashed}).eq("id",id);
+    if(error){ showToast("Não foi possível definir a password","err"); return null; }
+    return limpa;
+  };
   const addPlayer      = async(name,username,password,phone)=>{
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
@@ -813,7 +853,7 @@ export default function App() {
     if(newName?.trim()) updates.name=newName.trim();
     if(newColor) updates.avatar_color=newColor;
     if(newPhone!==undefined) updates.phone=newPhone?.trim()||null;
-    if(newPassword?.trim()) updates.password=await hashPassword(newPassword.trim());
+    if(limparPassword(newPassword)) updates.password=await hashPassword(limparPassword(newPassword));
     if(Object.keys(updates).length===0) return;
     const localUpdates={...updates}; delete localUpdates.password;
     if(Object.keys(localUpdates).length>0) setPlayers(prev=>prev.map(p=>p.id===id?{...p,...localUpdates}:p));
@@ -1879,10 +1919,13 @@ function ReporPasswordView({token, setView, showToast}) {
   const [done, setDone]     = useState(null); // {username}
 
   const submit = async() => {
-    if(pw1.length<4){ showToast("A password tem de ter pelo menos 4 caracteres","err"); return; }
-    if(pw1!==pw2){ showToast("As passwords não coincidem","err"); return; }
+    // Limpar antes de comparar: se o teclado meter um espaço só num dos campos,
+    // a pessoa vê duas passwords iguais e a app diz que não coincidem.
+    const limpa1=limparPassword(pw1), limpa2=limparPassword(pw2);
+    if(limpa1.length<4){ showToast("A password tem de ter pelo menos 4 caracteres","err"); return; }
+    if(limpa1!==limpa2){ showToast("As passwords não coincidem","err"); return; }
     setLoading(true);
-    const result = await callResetPassword(token, pw1);
+    const result = await callResetPassword(token, limpa1);
     setLoading(false);
     if(result?.error){ showToast(result.error,"err"); return; }
     // Limpar o token do URL para não ficar no histórico do browser
@@ -3388,7 +3431,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             <label className="field-label">Confirmar password</label>
             <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
             <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{
-              if(newPw&&newPw!==newPwC){showToast("As passwords não coincidem","err");return;}
+              if(newPw&&limparPassword(newPw)!==limparPassword(newPwC)){showToast("As passwords não coincidem","err");return;}
               onUpdateProfile(newName,newPw,color,newPhone);
               if(newPw) setTimeout(()=>onLogout(),800);
               else setEditOpen(false);
@@ -3644,6 +3687,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [newPass,setNewPass]=useState("");
   const [editPassId,setEditPassId]=useState(null);
   const [editPassVal,setEditPassVal]=useState("");
+  const [passDefinida,setPassDefinida]=useState(null);
   const [guestName,setGuestName]=useState("");
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   const [editLoc,setEditLoc]=useState(gameInfo.location);
@@ -3966,8 +4010,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":"❌ Fora"}</button>
                 {!p.is_admin&&<button className="icon-danger" onClick={()=>onRemovePlayer(p.id)}><Icon name="trash" size={13}/></button>}
                 {editPassId===p.id
-                  ?<div style={{width:"100%",display:"flex",gap:6,marginTop:4}}><input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)} autoFocus/><button className="btn-primary" style={{padding:"7px 10px"}} onClick={()=>{onChangePassword(p.id,editPassVal);setEditPassId(null);setEditPassVal("");}}><Icon name="check" size={13}/></button><button className="icon-ghost" onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button></div>
+                  ?<div style={{width:"100%",display:"flex",gap:6,marginTop:4}}><input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)} autoFocus/><button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}}><Icon name="check" size={13}/></button><button className="icon-ghost" onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button></div>
                   :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}}><Icon name="key" size={14}/></button>}
+                {passDefinida?.nome===p.name&&<PasswordDefinida nome={passDefinida.nome} valor={passDefinida.valor} onFechar={()=>setPassDefinida(null)} showToast={showToast}/>}
               </div>
             ))}
           </div>
@@ -4320,6 +4365,7 @@ function PasswordResetRequestsPanel({adminId, showToast}) {
   const [openId, setOpenId] = useState(null);
   const [newPass, setNewPass] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [definida, setDefinida] = useState(null);
 
   const load = useCallback(async()=>{
     const{data}=await supabase.from("password_reset_requests").select("id,player_id,player_name,created_at").eq("status","pending").order("created_at");
@@ -4333,22 +4379,30 @@ function PasswordResetRequestsPanel({adminId, showToast}) {
   },[load]);
 
   const resolve = async(req)=>{
-    if(!newPass.trim()){ showToast("Escreve a nova password","err"); return; }
+    const limpa=limparPassword(newPass);
+    if(limpa.length<4){ showToast("A password tem de ter pelo menos 4 caracteres","err"); return; }
     setBusyId(req.id);
-    const hashed=await hashPassword(newPass.trim());
+    const hashed=await hashPassword(limpa);
     const{error}=await supabase.from("players").update({password:hashed}).eq("id",req.player_id);
     if(error){ showToast("Erro ao definir a password","err"); setBusyId(null); return; }
     await supabase.from("password_reset_requests").update({status:"done",resolved_at:new Date().toISOString(),resolved_by:adminId}).eq("id",req.id);
-    showToast(`Password de ${req.player_name} atualizada — envia-lha ✓`);
+    // Guardamos o que ficou MESMO gravado para o admin copiar. O pedido sai da
+    // lista assim que for marcado como resolvido, por isso o nome tem de vir
+    // com ele.
+    setDefinida({nome:req.player_name, valor:limpa});
     setOpenId(null); setNewPass(""); setBusyId(null);
     load();
   };
 
-  if(requests.length===0) return null;
+  // Não basta haver pedidos: depois de resolver o último a lista fica vazia, e
+  // sem esta condição o painel desaparecia a levar consigo a password que o
+  // admin ainda tem de copiar.
+  if(requests.length===0 && !definida) return null;
 
   return (
     <div style={{background:"rgba(212,175,55,0.08)",border:"2px solid #d4af37",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-      <div style={{color:"#d4af37",fontWeight:800,fontSize:13,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>🔑 {requests.length} pedido{requests.length>1?"s":""} de nova password</div>
+      {definida && <PasswordDefinida nome={definida.nome} valor={definida.valor} onFechar={()=>setDefinida(null)} showToast={showToast}/>}
+      {requests.length>0 && <div style={{color:"#d4af37",fontWeight:800,fontSize:13,margin:definida?"12px 0 10px":"0 0 10px",display:"flex",alignItems:"center",gap:6}}>🔑 {requests.length} pedido{requests.length>1?"s":""} de nova password</div>}
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {requests.map(r=>(
           <div key={r.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px"}}>

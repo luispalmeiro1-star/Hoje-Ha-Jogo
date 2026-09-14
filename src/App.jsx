@@ -1006,6 +1006,16 @@ export default function App() {
     await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:activeGroupId||null},{onConflict:"voter_id,game_date,group_id"});
     showToast("Voto registado ✓");
   };
+  // Dava para mudar o voto, mas não para o retirar — quem votasse por engano
+  // ficava com ele até ao fim do jogo.
+  const removeMvpVote = async(voterId)=>{
+    const antes=mvpVotes;
+    setMvpVotes(prev=>prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date)));
+    const q=supabase.from("mvp_votes").delete().eq("voter_id",voterId).eq("game_date",gameInfo.date);
+    const{error}=activeGroupId?await q.eq("group_id",activeGroupId):await q;
+    if(error){ setMvpVotes(antes); showToast("Não foi possível retirar o voto","err"); return; }
+    showToast("Voto retirado");
+  };
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
@@ -1042,8 +1052,8 @@ export default function App() {
       {view==="entrar-vaga"    && <EntrarVagaView code={vagaCode} setView={setView}/>}
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onRemoveMvpVote={()=>removeMvpVote(liveUser.id)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onRemoveMvpVote={()=>removeMvpVote(liveUser.id)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -2576,7 +2586,7 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
 }
 
 // ── MVP VOTE ─────────────────────────────────────────────────────────────────
-function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
+function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemoveVote}) {
   const myVote=mvpVotes.find(v=>v.voter_id===currentUserId&&v.game_date===gameDate);
   const counts={};
   mvpVotes.filter(v=>v.game_date===gameDate).forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
@@ -2590,7 +2600,16 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
           return <button key={p.id} onClick={()=>onVote(p.id)} style={{display:"flex",alignItems:"center",gap:10,background:isVoted?"rgba(217,119,6,0.15)":"#14160f",border:`2px solid ${isVoted?"#d97706":"#23271b"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",textAlign:"left",width:"100%"}}><Avatar player={p} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{p.name}</span><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:60,height:6,background:"#14160f",borderRadius:99,overflow:"hidden"}}><div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/></div><span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>{isVoted&&<span style={{fontSize:12}}>⭐</span>}</div></button>;
         })}
       </div>
-      {myVote&&<p style={{fontSize:11,color:"#6b7280",marginTop:8,textAlign:"center"}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>}
+      {myVote&&(
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:8,flexWrap:"wrap"}}>
+          <p style={{fontSize:11,color:"#6b7280",margin:0}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>
+          {onRemoveVote&&(
+            <button onClick={()=>onRemoveVote(currentUserId)} style={{background:"transparent",border:"1px solid #3a4030",borderRadius:8,padding:"5px 10px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              Retirar voto
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -3534,7 +3553,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
   const cfg=sportConfig(sportType);
   const isIn=player.status==="in",isWait=player.status==="wait";
   const [confirming,setConfirming]=useState(false);
@@ -3613,7 +3632,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
                   <div style={{fontSize:11,color:"#6b7280"}}>{myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?"}</div>
                 </div>
               </div>
-              <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>
+              <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp} onRemoveVote={onRemoveMvpVote}/>
             </div>
           );
         })()}
@@ -3719,7 +3738,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait";
@@ -3975,7 +3994,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               </div>
             </div>
           </ExpandableSection>
-          {confirmed.length>=MIN_PLAYERS&&<MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>}
+          {confirmed.length>=MIN_PLAYERS&&<MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={gameInfo.date} onVote={onVoteMvp} onRemoveVote={onRemoveMvpVote}/>}
           {!showReset
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
             :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>

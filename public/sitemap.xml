@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Só há duas páginas reais. O resto da app são ecrãs dentro do JavaScript, sem
+  endereço próprio, por isso não há mais nada para indexar. Quando houver
+  páginas de conteúdo, juntam-se aqui.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://hojehajogo.pt/</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://hojehajogo.pt/privacidade</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

@@ -989,9 +989,13 @@ export default function App() {
     if(podeAjustarEquipas()) await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
     showToast("Posição atualizada ✓");
   };
-  const sendPushNotification = async(title,message)=>{
+  // playerIds (opcional): só estas pessoas recebem, em vez do grupo todo. É o
+  // caso do aviso de MVP — só interessa a quem confirmou presença no jogo.
+  const sendPushNotification = async(title,message,playerIds=null)=>{
     try{
-      const{error}=await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt",group_id:activeGroupId}});
+      const body={title,message,url:"https://hojehajogo.pt",group_id:activeGroupId};
+      if(playerIds&&playerIds.length>0) body.player_ids=playerIds;
+      const{error}=await supabase.functions.invoke("send-notification",{body});
       if(error) throw error;
       return true;
     }catch(e){ console.error("Erro ao enviar notificação:",e); return false; }
@@ -1058,8 +1062,8 @@ export default function App() {
     await supabase.from("game_info").update({date:nextDate}).eq("id",gameInfo.id);
     await supabase.from("game_info").update({treasurer_id:null,treasurer_name:null}).eq("group_id",gid);
     showToast(isAuto?"Jogo fechado automaticamente ✓":"Jogo fechado ✓");
-    // Notificação de MVP e fecho
-    sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.");
+    // Notificação de MVP e fecho — só a quem jogou, não ao grupo todo
+    sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.",confirmedMembers.filter(p=>!p.is_guest).map(p=>p.id));
     await reloadAll(gid);
   };
   const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast("Dívida registada ✓"); };
@@ -2707,6 +2711,9 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
 
 // ── MVP VOTE ─────────────────────────────────────────────────────────────────
 function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemoveVote}) {
+  // Só quem confirmou presença neste jogo é que pode votar — evita que
+  // alguém que não jogou influencie o MVP.
+  if(!confirmed.some(p=>p.id===currentUserId)) return null;
   const myVote=mvpVotes.find(v=>v.voter_id===currentUserId&&v.game_date===gameDate);
   const counts={};
   mvpVotes.filter(v=>v.game_date===gameDate).forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
@@ -3741,7 +3748,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           const gameStart=new Date(gy,gm-1,gd,gh,gmin);
           const gameEnd=new Date(gameStart.getTime()+90*60000);
           const canVote=new Date()>=gameEnd;
-          if(!canVote) return null;
+          if(!canVote||!confirmed.some(p=>p.id===player.id)) return null;
           const myVote = mvpVotes.find(v=>v.voter_id===player.id&&v.game_date===gameInfo.date);
           return (
             <div style={{background:"linear-gradient(135deg,rgba(212,175,55,0.15),rgba(212,175,55,0.05))",border:"2px solid rgba(212,175,55,0.4)",borderRadius:14,padding:14,marginBottom:8,animation:"pulse-gold 2s ease-in-out infinite"}}>

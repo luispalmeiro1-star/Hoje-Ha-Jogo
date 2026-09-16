@@ -889,6 +889,27 @@ export default function App() {
     if(error){ setPlayers(antes); showToast("Não foi possível mover o jogador","err"); }
   };
 
+  // Quando alguém sai e liberta um lugar, ninguém ia automaticamente buscar
+  // quem estava à espera — ficava lá parado até tocar duas vezes (a primeira
+  // tirava-o de vez da lista, em vez de o fazer entrar). Isto corre a seguir
+  // a qualquer mudança que possa ter aberto vaga, e passa para dentro, por
+  // ordem de chegada, quantos couberem.
+  const promoverFilaEspera = async(gid) => {
+    if(!gid) return;
+    const{data:pg}=await supabase.from("player_groups").select("player_id,status,confirmed_at").eq("group_id",gid);
+    if(!pg) return;
+    const{data:grp}=await supabase.from("groups").select("max_players").eq("id",gid).maybeSingle();
+    const limite=grp?.max_players||maxPlayers;
+    const vagas=limite-pg.filter(p=>p.status==="in").length;
+    if(vagas<=0) return;
+    const espera=pg.filter(p=>p.status==="wait").sort((a,b)=>a.confirmed_at-b.confirmed_at).slice(0,vagas);
+    if(espera.length===0) return;
+    const{error}=await supabase.from("player_groups").update({status:"in"}).eq("group_id",gid).in("player_id",espera.map(p=>p.player_id));
+    if(error) return;
+    const nomes=espera.map(p=>players.find(pl=>pl.id===p.player_id)?.name).filter(Boolean);
+    if(nomes.length) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
+  };
+
   const togglePresence = async(playerId)=>{
     const p=players.find(pl=>pl.id===playerId); if(!p) return;
     let ns,na;
@@ -898,6 +919,7 @@ export default function App() {
     // Atualizar status no player_groups (por grupo)
     await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
     if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
+    if(ns==="out") await promoverFilaEspera(activeGroupId);
   };
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
@@ -913,9 +935,9 @@ export default function App() {
     }
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{ await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
+  const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
   const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
-  const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Jogador removido"); };
+  const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
   // Devolve a password que ficou guardada (para o admin a poder copiar), ou
   // null se falhou. Antes não devolvia nada e não olhava sequer para o erro.
   const changePassword = async(id,pw)=>{

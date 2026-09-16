@@ -894,19 +894,15 @@ export default function App() {
   // tirava-o de vez da lista, em vez de o fazer entrar). Isto corre a seguir
   // a qualquer mudança que possa ter aberto vaga, e passa para dentro, por
   // ordem de chegada, quantos couberem.
+  // Corre do lado do servidor (função promote_waitlist) porque quem sai não é
+  // necessariamente admin, e mudar a presença de OUTRO jogador é uma ação só
+  // de admin — sem isto, a promoção era bloqueada em silêncio sempre que um
+  // jogador normal (não admin) libertava o lugar.
   const promoverFilaEspera = async(gid) => {
     if(!gid) return;
-    const{data:pg}=await supabase.from("player_groups").select("player_id,status,confirmed_at").eq("group_id",gid);
-    if(!pg) return;
-    const{data:grp}=await supabase.from("groups").select("max_players").eq("id",gid).maybeSingle();
-    const limite=grp?.max_players||maxPlayers;
-    const vagas=limite-pg.filter(p=>p.status==="in").length;
-    if(vagas<=0) return;
-    const espera=pg.filter(p=>p.status==="wait").sort((a,b)=>a.confirmed_at-b.confirmed_at).slice(0,vagas);
-    if(espera.length===0) return;
-    const{error}=await supabase.from("player_groups").update({status:"in"}).eq("group_id",gid).in("player_id",espera.map(p=>p.player_id));
-    if(error) return;
-    const nomes=espera.map(p=>players.find(pl=>pl.id===p.player_id)?.name).filter(Boolean);
+    const{data,error}=await supabase.rpc("promote_waitlist",{p_group_id:gid});
+    if(error||!data?.length) return;
+    const nomes=data.map(p=>p.player_name).filter(Boolean);
     if(nomes.length) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
   };
 

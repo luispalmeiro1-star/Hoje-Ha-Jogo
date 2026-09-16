@@ -349,7 +349,7 @@ function mvpVotingContext(gameInfo,confirmed,lastClosedGame,userId) {
     return {gameDate:gameInfo.date,confirmed};
   }
   if(lastClosedGame&&lastClosedGame.attendance.some(a=>a.player_id===userId)){
-    return {gameDate:lastClosedGame.date,confirmed:lastClosedGame.attendance.map(a=>({id:a.player_id,name:a.player_name,is_guest:false}))};
+    return {gameDate:lastClosedGame.date,confirmed:lastClosedGame.attendance.map(a=>({id:a.player_id,name:a.player_name,is_guest:false})),isPastGame:true,closedAt:lastClosedGame.closedAt};
   }
   return null;
 }
@@ -741,7 +741,7 @@ export default function App() {
     const fechados=history.filter(h=>h.closed_at).sort((a,b)=>new Date(b.closed_at)-new Date(a.closed_at));
     const ultimo=fechados[0];
     if(!ultimo||Date.now()-new Date(ultimo.closed_at).getTime()>=12*3600*1000) return null;
-    return {date:ultimo.date,attendance:attendance.filter(a=>a.game_date===ultimo.date)};
+    return {date:ultimo.date,closedAt:ultimo.closed_at,attendance:attendance.filter(a=>a.game_date===ultimo.date)};
   })();
 
 
@@ -2741,17 +2741,28 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
 }
 
 // ── MVP VOTE ─────────────────────────────────────────────────────────────────
-function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemoveVote}) {
+function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemoveVote,isPastGame=false,closedAt=null}) {
   // Só quem confirmou presença neste jogo é que pode votar — evita que
   // alguém que não jogou influencie o MVP.
   if(!confirmed.some(p=>p.id===currentUserId)) return null;
   const myVote=mvpVotes.find(v=>v.voter_id===currentUserId&&v.game_date===gameDate);
+  // Depois de fechado, quem já tinha votado antes do fecho fica com o voto
+  // trancado — só quem ainda não tinha votado é que aproveita a janela de 12h.
+  const jaVotouAntesDoFecho=isPastGame&&myVote&&closedAt&&new Date(myVote.created_at)<new Date(closedAt);
+  if(jaVotouAntesDoFecho){
+    return (
+      <div style={{marginBottom:14}}>
+        <p className="section-label"><Icon name="star" size={12}/> MVP DA SEMANA PASSADA</p>
+        <p style={{fontSize:12,color:"#6b7280",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente.</p>
+      </div>
+    );
+  }
   const counts={};
   mvpVotes.filter(v=>v.game_date===gameDate).forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
   const maxVotes=Math.max(...Object.values(counts),1);
   return (
     <div style={{marginBottom:14}}>
-      <p className="section-label"><Icon name="star" size={12}/> MVP DA SEMANA</p>
+      <p className="section-label"><Icon name="star" size={12}/> {isPastGame?"MVP DA SEMANA PASSADA":"MVP DA SEMANA"}</p>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {confirmed.filter(p=>!p.is_guest&&p.id!==currentUserId).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
@@ -3782,11 +3793,11 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                 <span style={{fontSize:22}}>⭐</span>
                 <div>
-                  <div style={{fontSize:14,fontWeight:800,color:"#d4af37"}}>{myVote?"Já votaste!":"Vota no MVP do jogo!"}</div>
-                  <div style={{fontSize:11,color:"#6b7280"}}>{myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?"}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#d4af37"}}>{ctx.isPastGame?"MVP da semana passada":(myVote?"Já votaste!":"Vota no MVP do jogo!")}</div>
+                  <div style={{fontSize:11,color:"#6b7280"}}>{ctx.isPastGame?"Última oportunidade de votar no jogo anterior":(myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?")}</div>
                 </div>
               </div>
-              <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)}/>
+              <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)} isPastGame={ctx.isPastGame} closedAt={ctx.closedAt}/>
             </div>
           );
         })()}
@@ -4151,7 +4162,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           {(()=>{
             const ctx=mvpVotingContext(gameInfo,confirmed,lastClosedGame,currentUser.id);
             if(!ctx) return null;
-            return <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)}/>;
+            return <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)} isPastGame={ctx.isPastGame} closedAt={ctx.closedAt}/>;
           })()}
           {!showReset
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>

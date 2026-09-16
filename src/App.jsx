@@ -337,6 +337,34 @@ function sortedConfirmed(players) {
   const guests  = players.filter(p=>p.status==="in"&& p.is_guest).sort((a,b)=>a.confirmed_at-b.confirmed_at);
   return [...members,...guests];
 }
+// Onde é que esta pessoa pode votar no MVP: no jogo atual (90min depois do
+// início, enquanto ainda está confirmada) ou, até 12h depois de fechar, no
+// último jogo que jogou de facto (game_attendance é o registo permanente,
+// diferente do player_groups.status que já foi reposto para "fora").
+function mvpVotingContext(gameInfo,confirmed,lastClosedGame,userId) {
+  const [gy,gm,gd]=(gameInfo.date||"").split("-").map(Number);
+  const [gh,gmin]=(gameInfo.time||"22:30").split(":").map(Number);
+  const gameEnd=new Date(new Date(gy,gm-1,gd,gh,gmin).getTime()+90*60000);
+  if(confirmed.length>=MIN_PLAYERS&&new Date()>=gameEnd&&confirmed.some(p=>p.id===userId)){
+    return {gameDate:gameInfo.date,confirmed};
+  }
+  if(lastClosedGame&&lastClosedGame.attendance.some(a=>a.player_id===userId)){
+    return {gameDate:lastClosedGame.date,confirmed:lastClosedGame.attendance.map(a=>({id:a.player_id,name:a.player_name,is_guest:false}))};
+  }
+  return null;
+}
+// Para quem enviar o aviso "MVP aberto para votação": os mesmos critérios de
+// mvpVotingContext, mas sem depender de um jogador em concreto.
+function mvpAudienceIds(gameInfo,confirmed,lastClosedGame) {
+  const [gy,gm,gd]=(gameInfo.date||"").split("-").map(Number);
+  const [gh,gmin]=(gameInfo.time||"22:30").split(":").map(Number);
+  const gameEnd=new Date(new Date(gy,gm-1,gd,gh,gmin).getTime()+90*60000);
+  if(confirmed.length>=MIN_PLAYERS&&new Date()>=gameEnd){
+    return confirmed.filter(p=>!p.is_guest).map(p=>p.id);
+  }
+  if(lastClosedGame) return lastClosedGame.attendance.map(a=>a.player_id);
+  return confirmed.filter(p=>!p.is_guest).map(p=>p.id);
+}
 function shuffle(arr) {
   const a=[...arr];
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
@@ -708,6 +736,13 @@ export default function App() {
   const notYet    = members.filter(p=>p.status==="out");
   const spotsLeft = Math.max(0,maxPlayers-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
+  // O último jogo fechado, só enquanto durar a janela de 12h para votar MVP.
+  const lastClosedGame = (()=>{
+    const fechados=history.filter(h=>h.closed_at).sort((a,b)=>new Date(b.closed_at)-new Date(a.closed_at));
+    const ultimo=fechados[0];
+    if(!ultimo||Date.now()-new Date(ultimo.closed_at).getTime()>=12*3600*1000) return null;
+    return {date:ultimo.date,attendance:attendance.filter(a=>a.game_date===ultimo.date)};
+  })();
 
 
   // Função auxiliar para carregar grupos de um player (só membros ativos —
@@ -1077,17 +1112,17 @@ export default function App() {
     setMessages(prev=>[...prev,{id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()}]);
     await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:activeGroupId||null});
   };
-  const voteForMvp = async(voterId,votedForId)=>{
-    setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date}]);
-    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:activeGroupId||null},{onConflict:"voter_id,game_date,group_id"});
+  const voteForMvp = async(voterId,votedForId,gameDate=gameInfo.date)=>{
+    setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameDate)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameDate}]);
+    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameDate,group_id:activeGroupId||null},{onConflict:"voter_id,game_date,group_id"});
     showToast("Voto registado ✓");
   };
   // Dava para mudar o voto, mas não para o retirar — quem votasse por engano
   // ficava com ele até ao fim do jogo.
-  const removeMvpVote = async(voterId)=>{
+  const removeMvpVote = async(voterId,gameDate=gameInfo.date)=>{
     const antes=mvpVotes;
-    setMvpVotes(prev=>prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date)));
-    const q=supabase.from("mvp_votes").delete().eq("voter_id",voterId).eq("game_date",gameInfo.date);
+    setMvpVotes(prev=>prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameDate)));
+    const q=supabase.from("mvp_votes").delete().eq("voter_id",voterId).eq("game_date",gameDate);
     const{error}=activeGroupId?await q.eq("group_id",activeGroupId):await q;
     if(error){ setMvpVotes(antes); showToast("Não foi possível retirar o voto","err"); return; }
     showToast("Voto retirado");
@@ -1095,7 +1130,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -1128,8 +1163,8 @@ export default function App() {
       {view==="entrar-vaga"    && <EntrarVagaView code={vagaCode} setView={setView}/>}
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onRemoveMvpVote={()=>removeMvpVote(liveUser.id)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onRemoveMvpVote={()=>removeMvpVote(liveUser.id)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -3676,7 +3711,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
   const cfg=sportConfig(sportType);
   const isIn=player.status==="in",isWait=player.status==="wait";
   const [confirming,setConfirming]=useState(false);
@@ -3738,14 +3773,10 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
             <AutoTeamsDisplay confirmed={confirmed} players={players}/>
           </div>
         )}
-        {confirmed.length>=MIN_PLAYERS&&(()=>{
-          const [gy,gm,gd]=(gameInfo.date||"").split("-").map(Number);
-          const [gh,gmin]=(gameInfo.time||"22:30").split(":").map(Number);
-          const gameStart=new Date(gy,gm-1,gd,gh,gmin);
-          const gameEnd=new Date(gameStart.getTime()+90*60000);
-          const canVote=new Date()>=gameEnd;
-          if(!canVote||!confirmed.some(p=>p.id===player.id)) return null;
-          const myVote = mvpVotes.find(v=>v.voter_id===player.id&&v.game_date===gameInfo.date);
+        {(()=>{
+          const ctx=mvpVotingContext(gameInfo,confirmed,lastClosedGame,player.id);
+          if(!ctx) return null;
+          const myVote = mvpVotes.find(v=>v.voter_id===player.id&&v.game_date===ctx.gameDate);
           return (
             <div style={{background:"linear-gradient(135deg,rgba(212,175,55,0.15),rgba(212,175,55,0.05))",border:"2px solid rgba(212,175,55,0.4)",borderRadius:14,padding:14,marginBottom:8,animation:"pulse-gold 2s ease-in-out infinite"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -3755,7 +3786,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
                   <div style={{fontSize:11,color:"#6b7280"}}>{myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?"}</div>
                 </div>
               </div>
-              <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp} onRemoveVote={onRemoveMvpVote}/>
+              <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)}/>
             </div>
           );
         })()}
@@ -3861,7 +3892,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait";
@@ -4117,7 +4148,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               </div>
             </div>
           </ExpandableSection>
-          {confirmed.length>=MIN_PLAYERS&&<MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={gameInfo.date} onVote={onVoteMvp} onRemoveVote={onRemoveMvpVote}/>}
+          {(()=>{
+            const ctx=mvpVotingContext(gameInfo,confirmed,lastClosedGame,currentUser.id);
+            if(!ctx) return null;
+            return <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)}/>;
+          })()}
           {!showReset
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
             :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
@@ -4304,7 +4339,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               <button className="btn-primary" style={{justifyContent:"center",background:"rgba(30,168,81,0.15)",color:"#4ade80",border:"1px solid rgba(30,168,81,0.4)"}} onClick={async()=>{const ok=await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⚽ Novo jogo disponível</button>
               <button className="btn-primary" style={{justifyContent:"center",background:"rgba(34,211,238,0.15)",color:"#22d3ee",border:"1px solid rgba(34,211,238,0.4)"}} onClick={async()=>{const ok=await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⏰ Lembrete — Marcar presença</button>
               <button className="btn-primary" style={{justifyContent:"center",background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.4)"}} onClick={async()=>{const ok=await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>💸 Lembrete — Pagamento</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(192,132,252,0.15)",color:"#c084fc",border:"1px solid rgba(192,132,252,0.4)"}} onClick={async()=>{const ok=await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!",confirmed.filter(p=>!p.is_guest).map(p=>p.id));showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>🏆 MVP aberto para votação</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(192,132,252,0.15)",color:"#c084fc",border:"1px solid rgba(192,132,252,0.4)"}} onClick={async()=>{const ok=await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!",mvpAudienceIds(gameInfo,confirmed,lastClosedGame));showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>🏆 MVP aberto para votação</button>
             </div>
           </ExpandableSection>
           <ExpandableSection icon="💳" title="Pagamentos" subtitle="Configurar MBWay para receber pagamentos">

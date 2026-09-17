@@ -2753,7 +2753,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
     return (
       <div style={{marginBottom:14}}>
         <p className="section-label"><Icon name="star" size={12}/> MVP DA SEMANA PASSADA</p>
-        <p style={{fontSize:12,color:"#6b7280",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente.</p>
+        <p style={{fontSize:12,color:"#6b7280",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo só depois de passarem as 12h do fecho do jogo.</p>
       </div>
     );
   }
@@ -2763,6 +2763,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
   return (
     <div style={{marginBottom:14}}>
       <p className="section-label"><Icon name="star" size={12}/> {isPastGame?"MVP DA SEMANA PASSADA":"MVP DA SEMANA"}</p>
+      {isPastGame&&<p style={{fontSize:11,color:"#6b7280",margin:"0 0 8px"}}>O resultado fica definitivo só depois de passarem as 12h do fecho do jogo.</p>}
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {confirmed.filter(p=>!p.is_guest&&p.id!==currentUserId).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;

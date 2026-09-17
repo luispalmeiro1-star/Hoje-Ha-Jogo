@@ -2741,6 +2741,33 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
 }
 
 // ── MVP VOTE ─────────────────────────────────────────────────────────────────
+// Conta o tempo que falta até um instante. Atualiza-se sozinho a cada 30s —
+// não precisa de mais que isto para uma janela de 12h.
+function useCountdownTo(deadline) {
+  const [now,setNow]=useState(Date.now());
+  useEffect(()=>{
+    if(!deadline) return;
+    const id=setInterval(()=>setNow(Date.now()),30000);
+    return ()=>clearInterval(id);
+  },[deadline]);
+  if(!deadline) return 0;
+  return Math.max(0,new Date(deadline).getTime()-now);
+}
+// Selo que mostra quanto falta para a votação do MVP fechar de vez — fica
+// vermelho a piscar na última hora, para não passar despercebido.
+function MvpCountdownBadge({deadline}) {
+  const ms=useCountdownTo(deadline);
+  if(ms<=0) return null;
+  const totalMin=Math.floor(ms/60000);
+  const h=Math.floor(totalMin/60),m=totalMin%60;
+  const urgente=ms<60*60000;
+  const texto=h>0?`${h}h ${m}min`:`${m}min`;
+  return (
+    <div style={{display:"inline-flex",alignItems:"center",gap:5,background:urgente?"rgba(239,68,68,0.15)":"rgba(217,119,6,0.15)",border:`1px solid ${urgente?"#ef4444":"#d97706"}`,borderRadius:999,padding:"3px 10px",fontSize:11,fontWeight:800,color:urgente?"#f87171":"#d97706",animation:urgente?"pulse-gold 1.2s ease-in-out infinite":"none",whiteSpace:"nowrap"}}>
+      <Icon name="clock" size={11}/> {texto}
+    </div>
+  );
+}
 function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemoveVote,isPastGame=false,closedAt=null}) {
   // Só quem confirmou presença neste jogo é que pode votar — evita que
   // alguém que não jogou influencie o MVP.
@@ -2749,11 +2776,15 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
   // Depois de fechado, quem já tinha votado antes do fecho fica com o voto
   // trancado — só quem ainda não tinha votado é que aproveita a janela de 12h.
   const jaVotouAntesDoFecho=isPastGame&&myVote&&closedAt&&new Date(myVote.created_at)<new Date(closedAt);
+  const prazoFinal=isPastGame&&closedAt?new Date(new Date(closedAt).getTime()+12*3600*1000):null;
   if(jaVotouAntesDoFecho){
     return (
       <div style={{marginBottom:14}}>
-        <p className="section-label"><Icon name="star" size={12}/> MVP DA SEMANA PASSADA</p>
-        <p style={{fontSize:12,color:"#6b7280",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo só depois de passarem as 12h do fecho do jogo.</p>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
+          <p className="section-label" style={{margin:0}}><Icon name="star" size={12}/> MVP DA SEMANA PASSADA</p>
+          <MvpCountdownBadge deadline={prazoFinal}/>
+        </div>
+        <p style={{fontSize:12,color:"#6b7280",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo assim que a contagem chegar a zero.</p>
       </div>
     );
   }
@@ -2762,8 +2793,10 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
   const maxVotes=Math.max(...Object.values(counts),1);
   return (
     <div style={{marginBottom:14}}>
-      <p className="section-label"><Icon name="star" size={12}/> {isPastGame?"MVP DA SEMANA PASSADA":"MVP DA SEMANA"}</p>
-      {isPastGame&&<p style={{fontSize:11,color:"#6b7280",margin:"0 0 8px"}}>O resultado fica definitivo só depois de passarem as 12h do fecho do jogo.</p>}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:isPastGame?8:0}}>
+        <p className="section-label" style={{margin:0}}><Icon name="star" size={12}/> {isPastGame?"MVP DA SEMANA PASSADA":"MVP DA SEMANA"}</p>
+        {isPastGame&&<MvpCountdownBadge deadline={prazoFinal}/>}
+      </div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {confirmed.filter(p=>!p.is_guest&&p.id!==currentUserId).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;

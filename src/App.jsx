@@ -178,11 +178,33 @@ function comOneSignal(fn) {
 // pode voltar a perguntar depois de um bloqueio. A 13/09/2026 só 3 das 20
 // contas vivas conseguiam receber alguma coisa. O pedido passa a ser feito só
 // pelo cartão que explica ao que vem, e só quando a pessoa lhe toca.
+// As etiquetas do OneSignal são escritas pelo browser, o que quer dizer que
+// qualquer telemóvel pode afirmar ser o jogador 497. Para "o jogo é amanhã" isso
+// não tem importância nenhuma; para o link que repõe uma password, tinha toda:
+// bastava pôr a etiqueta de outra pessoa e o link de reposição dela chegava ao
+// nosso telemóvel. Esta tabela guarda a mesma ligação de um lado em que se pode
+// confiar — é escrita aqui, já com a sessão da pessoa iniciada, e as regras de
+// acesso não deixam ninguém apontar um aparelho a outra conta.
+async function registarAparelho(playerId) {
+  try {
+    const subId = window.OneSignal?.User?.PushSubscription?.id;
+    if(!subId) return;
+    await supabase.from("push_devices")
+      .upsert({player_id:Number(playerId), subscription_id:subId, updated_at:new Date().toISOString()},
+              {onConflict:"subscription_id"});
+  } catch(e) {
+    // Não é crítico ao ponto de estragar o login: se falhar, a pessoa continua
+    // a receber as notificações normais, só não tem recuperação pelo aparelho.
+    console.warn("não foi possível registar o aparelho para notificações", e);
+  }
+}
+
 function linkOneSignal(playerId, groupId=null) {
   return comOneSignal(async (OneSignal) => {
     if(OneSignal.Notifications.permission!==true) return;
     await OneSignal.User.addTag("player_id",String(playerId));
     if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
+    await registarAparelho(playerId);
   });
 }
 
@@ -194,6 +216,7 @@ function pedirPermissaoNotificacoes(playerId, groupId=null) {
     if(OneSignal.Notifications.permission===true){
       await OneSignal.User.addTag("player_id",String(playerId));
       if(groupId) await OneSignal.User.addTag("group_id",String(groupId));
+      await registarAparelho(playerId);
     }
   });
 }
@@ -737,8 +760,14 @@ export default function App() {
   const spotsLeft = Math.max(0,maxPlayers-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
   // O último jogo fechado, só enquanto durar a janela de 12h para votar MVP.
+  //
+  // O players_count>0 não é um detalhe: pagar uma dívida grava uma linha no
+  // histórico só para registar o dinheiro, com zero jogadores e a data do
+  // PRÓXIMO jogo. Sem este filtro, essa linha passava a ser "o último jogo",
+  // já com mais de 12h à frente no calendário — e a votação do MVP do jogo a
+  // sério fechava no instante em que alguém acertava contas.
   const lastClosedGame = (()=>{
-    const fechados=history.filter(h=>h.closed_at).sort((a,b)=>new Date(b.closed_at)-new Date(a.closed_at));
+    const fechados=history.filter(h=>h.closed_at&&h.players_count>0).sort((a,b)=>new Date(b.closed_at)-new Date(a.closed_at));
     const ultimo=fechados[0];
     if(!ultimo||Date.now()-new Date(ultimo.closed_at).getTime()>=12*3600*1000) return null;
     return {date:ultimo.date,closedAt:ultimo.closed_at,attendance:attendance.filter(a=>a.game_date===ultimo.date)};
@@ -757,13 +786,12 @@ export default function App() {
 
   const handleLogin = async(identifier,password,groupId=null)=>{
     const clean=identifier.trim().toLowerCase();
-    let result = await callLogin(clean, password, groupId);
-    if(result?.error==="Utilizador não encontrado"){
-      const{data:byPhone}=await supabase.from("players").select("username,group_id").eq("phone",identifier.trim().replace(/\s+/g,"")).limit(1);
-      if(byPhone&&byPhone.length>0){
-        result=await callLogin(byPhone[0].username, password, groupId||byPhone[0].group_id||null);
-      }
-    }
+    // Entrar pelo número de telemóvel é tratado dentro da auth-login. Estava
+    // aqui, a perguntar o número à tabela players a partir do browser, e essa
+    // leitura é recusada a quem ainda não tem sessão: voltava sempre vazia, por
+    // isso o login por telemóvel nunca funcionou — apesar de o ecrã do admin o
+    // prometer a quem cria as contas.
+    const result = await callLogin(clean, password, groupId);
     const p=result?.player||null;
     if(!p) return false;
     await establishSession(result.session);
@@ -976,7 +1004,16 @@ export default function App() {
     if(limpa.length<4){ showToast("A password tem de ter pelo menos 4 caracteres","err"); return null; }
     const hashed=await hashPassword(limpa);
     const{error}=await supabase.from("players").update({password:hashed}).eq("id",id);
-    if(error){ showToast("Não foi possível definir a password","err"); return null; }
+    if(error){
+      // A base de dados recusa isto quando a conta também é usada num grupo que
+      // não administras. A conta é a mesma pessoa em todo o lado: a password
+      // dela abre também aquilo que ela tem fora do teu grupo.
+      const contaPartilhada=/noutro grupo/i.test(error.message||"");
+      showToast(contaPartilhada
+        ? "Esta conta também é usada noutro grupo. Só o próprio jogador pode mudar a password."
+        : "Não foi possível definir a password","err");
+      return null;
+    }
     return limpa;
   };
   const addPlayer      = async(name,username,password,phone)=>{
@@ -984,7 +1021,7 @@ export default function App() {
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const cleanUsername=normalizeUsername(username);
     const gid=activeGroupId||null;
-    const result=await callRegister({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,password:password.trim(),is_admin:false,avatar_color:color,group_id:gid});
+    const result=await callRegister({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,password:password.trim(),avatar_color:color,group_id:gid});
     if(result?.error){showToast(result.error,"err");return;}
     if(result.player&&gid) await supabase.from("player_groups").upsert({player_id:result.player.id,group_id:gid,is_admin:false},{onConflict:"player_id,group_id"});
     showToast(`${name} adicionado! 🎉`);
@@ -1066,10 +1103,15 @@ export default function App() {
       const inviter=freshPlayers.find(m=>m.id===p.invited_by_id);
       if(inviter) await supabase.from("debts").insert({player_id:inviter.id,player_name:inviter.name,amount:gameCost,description:`Jogo de ${gameInfo.date} — convidado ${p.name}`,group_id:gid});
     }
-    for(const p of confirmedMembers){
-      const result = await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
+    // Os convidados ficam de fora das presenças. São apagados logo a seguir, e
+    // uma presença apontada a um jogador que já não existe só estraga as
+    // estatísticas de quem ficou. É assim que o fecho automático sempre fez;
+    // fechar à mão gravava-os, e as contas ficavam diferentes consoante quem
+    // tinha fechado o jogo.
+    for(const p of confirmedMembers.filter(p=>!p.is_guest)){
+      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
     }
-    for(const p of confirmedMembers){
+    for(const p of confirmedMembers.filter(p=>!p.is_guest)){
       const pl=freshPlayers.find(m=>m.id===p.id);
       if(pl){ const ns=(pl.current_streak||0)+1; await supabase.from("players").update({total_games:(pl.total_games||0)+1,total_paid:(pl.total_paid||0)+(p.paid?gameCost:0),current_streak:ns,best_streak:Math.max(pl.best_streak||0,ns)}).eq("id",p.id); }
     }
@@ -1079,8 +1121,11 @@ export default function App() {
     let mvpName=null;
     if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null; }
     if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:freshConfirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid,treasurer_name:treasurerName||null});
-    // Remover convidados
-    const guestIds=freshConfirmed.filter(p=>p.is_guest).map(p=>p.id);
+    // Remover TODOS os convidados do grupo, não só os que jogaram. Os que
+    // ficaram na lista de espera não eram apagados e ficavam lá para sempre —
+    // e como o link de vaga aberta só aceita 10 convidados de cada vez, ao fim
+    // de dez pessoas que não chegaram a entrar o link morria de vez.
+    const guestIds=freshPlayers.filter(p=>p.is_guest).map(p=>p.id);
     if(guestIds.length>0){
       await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",gid);
       await supabase.from("players").delete().in("id",guestIds);
@@ -1333,8 +1378,12 @@ function HallOfFameMVP({history=[], members=[]}) {
 function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo, maxPlayers=15}) {
   const [idx, setIdx] = useState(0);
   const highlights = [];
-  if(history.length>0&&history[0].mvp_name) highlights.push({icon:"⭐",text:`${history[0].mvp_name} foi o MVP do último jogo!`});
-  if(history.length>0&&history[0].winner_team) highlights.push({icon:"🏆",text:`Equipa ${history[0].winner_team} venceu o último jogo!`});
+  // "O último jogo" é o último jogo mesmo: as linhas de dívida paga também
+  // vivem no histórico, com zero jogadores, e podem estar à frente de todas as
+  // outras porque ficam com a data do próximo jogo.
+  const ultimoJogo = history.find(h=>h.players_count>0);
+  if(ultimoJogo?.mvp_name) highlights.push({icon:"⭐",text:`${ultimoJogo.mvp_name} foi o MVP do último jogo!`});
+  if(ultimoJogo?.winner_team) highlights.push({icon:"🏆",text:`Equipa ${ultimoJogo.winner_team} venceu o último jogo!`});
   const topPlayer=[...members].sort((a,b)=>(b.total_games||0)-(a.total_games||0))[0];
 
   const faltam=maxPlayers-confirmed.length;
@@ -2156,14 +2205,21 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
 
   const generateCode = async() => {
     const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code, exists=true;
-    while(exists){
-      code="HHJ-";
+    // Só um "código inválido" prova que o código está livre. Qualquer outro
+    // erro — rede em baixo, ou o limite de tentativas a responder 429 — era
+    // lido como "livre" e devolvia um código que nunca chegou a ser verificado.
+    // O índice único na base de dados apanhava-o depois, mas com um erro a
+    // dizer outra coisa qualquer a quem estava a criar o grupo.
+    for(let tentativa=0; tentativa<8; tentativa++){
+      let code="HHJ-";
       for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
       const check=await callVerifyInvite(code);
-      exists=!check?.error;
+      if(!check) throw new Error("Não foi possível verificar o código. Verifica a ligação e tenta outra vez.");
+      if(check.group) continue;            // já está ocupado, tenta outro
+      if(check.error==="Código inválido ou expirado.") return code;  // livre
+      throw new Error(check.error||"Não foi possível gerar o código do grupo.");
     }
-    return code;
+    throw new Error("Não foi possível gerar um código livre. Tenta outra vez.");
   };
 
   const handleCreate = async() => {
@@ -2177,15 +2233,22 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // falhasse (username já usado, por exemplo) ficava um grupo sem dono na
       // base de dados, com o código de convite gasto, a cada tentativa.
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-      const regResult=await callRegister({name:adminName.trim(),username:normalizeUsername(adminUsername),password:adminPassword,phone:adminPhone||null,is_admin:true,avatar_color:color,group_id:null});
+      const regResult=await callRegister({name:adminName.trim(),username:normalizeUsername(adminUsername),password:adminPassword,phone:adminPhone||null,avatar_color:color,group_id:null});
       if(regResult?.error) throw new Error(regResult.error);
       const player=regResult.player;
       await establishSession(regResult.session);
       const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
       if(ge) throw ge;
-      await supabase.from("players").update({group_id:group.id}).eq("id",player.id);
-      // Registar na tabela player_groups primeiro — o jogo só pode ser criado depois de haver um admin no grupo
-      await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
+      // A inscrição no grupo vem PRIMEIRO, e não a seguir. É ela que faz de
+      // quem cria o grupo o admin dele, e há um trigger na base de dados que só
+      // deixa mexer no players.group_id a quem já seja admin do grupo. Pela
+      // ordem antiga, a linha de cima era recusada em silêncio (o erro nem era
+      // lido) e o grupo ficava a funcionar com o players.group_id a null — foi
+      // o que aconteceu aos dois grupos mais recentes.
+      const{error:pgErr}=await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
+      if(pgErr) throw pgErr;
+      const{error:pgIdErr}=await supabase.from("players").update({group_id:group.id}).eq("id",player.id);
+      if(pgIdErr) throw pgIdErr;
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return toDateStr(d);};
       await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:group.id}));
@@ -2485,7 +2548,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     // Cria a conta sem grupo — só fica associada ao grupo quando o admin
     // aprovar o pedido (ver player_groups.membership_status abaixo).
-    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,is_admin:false,avatar_color:color,group_id:null});
+    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,avatar_color:color,group_id:null});
     if(regResult?.error){showToast(regResult.error,"err");if(regResult.suggestion)setUsername(regResult.suggestion);setLoading(false);return;}
     const inserted=regResult.player;
     await establishSession(regResult.session);
@@ -2990,7 +3053,11 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
   const [tab,setTab]=useState("pessoal");
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});
-  const totalGames=history.length;
+  // Contam só os jogos a sério. O histórico leva também uma linha por cada
+  // dívida paga, com zero jogadores, criada só para registar o dinheiro — e
+  // contá-las aqui fazia a percentagem de presenças de toda a gente cair por
+  // cada acerto de contas do grupo.
+  const totalGames=history.filter(g=>g.players_count>0).length;
   const ranked=[...members].filter(p=>!p.is_guest).sort((a,b)=>(b.total_games||0)-(a.total_games||0));
   const myDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const myPct=totalGames>0?Math.round(((player.total_games||0)/totalGames)*100):0;
@@ -3402,8 +3469,15 @@ function ZonaView({player, players=[], onBack, showToast}) {
   };
 
   useEffect(()=>{
-    // Buscar jogadores disponíveis
-    supabase.from("players").select("id,name,zone,avatar_color,zone_contact,availability_notes,availability_days").eq("available",true).neq("id",player.id).then(({data})=>{
+    // Buscar jogadores disponíveis.
+    //
+    // Isto era uma leitura directa à tabela players, e por isso nunca mostrou
+    // ninguém de fora: as regras de acesso só deixam ver quem partilha um grupo
+    // connosco, que é o oposto do que este ecrã serve para fazer. A função
+    // jogadores_disponiveis() é a porta certa — devolve só quem se declarou
+    // disponível e só o que essa pessoa escolheu publicar.
+    supabase.rpc("jogadores_disponiveis").then(({data,error})=>{
+      if(error){ console.warn("não foi possível carregar os jogadores disponíveis", error); return; }
       setAvailablePlayers(data||[]);
     });
   },[]);
@@ -3707,7 +3781,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         </div>
 
         {/* Código do grupo */}
-        <GroupCodeCard groupId={activeGroupId||player.group_id} isAdmin={!!player.is_admin}/>
+        <GroupCodeCard groupId={activeGroupId||player.group_id} isAdmin={!!player.is_admin} showToast={showToast}/>
 
         {/* Ações */}
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
@@ -4095,13 +4169,17 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
             📋 Histórico
           </button>
         </div>
-        {history.length>0&&history[0].winner_team===null&&history[0].players_count>0&&(
+        {/* O último jogo a sério, não a última linha do histórico: pagar uma
+            dívida grava lá uma linha com zero jogadores e a data do próximo
+            jogo, que ficava à frente de tudo e fazia esta pergunta desaparecer
+            sem ninguém ter respondido a ela. */}
+        {(()=>{ const ultimoJogo=history.find(h=>h.players_count>0); return ultimoJogo&&ultimoJogo.winner_team===null&&(
           <div style={{background:"rgba(37,99,235,0.12)",border:"2px solid #2563eb",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
             <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
             <div style={{display:"flex",gap:8}}>
-              {["A","B","C"].slice(0,numTeamsFor(history[0].players_count,sportType)).map(t=>(
+              {["A","B","C"].slice(0,numTeamsFor(ultimoJogo.players_count,sportType)).map(t=>(
                 <button key={t} onClick={async()=>{
-                  await supabase.from("game_history").update({winner_team:t}).eq("id",history[0].id);
+                  await supabase.from("game_history").update({winner_team:t}).eq("id",ultimoJogo.id);
                   showToast(`Equipa ${t} registada como vencedora ✓`);
                   setAdminTab("historico");
                 }} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #2563eb",background:"rgba(37,99,235,0.15)",color:"#93c5fd",fontWeight:800,fontSize:14,cursor:"pointer"}}>
@@ -4110,7 +4188,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               ))}
             </div>
           </div>
-        )}
+        ); })()}
 
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players} maxPlayers={maxPlayers}/>
 
@@ -4228,7 +4306,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 Equipa {winnerTeam} venceu!</div>}
             </>}
           <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
-          <GroupCodeCard groupId={groupId} isAdmin={true}/>
+          <GroupCodeCard groupId={groupId} isAdmin={true} showToast={showToast}/>
         </>}
 
         {adminTab==="dividas"&&<>
@@ -5078,7 +5156,7 @@ function OpenSlotCard({gameInfo, groupId, showToast}) {
   );
 }
 
-function GroupCodeCard({groupId, isAdmin=false}) {
+function GroupCodeCard({groupId, isAdmin=false, showToast=()=>{}}) {
   const [code, setCode] = useState(null);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -5101,15 +5179,22 @@ function GroupCodeCard({groupId, isAdmin=false}) {
 
   const handleRefreshCode=async()=>{
     const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let newCode, exists=true;
-    while(exists){
-      newCode="HHJ-";
-      for(let i=0;i<4;i++) newCode+=chars[Math.floor(Math.random()*chars.length)];
-      const check=await callVerifyInvite(newCode);
-      exists=!check?.error;
+    // Só um "código inválido" quer dizer que está livre. Antes, um erro de rede
+    // ou o limite de tentativas a responder 429 também contavam como livre, e a
+    // volta terminava com um código que ninguém chegou a verificar.
+    let newCode=null;
+    for(let tentativa=0; tentativa<8 && !newCode; tentativa++){
+      let candidato="HHJ-";
+      for(let i=0;i<4;i++) candidato+=chars[Math.floor(Math.random()*chars.length)];
+      let check;
+      try { check=await callVerifyInvite(candidato); } catch(e) { check=null; }
+      if(check?.error==="Código inválido ou expirado.") newCode=candidato;
+      else if(check?.group) continue;   // ocupado, tenta outro
+      else { showToast("Não foi possível gerar um código novo. Tenta outra vez.","err"); return; }
     }
+    if(!newCode){ showToast("Não foi possível gerar um código novo. Tenta outra vez.","err"); return; }
     const{error}=await supabase.from("groups").update({invite_code:newCode}).eq("id",groupId);
-    if(error) return;
+    if(error){ showToast("Não foi possível guardar o código novo.","err"); return; }
     setCode(newCode);
     setShowQR(false);
   };

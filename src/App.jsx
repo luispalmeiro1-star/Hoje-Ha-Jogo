@@ -981,8 +981,23 @@ export default function App() {
     if(p.status==="in"||p.status==="wait"){ns="out";na=null;}
     else if(confirmed.length<maxPlayers){ns="in";na=Date.now();}
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
-    // Atualizar status no player_groups (por grupo)
-    await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
+    // O ecrã muda já, antes de se falar com o servidor. Sem isto, carregar em
+    // "confirmar presença" não dava sinal nenhum até a resposta voltar — e
+    // ainda menos quando havia equipas para resortear a seguir, que é outra
+    // ida ao servidor por cima desta. Ficava a parecer que o toque não tinha
+    // sido registado, e havia quem carregasse outra vez.
+    //
+    // É o mesmo que o pagamento e o mover jogador já faziam. Se o servidor
+    // recusar, volta-se atrás e diz-se porquê, em vez de ficar um ecrã a
+    // mostrar uma coisa que não chegou a ser gravada.
+    const antes=players;
+    setPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
+    const{error}=await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
+    if(error){
+      setPlayers(antes);
+      showToast("Não foi possível atualizar a presença","err");
+      return;
+    }
     if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
     if(ns==="out") await promoverFilaEspera(activeGroupId);
   };

@@ -2201,6 +2201,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminPhone, setAdminPhone]   = useState("");
+  const [adminEmail, setAdminEmail]   = useState("");
   const [loading, setLoading]         = useState(false);
   const [inviteCode, setInviteCode]   = useState(()=>localStorage.getItem("hhb_pending_code")||"");
   const [createdGroup, setCreatedGroup] = useState(()=>{
@@ -2240,7 +2241,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // base de dados, com o código de convite gasto, a cada tentativa.
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
       const utilizador=normalizeUsername(adminUsername);
-      let regResult=await callRegister({name:adminName.trim(),username:utilizador,password:adminPassword,phone:adminPhone||null,avatar_color:color,group_id:null});
+      let regResult=await callRegister({name:adminName.trim(),username:utilizador,password:adminPassword,phone:adminPhone||null,email:adminEmail||null,avatar_color:color,group_id:null});
       // Se o nome de utilizador já existe, pode ser de uma tentativa anterior
       // que criou a conta e falhou a seguir, no grupo — e aí a conta é da
       // própria pessoa. Antes isto era um beco sem saída: a app respondia "já
@@ -2381,6 +2382,9 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
           <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
           <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
+          <label style={fieldLabel}>EMAIL (opcional)</label>
+          <input className="text-input" type="email" value={adminEmail} onChange={e=>setAdminEmail(e.target.value)} placeholder="o.teu@email.pt" autoCapitalize="none" autoCorrect="off" style={{marginBottom:6}}/>
+          <p style={{color:"#565c4d",fontSize:11,marginBottom:14,lineHeight:1.4}}>Só para te podermos ajudar se perderes o acesso. Não enviamos publicidade.</p>
           <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
           <button className="btn-big" style={greenBtn} onClick={handleCreate} disabled={loading}>{loading?"A criar grupo...":"🚀 Criar grupo"}</button>
         </>}
@@ -2509,6 +2513,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone]       = useState("");
+  const [email, setEmail]       = useState("");
   const [loading, setLoading]   = useState(false);
 
   const checkCode = async() => {
@@ -2565,7 +2570,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     // Cria a conta sem grupo — só fica associada ao grupo quando o admin
     // aprovar o pedido (ver player_groups.membership_status abaixo).
-    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,avatar_color:color,group_id:null});
+    const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,email:email||null,avatar_color:color,group_id:null});
     if(regResult?.error){showToast(regResult.error,"err");if(regResult.suggestion)setUsername(regResult.suggestion);setLoading(false);return;}
     const inserted=regResult.player;
     await establishSession(regResult.session);
@@ -2690,6 +2695,9 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
           <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
+          <label style={fieldLabel}>EMAIL (opcional)</label>
+          <input className="text-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="o.teu@email.pt" autoCapitalize="none" autoCorrect="off" style={{marginBottom:6}}/>
+          <p style={{color:"#565c4d",fontSize:11,marginBottom:14,lineHeight:1.4}}>Só para te podermos ajudar se perderes o acesso. Não enviamos publicidade.</p>
           <p style={{color:"#565c4d",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
           <button className="btn-big" style={greenBtn} onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
         </>}

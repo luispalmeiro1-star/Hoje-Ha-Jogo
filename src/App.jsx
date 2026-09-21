@@ -698,8 +698,10 @@ export default function App() {
                   setPendingRequest({status:flagRow.membership_status, groupName:gInfo?.name||null});
                   setView("pedido-pendente");
                 } else {
-                  setView("landing");
-                  showToast("Conta criada com o Google! Fala com o administrador do teu grupo para te adicionar.");
+                  // Mesmo caso do login normal: conta feita, grupo nenhum. A
+                  // página inicial não diz o que falta, o ecrã do código diz.
+                  setView("entrar-convite");
+                  showToast("Conta criada com o Google! Só falta o código do teu grupo.");
                 }
               }
               handled=true;
@@ -820,7 +822,11 @@ export default function App() {
         setPendingRequest({status:flagRow.membership_status, groupName:gInfo?.name||null});
         setView("pedido-pendente");
       } else {
-        setView("landing");
+        // Conta sem grupo nenhum. Ia parar à página inicial, que para quem já
+        // tem sessão é um beco: nada ali explica o que falta fazer. Vai para o
+        // ecrã do código de convite, que é o passo que falta — e que também dá
+        // para criar um grupo de raiz.
+        setView("entrar-convite");
       }
     }
     return true;
@@ -2233,8 +2239,19 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // falhasse (username já usado, por exemplo) ficava um grupo sem dono na
       // base de dados, com o código de convite gasto, a cada tentativa.
       const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-      const regResult=await callRegister({name:adminName.trim(),username:normalizeUsername(adminUsername),password:adminPassword,phone:adminPhone||null,avatar_color:color,group_id:null});
-      if(regResult?.error) throw new Error(regResult.error);
+      const utilizador=normalizeUsername(adminUsername);
+      let regResult=await callRegister({name:adminName.trim(),username:utilizador,password:adminPassword,phone:adminPhone||null,avatar_color:color,group_id:null});
+      // Se o nome de utilizador já existe, pode ser de uma tentativa anterior
+      // que criou a conta e falhou a seguir, no grupo — e aí a conta é da
+      // própria pessoa. Antes isto era um beco sem saída: a app respondia "já
+      // está ocupado" (pela conta dela!) e ela nunca mais conseguia criar o
+      // grupo com aquele utilizador. Se a password bater certo, é mesmo ela, e
+      // continuamos de onde ficou em vez de a mandar inventar outro nome.
+      if(regResult?.error && !regResult.player){
+        const login=await callLogin(utilizador, adminPassword, null);
+        if(login?.player) regResult={player:login.player, session:login.session};
+        else throw new Error(regResult.error);
+      }
       const player=regResult.player;
       await establishSession(regResult.session);
       const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
@@ -2580,6 +2597,16 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
             setCode(clean.length>3?clean.slice(0,3)+"-"+clean.slice(3):clean);
           }} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
           <button className="btn-big" style={greenBtn} onClick={checkCode} disabled={loading}>{loading?"A verificar...":"Verificar código →"}</button>
+          {/* Quem chega aqui com sessão iniciada e sem grupo nenhum pode não ter
+              código nenhum para pôr — pode ser quem quer montar o seu próprio
+              grupo. Sem esta saída, o ecrã era um beco: um campo que a pessoa
+              não tem como preencher e mais nada. */}
+          {currentUser&&<div style={{marginTop:28,paddingTop:22,borderTop:"1px solid #23271b",textAlign:"center"}}>
+            <p style={{color:"#8a9080",fontSize:13,marginBottom:12}}>Não tens código? És tu que vais organizar?</p>
+            <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"15px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+              ⚽ Criar o meu grupo
+            </button>
+          </div>}
         </>}
 
         {/* PASSO 2 — escolha (ou adicionar grupo se já autenticado) */}

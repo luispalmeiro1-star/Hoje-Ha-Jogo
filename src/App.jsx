@@ -4607,8 +4607,25 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           <ExpandableSection icon="🔔" title="Notificações" subtitle="Enviar notificações ao grupo">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               <button className="btn-primary" style={{justifyContent:"center",background:"rgba(30,168,81,0.15)",color:"#4ade80",border:"1px solid rgba(30,168,81,0.4)"}} onClick={async()=>{const ok=await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⚽ Novo jogo disponível</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(34,211,238,0.15)",color:"#22d3ee",border:"1px solid rgba(34,211,238,0.4)"}} onClick={async()=>{const ok=await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⏰ Lembrete — Marcar presença</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.4)"}} onClick={async()=>{const ok=await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>💸 Lembrete — Pagamento</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(34,211,238,0.15)",color:"#22d3ee",border:"1px solid rgba(34,211,238,0.4)"}} onClick={async()=>{
+                /* Só a quem falta responder. Ia para o grupo inteiro, o que
+                   acordava quem já tinha confirmado e — agora que dizer "não
+                   vou" é possível — também quem já tinha dito que não ia.
+                   Lista vazia não serve: a função do servidor entende isso
+                   como "manda ao grupo todo", que é precisamente o contrário. */
+                const alvos=notYet.map(p=>p.id);
+                if(alvos.length===0){showToast("Já responderam todos ✓");return;}
+                const ok=await onSendPush("⏰ Lembrete de presença!",`Ainda não respondeste ao jogo de ${formatDisplayDate(gameInfo.date)} às ${gameInfo.time}. Vais?`,alvos);
+                showToast(ok?`Lembrete enviado a ${alvos.length} ${alvos.length===1?"pessoa":"pessoas"} ✓`:"Não foi possível enviar a notificação",ok?"ok":"err");
+              }}>⏰ Lembrete — Marcar presença{notYet.length>0?` (${notYet.length})`:""}</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.4)"}} onClick={async()=>{
+                /* Mesmo problema: o aviso de pagamento ia a toda a gente,
+                   incluindo quem já tinha pago e quem nem sequer vai jogar. */
+                const devedores=confirmed.filter(p=>!p.is_guest&&!p.paid).map(p=>p.id);
+                if(devedores.length===0){showToast("Já pagaram todos ✓");return;}
+                const ok=await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`,devedores);
+                showToast(ok?`Aviso enviado a ${devedores.length} ${devedores.length===1?"pessoa":"pessoas"} ✓`:"Não foi possível enviar a notificação",ok?"ok":"err");
+              }}>💸 Lembrete — Pagamento{(()=>{const n=confirmed.filter(p=>!p.is_guest&&!p.paid).length;return n>0?` (${n})`:"";})()}</button>
               <button className="btn-primary" style={{justifyContent:"center",background:"rgba(192,132,252,0.15)",color:"#c084fc",border:"1px solid rgba(192,132,252,0.4)"}} onClick={async()=>{const ok=await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!",mvpAudienceIds(gameInfo,confirmed,lastClosedGame));showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>🏆 MVP aberto para votação</button>
             </div>
           </ExpandableSection>

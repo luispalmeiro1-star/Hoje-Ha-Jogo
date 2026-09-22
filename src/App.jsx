@@ -2579,6 +2579,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
   const [phone, setPhone]       = useState("");
   const [email, setEmail]       = useState("");
   const [loading, setLoading]   = useState(false);
+  const codigoJaMarcado = useRef(false);
 
   const checkCode = async() => {
     if(!code.trim()){showToast("Insere o código de convite","err");return;}
@@ -2586,7 +2587,10 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const result=await callVerifyInvite(code.trim());
     setLoading(false);
     if(result?.error){marcarPasso("codigo_recusado");showToast(result.error,"err");return;}
-    marcarPasso("codigo_aceite");
+    // Uma vez por sessão. O código que vem no link é verificado sozinho à
+    // chegada, e se a pessoa carregar também no botão o mesmo passo era
+    // contado duas vezes — o que fazia a mesma visita parecer duas.
+    if(!codigoJaMarcado.current){codigoJaMarcado.current=true;marcarPasso("codigo_aceite");}
     setGroup(result.group); setStep(2);
   };
 
@@ -2616,6 +2620,10 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const{data:existing}=await supabase.from("player_groups").select("membership_status").eq("player_id",p.id).eq("group_id",group.id).maybeSingle();
     if(existing?.membership_status==="active"){
       if(!p.group_id) await supabase.from("players").update({group_id:group.id}).eq("id",p.id);
+      // Entrar por convite com conta já feita também é chegar ao fim do funil.
+      // Sem esta marca, quem seguia por aqui desaparecia da medição logo a
+      // seguir ao código aceite e ficava indistinguível de quem desiste.
+      marcarPasso("entrou_no_grupo");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:group.id}));
       window.location.reload();
       return;
@@ -2624,6 +2632,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
       await supabase.from("player_groups").upsert({player_id:p.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
       linkOneSignal(p.id);
       await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+      marcarPasso("entrou_no_grupo");
     }
     localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id}));
     window.location.reload();

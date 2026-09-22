@@ -794,7 +794,12 @@ export default function App() {
   const guests    = players.filter(p=>p.is_guest);
   const confirmed = sortedConfirmed(players);
   const waiting   = players.filter(p=>p.status==="wait");
+  // "out" e "nao_vou" são coisas diferentes: o primeiro é quem ainda não
+  // respondeu, o segundo é quem respondeu que não vai. Até aqui eram o mesmo
+  // valor, e por isso a lista de "sem resposta" incluía gente que já tinha
+  // dito que não ia — e que continuava a ser chateada para responder.
   const notYet    = members.filter(p=>p.status==="out");
+  const naoVao    = members.filter(p=>p.status==="nao_vou");
   const spotsLeft = Math.max(0,maxPlayers-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
   // O último jogo fechado, só enquanto durar a janela de 12h para votar MVP.
@@ -1011,10 +1016,14 @@ export default function App() {
     if(nomes.length) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
   };
 
-  const togglePresence = async(playerId)=>{
+  // O "destino" é opcional. O jogador diz explicitamente o que quer ("in" ou
+  // "nao_vou") pelos dois botões; o admin continua a carregar num botão só,
+  // que alterna entre dentro e fora como sempre fez.
+  const togglePresence = async(playerId,destino=null)=>{
     const p=players.find(pl=>pl.id===playerId); if(!p) return;
     let ns,na;
-    if(p.status==="in"||p.status==="wait"){ns="out";na=null;}
+    const querJogar = destino ? destino==="in" : (p.status!=="in"&&p.status!=="wait");
+    if(!querJogar){ns="nao_vou";na=null;}
     else if(confirmed.length<maxPlayers){ns="in";na=Date.now();}
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
     // O ecrã muda já, antes de se falar com o servidor. Sem isto, carregar em
@@ -1036,7 +1045,7 @@ export default function App() {
       return;
     }
     if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
-    if(ns==="out") await promoverFilaEspera(activeGroupId);
+    if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
   };
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
@@ -1233,7 +1242,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -1752,7 +1761,7 @@ function AvisoNotificacoes({playerId,groupId}) {
   );
 }
 
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   const now=new Date();
@@ -1852,6 +1861,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {confirmed.length>0&&<div style={{background:"#14160f",border:"1px solid #1ea85133",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#1ea851",flexShrink:0}}/><span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>{confirmed.length} confirmados</span></div>}
               {notYet&&notYet.length>0&&<div style={{background:"#1a1a0a",border:"1px solid #d4af3733",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#d4af37",flexShrink:0}}/><span style={{fontSize:11,color:"#fbbf24",fontWeight:700}}>{notYet.length} sem resposta</span></div>}
+              {naoVao&&naoVao.length>0&&<div style={{background:"#161314",border:"1px solid #ef444433",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",flexShrink:0}}/><span style={{fontSize:11,color:"#d6a1a1",fontWeight:700}}>{naoVao.length} não {naoVao.length===1?"vai":"vão"}</span></div>}
               {waiting.length>0&&<div style={{background:"#1a1010",border:"1px solid #dc262633",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dc2626",flexShrink:0}}/><span style={{fontSize:11,color:"#f87171",fontWeight:700}}>{waiting.length} em espera</span></div>}
               {confirmed.length>0&&<ExpandableList confirmed={confirmed} waiting={waiting}/>}
             </div>
@@ -3923,11 +3933,11 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
   const cfg=sportConfig(sportType);
-  const isIn=player.status==="in",isWait=player.status==="wait";
+  const isIn=player.status==="in",isWait=player.status==="wait",isNao=player.status==="nao_vou";
   const [confirming,setConfirming]=useState(false);
-  const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
+  const handleToggle=async(destino)=>{setConfirming(true);await onToggle(destino);setTimeout(()=>setConfirming(false),600);};
   const waitPos=waiting.findIndex(p=>p.id===player.id)+1;
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
   const totalDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
@@ -3935,7 +3945,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
         
       />
       <div className="body">
@@ -3948,13 +3958,32 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
             <Icon name="warn" size={18}/><div style={{flex:1}}><div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div><div style={{fontSize:11,color:"#fcd34d"}}>Carrega para ver detalhes</div></div><Icon name="right" size={14}/>
           </button>
         )}
-        <div className={`status-banner sb-${isIn?"in":isWait?"wait":"out"}`}>
-          <span className="sb-icon">{isIn?"✅":isWait?"⏳":"⚽"}</span>
-          <div><div className="sb-title">{isIn?"Confirmado!":isWait?`Lista de espera #${waitPos}`:"Ainda não respondeste"}</div><div className="sb-sub">{isIn?"Estás dentro":isWait?"Aguarda vaga":`${spotsLeft} vagas`}</div></div>
+        <div className={`status-banner sb-${isIn?"in":isWait?"wait":isNao?"nao":"out"}`}>
+          <span className="sb-icon">{isIn?"✅":isWait?"⏳":isNao?"❌":"⚽"}</span>
+          <div><div className="sb-title">{isIn?"Confirmado!":isWait?`Lista de espera #${waitPos}`:isNao?"Disseste que não vais":"Ainda não respondeste"}</div><div className="sb-sub">{isIn?"Estás dentro":isWait?"Aguarda vaga":isNao?"Se mudares de ideias, ainda vais a tempo":`${spotsLeft} vagas`}</div></div>
         </div>
-        <button className={`btn-big ${isIn||isWait?"btn-red":"btn-green"}`} onClick={handleToggle} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
-          {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
-        </button>
+        {/* Quem ainda não respondeu vê as duas hipóteses lado a lado. Dizer que
+            não vai é uma resposta como outra qualquer: tira a pessoa da lista
+            de quem falta responder e liberta já o lugar para a lista de espera,
+            em vez de deixar o grupo à espera de uma resposta que não vem. */}
+        {isIn||isWait?(
+          <button className="btn-big btn-red" onClick={()=>handleToggle("nao_vou")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+            {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
+          </button>
+        ):isNao?(
+          <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+            {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
+          </button>
+        ):(
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+              {confirming?"⏳":<><Icon name="check" size={18}/> VOU JOGAR</>}
+            </button>
+            <button className="btn-big btn-nao" onClick={()=>handleToggle("nao_vou")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+              {confirming?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
+            </button>
+          </div>
+        )}
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
         {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
         {/* Abaixo do botão de confirmar presença de propósito: o aviso é
@@ -4104,12 +4133,12 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
-  const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait";
+  const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait",isAdminNao=myself.status==="nao_vou";
   const [confirmingSelf,setConfirmingSelf]=useState(false);
-  const handleSelfToggle=async()=>{setConfirmingSelf(true);await onTogglePresence(currentUser.id);setTimeout(()=>setConfirmingSelf(false),600);};
+  const handleSelfToggle=async(destino)=>{setConfirmingSelf(true);await onTogglePresence(currentUser.id,destino);setTimeout(()=>setConfirmingSelf(false),600);};
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -4202,7 +4231,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
         
       />
       <div className="body">
@@ -4300,13 +4329,28 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
         </div>
 
         {adminTab==="jogo"&&<>
-          <div className={`status-banner sb-${isAdminIn?"in":isAdminWait?"wait":"out"}`} style={{marginBottom:10}}>
-            <span className="sb-icon">{isAdminIn?"✅":isAdminWait?"⏳":"⚽"}</span>
-            <div><div className="sb-title">{isAdminIn?"Também vais jogar!":isAdminWait?"Estás na lista de espera":"Também vais jogar?"}</div><div className="sb-sub">{isAdminIn?"Estás dentro":isAdminWait?"Aguarda vaga":"Confirma a tua presença"}</div></div>
+          <div className={`status-banner sb-${isAdminIn?"in":isAdminWait?"wait":isAdminNao?"nao":"out"}`} style={{marginBottom:10}}>
+            <span className="sb-icon">{isAdminIn?"✅":isAdminWait?"⏳":isAdminNao?"❌":"⚽"}</span>
+            <div><div className="sb-title">{isAdminIn?"Também vais jogar!":isAdminWait?"Estás na lista de espera":isAdminNao?"Disseste que não vais":"Também vais jogar?"}</div><div className="sb-sub">{isAdminIn?"Estás dentro":isAdminWait?"Aguarda vaga":isAdminNao?"Se mudares de ideias, ainda vais a tempo":"Confirma a tua presença"}</div></div>
           </div>
-          <button className={`btn-big ${isAdminIn||isAdminWait?"btn-red":"btn-green"}`} style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={handleSelfToggle}>
-            {confirmingSelf?"⏳ A processar...":(isAdminIn||isAdminWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
-          </button>
+          {isAdminIn||isAdminWait?(
+            <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
+              {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
+            </button>
+          ):isAdminNao?(
+            <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
+              {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
+            </button>
+          ):(
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <button className="btn-big btn-green" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
+                {confirmingSelf?"⏳":<><Icon name="check" size={18}/> VOU JOGAR</>}
+              </button>
+              <button className="btn-big btn-nao" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
+                {confirmingSelf?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
+              </button>
+            </div>
+          )}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{
@@ -4346,6 +4390,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           </ExpandableSection>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#6b7280"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
+          {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
           {/* Convidar */}
           <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>
@@ -4442,9 +4487,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
                 <Avatar player={players.find(pl=>pl.id===p.id)||p} size={30} style={{marginTop:2}}/>
                 <div className="list-info" style={{flex:1}}>
                   <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
-                  <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":"❌"} · {p.total_games||0} jogos</span>
+                  <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
                 </div>
-                <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":"❌ Fora"}</button>
+                <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
                 {!p.is_admin&&<button className="icon-danger" onClick={()=>onRemovePlayer(p.id)}><Icon name="trash" size={13}/></button>}
                 {editPassId===p.id
                   ?<div style={{width:"100%",marginTop:6}}>
@@ -5349,6 +5394,10 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .btn-big{width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;box-shadow:0 6px 16px rgba(0,0,0,0.25);}
 .btn-big:hover{filter:brightness(1.08);}
 .btn-green{background:linear-gradient(180deg,#2fd66b,#1ea851);color:#04240f;}.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;}
+/* O "não vou" é uma resposta legítima, não um cancelamento — por isso fica
+   discreto ao lado do verde, em vez de gritar a vermelho como o "já não vou". */
+.btn-nao{background:#14160f;border:2px solid #3a2020;color:#d6a1a1;box-shadow:none;}
+.btn-nao:hover{border-color:#5c2c2c;color:#f0b8b8;}
 .btn-add{background:#1ea851;color:white;border:none;border-radius:10px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
 .btn-danger-full{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;width:100%;text-align:center;}
 .icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;color:#6b7280;cursor:pointer;display:flex;align-items:center;}
@@ -5358,6 +5407,7 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .sb-in{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);}
 .sb-wait{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);}
 .sb-out{background:#14160f;border:2px solid #23271b;}
+.sb-nao{background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.28);}
 .sb-icon{font-size:22px;}.sb-title{font-size:14px;font-weight:800;color:#f0f0f0;}.sb-sub{font-size:11px;color:#8a9080;margin-top:2px;}
 .player-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px;}
 .list-row{display:flex;align-items:center;gap:8px;background:#14160f;border-radius:10px;padding:9px 12px;border:1px solid #23271b;}

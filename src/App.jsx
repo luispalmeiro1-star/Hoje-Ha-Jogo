@@ -254,6 +254,34 @@ function limparPassword(raw) {
   return (raw || "").replace(/\s+/g, "");
 }
 
+// ── Medir onde é que as pessoas se perdem ───────────────────────────────────
+//
+// Duas pessoas chegaram à app sozinhas e desapareceram as duas sem se saber em
+// que passo. Isto marca o caminho — não para saber QUEM, mas para saber ONDE.
+//
+// Não guarda nada de pessoal: o nome do passo e um número aleatório que só
+// serve para ligar entre si os passos da mesma visita. Respeita a mesma
+// exclusão que as visitas (hojehajogo.pt/?analytics=off), para os telemóveis
+// de quem faz a app não falsearem as contas — com estes números, três testes
+// chegavam para inventar um funil que não existe.
+const SESSAO_KEY = "hhj_sessao_funil";
+function idDaVisita() {
+  try {
+    let s = sessionStorage.getItem(SESSAO_KEY);
+    if (!s) { s = Math.random().toString(36).slice(2, 12); sessionStorage.setItem(SESSAO_KEY, s); }
+    return s;
+  } catch (e) { return null; }
+}
+function marcarPasso(passo) {
+  try {
+    if (localStorage.getItem("hhj_analytics_optout") === "1") return;
+  } catch (e) { /* janela privada: contar é o comportamento certo */ }
+  // Dispara e segue. Isto nunca pode atrasar nem partir o que a pessoa está a
+  // fazer — é medição, não é funcionalidade.
+  supabase.from("funil").insert({ passo, sessao: idDaVisita() })
+    .then(() => {}, () => {});
+}
+
 // Mostra ao admin a password que FICOU MESMO GUARDADA, para ele copiar em vez
 // de a reescrever de cabeça. É a outra metade da correção: sem isto, continua
 // a definir uma password às cegas.
@@ -580,6 +608,14 @@ export default function App() {
 
   // Carregar players inicialmente (sem groupId) para session restore
   useEffect(()=>{
+    // O denominador de tudo o resto: quantas pessoas chegaram cá. Marcado uma
+    // vez por visita — recarregar a página não é uma pessoa nova.
+    try {
+      if(!sessionStorage.getItem("hhj_ja_chegou")){
+        sessionStorage.setItem("hhj_ja_chegou","1");
+        marcarPasso("chegou");
+      }
+    } catch(e) { /* janela privada: não vale a pena insistir */ }
     (async()=>{
       setLoading(true);
       let handled = false;
@@ -990,6 +1026,7 @@ export default function App() {
     // É o mesmo que o pagamento e o mover jogador já faziam. Se o servidor
     // recusar, volta-se atrás e diz-se porquê, em vez de ficar um ecrã a
     // mostrar uma coisa que não chegou a ser gravada.
+    if(ns==="in") marcarPasso("confirmou_presenca");
     const antes=players;
     setPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
     const{error}=await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
@@ -1956,10 +1993,10 @@ function LandingView({setView}) {
 
           {/* CTAs */}
           <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320,margin:"0 auto"}}>
-            <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
+            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
               ⚽ Criar grupo grátis
             </button>
-            <button onClick={()=>setView("entrar-convite")} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+            <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
               📲 Tenho um código de convite
             </button>
           </div>
@@ -2016,7 +2053,7 @@ function LandingView({setView}) {
         <div style={{textAlign:"center",padding:"38px 24px 48px",borderTop:"1px solid #23271b"}}>
           <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:"white",margin:"0 0 6px"}}>Pronto para o próximo jogo?</h2>
           <p style={{color:"#8a9080",fontSize:13,margin:"0 0 22px"}}>Grátis, sem publicidade, sem complicações.</p>
-          <button onClick={()=>setView("criar-grupo")} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>
+          <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>
             Começa agora — é grátis
           </button>
           {/* A seguir a este botão pedimos o nome e o telemóvel a um
@@ -2269,6 +2306,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
         else throw new Error(regResult.error);
       }
       const player=regResult.player;
+      marcarPasso("conta_criada");
       await establishSession(regResult.session);
       const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
       if(ge) throw ge;
@@ -2284,6 +2322,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       if(pgIdErr) throw pgIdErr;
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return toDateStr(d);};
       await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
+      marcarPasso("grupo_criado");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:group.id}));
       localStorage.setItem("hhb_new_group_code",code);
       window.location.reload();
@@ -2536,7 +2575,8 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     setLoading(true);
     const result=await callVerifyInvite(code.trim());
     setLoading(false);
-    if(result?.error){showToast(result.error,"err");return;}
+    if(result?.error){marcarPasso("codigo_recusado");showToast(result.error,"err");return;}
+    marcarPasso("codigo_aceite");
     setGroup(result.group); setStep(2);
   };
 
@@ -2588,10 +2628,12 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     const regResult=await callRegister({name:name.trim(),username:normalizeUsername(username),password,phone:phone||null,email:email||null,avatar_color:color,group_id:null});
     if(regResult?.error){showToast(regResult.error,"err");if(regResult.suggestion)setUsername(regResult.suggestion);setLoading(false);return;}
     const inserted=regResult.player;
+    marcarPasso("conta_criada");
     await establishSession(regResult.session);
     await supabase.from("player_groups").upsert({player_id:inserted.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
     linkOneSignal(inserted.id);
     await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+    marcarPasso("entrou_no_grupo");
     showToast("Conta criada! Pedido enviado ao admin 🎉");
     localStorage.setItem("hhb_session",JSON.stringify({playerId:inserted.id}));
     await new Promise(r=>setTimeout(r,800));
@@ -2656,7 +2698,8 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
                 if(error){ showToast("Erro ao enviar pedido","err"); setLoading(false); return; }
                 await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
               }
-              showToast("Pedido enviado! Aguarda aprovação do admin.");
+              marcarPasso("entrou_no_grupo");
+      showToast("Pedido enviado! Aguarda aprovação do admin.");
               await new Promise(r=>setTimeout(r,600));
               setLoading(false);
               if(onGrupoAdicionado) onGrupoAdicionado();

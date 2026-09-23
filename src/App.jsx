@@ -2973,9 +2973,27 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
         {isPastGame&&<MvpCountdownBadge deadline={prazoFinal}/>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {confirmed.filter(p=>!p.is_guest&&p.id!==currentUserId).map(p=>{
+        {/* A própria pessoa aparece na lista, mas a linha dela não é um botão.
+            Antes era retirada da lista de vez, e o efeito era este: não podia
+            votar em si (bem) mas também não conseguia ver se alguém tinha
+            votado nela (mal) — ficava sem saber o resultado que mais lhe
+            interessa. Continua a não poder votar em si própria; só passa a ver
+            a contagem, como vê a dos outros. */}
+        {confirmed.filter(p=>!p.is_guest).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
-          return <button key={p.id} onClick={()=>onVote(p.id)} style={{display:"flex",alignItems:"center",gap:10,background:isVoted?"rgba(217,119,6,0.15)":"#14160f",border:`2px solid ${isVoted?"#d97706":"#23271b"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",textAlign:"left",width:"100%"}}><Avatar player={p} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{p.name}</span><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:60,height:6,background:"#14160f",borderRadius:99,overflow:"hidden"}}><div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/></div><span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>{isVoted&&<span style={{fontSize:12}}>⭐</span>}</div></button>;
+          const souEu=p.id===currentUserId;
+          const linha={display:"flex",alignItems:"center",gap:10,borderRadius:10,padding:"8px 12px",textAlign:"left",width:"100%"};
+          const conteudo=(<>
+            <Avatar player={p} size={28}/>
+            <span style={{flex:1,fontSize:13,fontWeight:700,color:souEu?"#8a9080":"white"}}>{p.name}{souEu&&" (tu)"}</span>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:60,height:6,background:"#14160f",borderRadius:99,overflow:"hidden"}}><div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/></div>
+              <span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>
+              {isVoted&&<span style={{fontSize:12}}>⭐</span>}
+            </div>
+          </>);
+          if(souEu) return <div key={p.id} style={{...linha,background:"#101208",border:"2px dashed #23271b"}}>{conteudo}</div>;
+          return <button key={p.id} onClick={()=>onVote(p.id)} style={{...linha,background:isVoted?"rgba(217,119,6,0.15)":"#14160f",border:`2px solid ${isVoted?"#d97706":"#23271b"}`,cursor:"pointer"}}>{conteudo}</button>;
         })}
       </div>
       {myVote&&(

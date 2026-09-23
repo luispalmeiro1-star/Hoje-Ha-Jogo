@@ -594,7 +594,21 @@ export default function App() {
   const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data)setHistory(data); },[]);
   const loadDebts      = useCallback(async(gid)=>{ const{data}=await supabase.from("debts").select("*").eq("group_id",gid).order("created_at"); if(data)setDebts(data); },[]);
   const loadMessages   = useCallback(async(gid)=>{ const{data}=await supabase.from("chat_messages").select("*").eq("group_id",gid).order("created_at").limit(100); if(data)setMessages(data); },[]);
-  const loadMvp        = useCallback(async(gid)=>{ const{data}=await supabase.from("mvp_votes").select("*").eq("group_id",gid); if(data)setMvpVotes(data); },[]);
+  // O voto é secreto: a tabela já não deixa ler a coluna de quem votou. O que
+  // volta da leitura normal serve para as contagens (toda a gente vê quantos
+  // votos cada um teve) e só os meus votos trazem o voter_id, por uma função
+  // do servidor que nunca devolve os dos outros. Juntam-se os dois, sem repetir
+  // a minha linha, e o resto da app continua a trabalhar como sempre.
+  const loadMvp        = useCallback(async(gid)=>{
+    const[anonimos,meus]=await Promise.all([
+      supabase.from("mvp_votes").select("id,group_id,game_date,voted_for_id,created_at").eq("group_id",gid),
+      supabase.rpc("meus_votos_mvp",{p_group_id:gid}),
+    ]);
+    const meusVotos=meus?.data||[];
+    const meusIds=new Set(meusVotos.map(v=>v.id));
+    const outros=(anonimos?.data||[]).filter(v=>!meusIds.has(v.id));
+    setMvpVotes([...outros,...meusVotos]);
+  },[]);
   const loadAttendance = useCallback(async(gid)=>{ const{data}=await supabase.from("game_attendance").select("*").eq("group_id",gid).order("game_date",{ascending:false}); if(data)setAttendance(data); },[]);
 
   const reloadAll = useCallback(async(gid)=>{
@@ -1226,7 +1240,8 @@ export default function App() {
   };
   const voteForMvp = async(voterId,votedForId,gameDate=gameInfo.date)=>{
     setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameDate)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameDate}]);
-    await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameDate,group_id:activeGroupId||null},{onConflict:"voter_id,game_date,group_id"});
+    const{error}=await supabase.rpc("votar_mvp",{p_group_id:activeGroupId,p_game_date:gameDate,p_voted_for:votedForId});
+    if(error){ loadMvp(activeGroupId); showToast("Não foi possível registar o voto","err"); return; }
     showToast("Voto registado ✓");
   };
   // Dava para mudar o voto, mas não para o retirar — quem votasse por engano
@@ -1234,8 +1249,7 @@ export default function App() {
   const removeMvpVote = async(voterId,gameDate=gameInfo.date)=>{
     const antes=mvpVotes;
     setMvpVotes(prev=>prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameDate)));
-    const q=supabase.from("mvp_votes").delete().eq("voter_id",voterId).eq("game_date",gameDate);
-    const{error}=activeGroupId?await q.eq("group_id",activeGroupId):await q;
+    const{error}=await supabase.rpc("retirar_voto_mvp",{p_group_id:activeGroupId,p_game_date:gameDate});
     if(error){ setMvpVotes(antes); showToast("Não foi possível retirar o voto","err"); return; }
     showToast("Voto retirado");
   };

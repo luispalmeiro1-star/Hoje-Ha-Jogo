@@ -1272,6 +1272,7 @@ export default function App() {
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
+      {view==="demo"           && <DemoView setView={setView} showToast={showToast}/>}
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser} onLeave={leaveGroup} onDelete={deleteGroup}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
       {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}
@@ -2032,15 +2033,27 @@ function LandingView({setView}) {
             </div>
           </div>
 
-          {/* CTAs */}
+          {/* CTAs
+              A ordem mudou por causa do que os números dizem. O botão do código
+              de convite ocupava o segundo lugar, mas quase ninguém o usa como
+              botão: em 28 dias, 28 pessoas entraram com código e só 2 lhe
+              tocaram — as outras vieram por um link que já traz o código
+              dentro. Quem chega de um post não tem código nenhum, e ficava sem
+              nada para fazer senão o passo mais pesado de todos.
+              Agora o segundo lugar é de quem ainda não decidiu: ver primeiro.
+              O código desce para texto, que é como de facto é usado. */}
           <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320,margin:"0 auto"}}>
             <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
               ⚽ Criar grupo grátis
             </button>
-            <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
-              📲 Tenho um código de convite
+            <button onClick={()=>setView("demo")} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              👀 Ver um grupo a funcionar
             </button>
           </div>
+
+          <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{marginTop:14,background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:4,textDecorationColor:"#3a4034"}}>
+            📲 Tenho um código de convite
+          </button>
 
           <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%",margin:"16px auto 0"}}>
             <p style={{fontSize:11,color:"#8a9080",margin:0,lineHeight:1.55}}>
@@ -2276,6 +2289,177 @@ function ReporPasswordView({token, setView, showToast}) {
     </div>
     <button onClick={()=>setView("landing")} style={{marginTop:18,background:"transparent",border:"none",color:"#565c4d",fontSize:13,cursor:"pointer"}}>Cancelar</button>
   </>);
+}
+
+
+// ── DEMONSTRAÇÃO ────────────────────────────────────────────────────────────
+//
+// Quem chega de um post nunca viu a app e não tem convite de ninguém. Os dois
+// caminhos que a página de entrada oferecia pediam-lhe o passo mais pesado que
+// existe (mudar o grupo todo) ou uma coisa que ela não tem (um código). Em 28
+// dias, de 136 chegadas a frio, 3 tocaram num botão e nenhuma criou conta.
+//
+// Isto é o terceiro caminho: ver antes de decidir. Não há aqui base de dados
+// nem sessão — é tudo estado local. A pessoa toca em VOU JOGAR e vê a lista
+// mexer-se, que é o momento em que se percebe para que serve a app. Nada do
+// que ela faça aqui sai deste ecrã.
+function DemoView({setView, showToast}) {
+  const OUTROS = [
+    {nome:"Rui Martins",   ini:"RM", cor:"#1ea851", estado:"vai"},
+    {nome:"Tiago Sousa",   ini:"TS", cor:"#b45309", estado:"vai"},
+    {nome:"Bruno Alves",   ini:"BA", cor:"#4338ca", estado:"vai"},
+    {nome:"André Costa",   ini:"AC", cor:"#0891b2", estado:"vai"},
+    {nome:"Pedro Nunes",   ini:"PN", cor:"#7c3aed", estado:"vai"},
+    {nome:"Miguel Ferreira",ini:"MF",cor:"#b91c1c", estado:"vai"},
+    {nome:"João Pires",    ini:"JP", cor:"#0d9488", estado:"vai"},
+    {nome:"Nuno Dias",     ini:"ND", cor:"#c2410c", estado:"vai"},
+    {nome:"Hugo Ramos",    ini:"HR", cor:"#4f46e5", estado:"sem"},
+    {nome:"Diogo Leal",    ini:"DL", cor:"#0369a1", estado:"sem"},
+    {nome:"Ricardo Sá",    ini:"RS", cor:"#a16207", estado:"sem"},
+    {nome:"Paulo Moreira", ini:"PM", cor:"#15803d", estado:"nao"},
+  ];
+  const MAX = 12;
+
+  const [euVou, setEuVou] = useState(null);   // null = ainda não respondeu
+  const [respondeu, setRespondeu] = useState(false);
+
+  // O botão que traz aqui está lá em baixo na página de entrada, e a vista
+  // nova herdava essa posição de scroll: a pessoa aterrava a meio da lista e
+  // perdia a contagem decrescente e o 8/12, que é o que a veio ver.
+  useEffect(()=>{ window.scrollTo(0,0); marcarPasso("viu_demo"); },[]);
+
+  const vaoOutros = OUTROS.filter(p=>p.estado==="vai").length;
+  const confirmados = vaoOutros + (euVou==="vai" ? 1 : 0);
+  const semResposta = OUTROS.filter(p=>p.estado==="sem").length + (euVou===null ? 1 : 0);
+
+  function responder(resposta) {
+    setEuVou(resposta);
+    if(!respondeu){ setRespondeu(true); marcarPasso("demo_respondeu"); }
+    showToast(resposta==="vai" ? "Estás dentro! ⚽" : "Ficas de fora desta vez", resposta==="vai" ? "success" : "warn");
+  }
+
+  // A pessoa aparece na lista onde a sua resposta a põe, como no ecrã real.
+  const lista = [
+    ...OUTROS.filter(p=>p.estado==="vai"),
+    ...(euVou==="vai" ? [{nome:"Tu",ini:"TU",cor:"#d4af37",estado:"vai",euSou:true}] : []),
+    ...(euVou===null ? [{nome:"Tu",ini:"TU",cor:"#d4af37",estado:"sem",euSou:true}] : []),
+    ...OUTROS.filter(p=>p.estado==="sem"),
+    ...(euVou==="nao" ? [{nome:"Tu",ini:"TU",cor:"#d4af37",estado:"nao",euSou:true}] : []),
+    ...OUTROS.filter(p=>p.estado==="nao"),
+  ];
+  const corEstado = {vai:"#4ade80", sem:"#fbbf24", nao:"#565c4d"};
+  const textoEstado = {vai:"✓ vai", sem:"sem resposta", nao:"não vai"};
+
+  return (
+    <div style={{background:"#0a0b08",minHeight:"100vh",paddingBottom:40}}>
+      {/* Dizer sempre o que isto é. Uma demonstração que se faz passar pela app
+          a sério engana, e quem descobre depois deixa de confiar. */}
+      <div style={{position:"sticky",top:0,zIndex:5,background:"#14160f",borderBottom:"1px solid #23271b",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+        <div style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:0.3}}>
+          Grupo de exemplo — nada do que fizeres aqui é guardado
+        </div>
+        <button onClick={()=>setView("landing")} style={{background:"transparent",border:"none",color:"#8a9080",fontSize:20,lineHeight:1,cursor:"pointer",padding:"0 2px",flexShrink:0}} aria-label="Sair da demonstração">×</button>
+      </div>
+
+      <div style={{maxWidth:460,margin:"0 auto",padding:"18px 16px 0"}}>
+        <div style={{fontSize:10,letterSpacing:2,color:"#565c4d",fontWeight:700}}>GRUPO</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:0.5,color:"white",margin:"2px 0 14px"}}>Futebolada de Quarta-Feira</div>
+
+        {/* O marcador: a forma de assinatura da app. */}
+        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+            <div>
+              <div style={{fontSize:10,letterSpacing:2,color:"#565c4d",fontWeight:700}}>PRÓXIMO JOGO</div>
+              <div style={{fontSize:14,fontWeight:700,color:"white",marginTop:4}}>Quarta-feira, 1 de Outubro</div>
+              <div style={{fontSize:11,color:"#8a9080",marginTop:3}}>21:00 · Pavilhão Municipal</div>
+            </div>
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{fontSize:9,letterSpacing:2,color:"#565c4d",fontWeight:700}}>FALTAM</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,lineHeight:1,color:"#d4af37",whiteSpace:"nowrap"}}>4D 6H</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <div style={{fontSize:10,letterSpacing:2,color:"#565c4d",fontWeight:700}}>CONFIRMADOS</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,lineHeight:1,color:"#4ade80"}}>{confirmados}<span style={{color:"#565c4d"}}>/{MAX}</span></div>
+          </div>
+          <div style={{height:5,borderRadius:99,background:"#23271b",marginTop:8,overflow:"hidden"}}>
+            <div style={{width:`${Math.min(100,(confirmados/MAX)*100)}%`,height:"100%",background:"#1ea851",borderRadius:99,transition:"width 0.35s ease"}}/>
+          </div>
+          <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(74,222,128,0.10)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:99,padding:"4px 10px",fontSize:11,fontWeight:700,color:"#4ade80"}}>
+              <span style={{width:5,height:5,borderRadius:"50%",background:"#4ade80"}}/>{confirmados} vão
+            </span>
+            {semResposta>0&&(
+              <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(217,119,6,0.10)",border:"1px solid rgba(217,119,6,0.4)",borderRadius:99,padding:"4px 10px",fontSize:11,fontWeight:700,color:"#fbbf24"}}>
+                <span style={{width:5,height:5,borderRadius:"50%",background:"#fbbf24"}}/>{semResposta} sem resposta
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* A pergunta, feita a esta pessoa. É isto que se veio cá experimentar. */}
+        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:22,flexShrink:0}}>⚽</span>
+          <div>
+            <div style={{fontSize:14,fontWeight:800,color:"white"}}>Também vais jogar?</div>
+            <div style={{fontSize:11.5,color:"#8a9080",marginTop:2}}>Carrega e vê a lista mexer-se</div>
+          </div>
+        </div>
+
+        {euVou==="vai"?(
+          <button className="btn-big btn-red" onClick={()=>responder("nao")} style={{marginBottom:14}}>
+            <Icon name="x" size={18}/> JÁ NÃO VOU
+          </button>
+        ):euVou==="nao"?(
+          <button className="btn-big btn-green" onClick={()=>responder("vai")} style={{marginBottom:14}}>
+            <Icon name="check" size={18}/> AFINAL VOU
+          </button>
+        ):(
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <button className="btn-big btn-green" onClick={()=>responder("vai")} style={{flex:1,marginBottom:0}}>
+              <Icon name="check" size={18}/> VOU JOGAR
+            </button>
+            <button className="btn-big btn-nao" onClick={()=>responder("nao")} style={{flex:1,marginBottom:0}}>
+              <Icon name="x" size={18}/> NÃO VOU
+            </button>
+          </div>
+        )}
+
+        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,overflow:"hidden",marginBottom:14}}>
+          {lista.map((p,i)=>(
+            <div key={p.nome} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderTop:i===0?"none":"1px solid #23271b",background:p.euSou?"rgba(212,175,55,0.06)":"transparent"}}>
+              <div style={{width:26,height:26,borderRadius:"50%",background:p.cor,color:p.euSou?"#0a0b08":"white",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:p.estado==="sem"?0.55:1}}>{p.ini}</div>
+              <div style={{fontSize:13,color:p.estado==="sem"?"#8a9080":"#d8dbd2",flex:1,fontWeight:p.euSou?800:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
+              <div style={{fontSize:11,fontWeight:800,color:corEstado[p.estado],whiteSpace:"nowrap"}}>{textoEstado[p.estado]}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Só depois de responder é que se convida a pessoa a avançar. Pedir-lhe
+            o grupo todo antes de ela perceber o que isto faz é o erro que nos
+            trouxe aqui. */}
+        {respondeu&&(
+          <div style={{background:"rgba(212,175,55,0.07)",border:"1px solid rgba(212,175,55,0.35)",borderRadius:14,padding:16,animation:"fadeIn 0.4s ease"}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:0.5,lineHeight:1.1}}>
+              É assim <span style={{color:"#d4af37"}}>no teu grupo.</span>
+            </div>
+            <div style={{fontSize:12.5,color:"#8a9080",margin:"8px 0 14px",lineHeight:1.55}}>
+              Cada um responde no telemóvel, a lista faz-se sozinha e, a quem se esquece, é a app que pergunta. Tu deixas de andar atrás de ninguém.
+            </div>
+            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:15,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:8}}>
+              ⚽ Criar o meu grupo grátis
+            </button>
+            <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{width:"100%",padding:13,background:"transparent",border:"1px solid #23271b",borderRadius:14,color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+              Já tenho um código de convite
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 
@@ -5452,6 +5636,12 @@ function getCss() {
   return `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&display=swap');
 @keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0.3)}50%{box-shadow:0 0 0 8px rgba(212,175,55,0)}}@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+/* Quem pediu ao sistema para reduzir movimento tem motivo para isso. O conteúdo
+   aparece na mesma; o que desaparece é o deslize. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}

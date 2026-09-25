@@ -1928,10 +1928,13 @@ function LandingView({setView}) {
   // O ecrã do telemóvel mostra as contas, não o botão de confirmar presença:
   // quem cria o grupo é quem anda a cobrar, e é esse problema que o título
   // promete resolver. Confirmar presença é a tarefa do jogador, não a dele.
-  const contas=[
-    {nome:"Rui M.",iniciais:"RM",cor:"#1ea851",estado:"pago",valor:"3,00 €"},
-    {nome:"Tiago S.",iniciais:"TS",cor:"#b45309",estado:"deve",valor:"6,00 €"},
-    {nome:"Bruno A.",iniciais:"BA",cor:"#4338ca",estado:"deve",valor:"3,00 €"},
+  // As três respostas possíveis, cada uma com a sua cor, como no ecrã real:
+  // verde para quem vai, cinzento para quem não vai, âmbar para quem ainda não
+  // respondeu. É esse âmbar que dá a dor do título.
+  const presencas=[
+    {nome:"Rui M.",iniciais:"RM",cor:"#1ea851",estado:"vai",resposta:"✓ vai"},
+    {nome:"Tiago S.",iniciais:"TS",cor:"#b45309",estado:"nao",resposta:"não vai"},
+    {nome:"Bruno A.",iniciais:"BA",cor:"#4338ca",estado:"sem",resposta:"sem resposta"},
   ];
   return (
     <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative"}}>
@@ -1946,16 +1949,21 @@ function LandingView({setView}) {
         {/* Hero */}
         <div style={{padding:"32px 24px 8px",textAlign:"center"}}>
           {/* O título continua a frase do cartaz que traz as pessoas até aqui.
-              Antes dizia "O teu jogo, organizado" com o dinheiro reduzido a uma
-              palavra no meio de uma lista: quem clicava numa dor concreta
-              aterrava numa frase que servia a qualquer app, e ia-se embora. */}
-          {/* 40px e não 44: medido na Bebas real, "cobrar 3€ ao pessoal." dá
+              Já esteve no dinheiro ("cobrar 3€ ao pessoal"), e isso foi melhor
+              do que a frase genérica que lá estava antes. Mas os posts que
+              trazem gente de facto falam de presenças — "quantos somos na
+              quarta", "19 por responder" — e quem clicava com essa pergunta na
+              cabeça aterrava a falar de contas. Em 28 dias, das 136 chegadas a
+              frio, 3 tocaram num botão e nenhuma criou conta. O dinheiro não
+              desapareceu: desceu para a frase de baixo, que é onde estava a
+              presença antes. */}
+          {/* 40px e não 44: medido na Bebas real, uma linha de 21 caracteres dá
               332px a 44px e não cabe num telemóvel de 360px de largura. */}
           <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,color:"white",letterSpacing:0.5,lineHeight:1.05,margin:"0 0 14px"}}>
-            Nunca mais andes a<br/><span style={{color:"#d4af37"}}>cobrar 3€ ao pessoal.</span>
+            Nunca mais perguntes<br/><span style={{color:"#d4af37"}}>quem joga na quarta.</span>
           </h1>
           <p style={{fontSize:14.5,color:"#8a9080",maxWidth:310,margin:"0 auto 26px",lineHeight:1.6}}>
-            A app diz quem pagou, quem deve e quanto tem o mealheiro do grupo. E ainda trata das presenças e das equipas.
+            Cada um diz se vai ou não vai, e a lista faz-se sozinha. Quem fica de fora entra em espera. E as contas ficam à vista de todos.
           </p>
 
           {/* Mockup do telemóvel */}
@@ -1978,38 +1986,47 @@ function LandingView({setView}) {
                       <div style={{fontSize:6,color:"#565c4d",textAlign:"right",letterSpacing:1,marginTop:2}}>FALTAM</div>
                     </div>
                   </div>
-                  <div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(212,175,55,0.14)",border:"1px solid rgba(212,175,55,0.35)",borderRadius:20,padding:"3px 8px",fontSize:8,fontWeight:700,color:"#d4af37",marginTop:9}}>
-                    <span style={{width:4,height:4,borderRadius:"50%",background:"#d4af37",flexShrink:0,display:"inline-block"}}/> 8 confirmados
+                  {/* Dois chips, como no ecrã real — e nenhum deles dourado. A
+                      contagem decrescente já é dourada aqui ao lado, e dois
+                      dourados no mesmo ecrã anulam-se. Estado é verde e âmbar. */}
+                  <div style={{display:"flex",gap:5,marginTop:9,flexWrap:"wrap"}}>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(74,222,128,0.12)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:20,padding:"3px 8px",fontSize:8,fontWeight:700,color:"#4ade80"}}>
+                      <span style={{width:4,height:4,borderRadius:"50%",background:"#4ade80",flexShrink:0,display:"inline-block"}}/> 8 vão
+                    </span>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(217,119,6,0.12)",border:"1px solid rgba(217,119,6,0.4)",borderRadius:20,padding:"3px 8px",fontSize:8,fontWeight:700,color:"#fbbf24"}}>
+                      <span style={{width:4,height:4,borderRadius:"50%",background:"#fbbf24",flexShrink:0,display:"inline-block"}}/> 4 sem resposta
+                    </span>
                   </div>
                 </div>
                 <div style={{flex:1,display:"flex",flexDirection:"column",gap:7,minHeight:0}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:6,background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"9px 10px"}}>
-                    <div>
-                      <div style={{fontSize:6.5,letterSpacing:1.2,color:"#565c4d"}}>MEALHEIRO</div>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#4ade80",lineHeight:1.1,marginTop:1}}>47,50 €</div>
+                  {/* O número que o título promete: quantos são. A barra mostra
+                      de relance o que falta para o jogo acontecer. */}
+                  <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"9px 10px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
+                      <div style={{fontSize:6.5,letterSpacing:1.2,color:"#565c4d"}}>CONFIRMADOS</div>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#4ade80",lineHeight:1}}>8<span style={{color:"#565c4d"}}>/12</span></div>
                     </div>
-                    <div style={{textAlign:"right"}}>
-                      <div style={{fontSize:6.5,letterSpacing:1.2,color:"#565c4d"}}>POR RECEBER</div>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#f87171",lineHeight:1.1,marginTop:1}}>9,00 €</div>
+                    <div style={{height:4,borderRadius:99,background:"#23271b",marginTop:6,overflow:"hidden"}}>
+                      <div style={{width:"66%",height:"100%",background:"#1ea851",borderRadius:99}}/>
                     </div>
                   </div>
-                  {contas.map((c)=>(
-                    <div key={c.nome} style={{display:"flex",alignItems:"center",gap:7}}>
-                      <div style={{width:17,height:17,borderRadius:"50%",background:c.cor,color:"white",fontSize:6.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.iniciais}</div>
-                      <div style={{fontSize:8.5,color:"#d8d8d8",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.nome}</div>
-                      <div style={{fontSize:8,fontWeight:800,whiteSpace:"nowrap",color:c.estado==="pago"?"#4ade80":"#f87171"}}>
-                        {c.estado==="pago"?`✓ ${c.valor}`:`deve ${c.valor}`}
+                  {presencas.map((p)=>(
+                    <div key={p.nome} style={{display:"flex",alignItems:"center",gap:7}}>
+                      <div style={{width:17,height:17,borderRadius:"50%",background:p.cor,color:"white",fontSize:6.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:p.estado==="sem"?0.5:1}}>{p.iniciais}</div>
+                      <div style={{fontSize:8.5,color:p.estado==="sem"?"#8a9080":"#d8d8d8",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
+                      <div style={{fontSize:8,fontWeight:800,whiteSpace:"nowrap",color:p.estado==="vai"?"#4ade80":p.estado==="nao"?"#565c4d":"#fbbf24"}}>
+                        {p.resposta}
                       </div>
                     </div>
                   ))}
                   {/* O que o organizador ganha em troca: deixa de ser ele a
-                      pedir o dinheiro. É isso que fecha o argumento do título. */}
+                      perguntar. É isso que fecha o argumento do título. */}
                   <div style={{marginTop:"auto",background:"rgba(74,222,128,0.12)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:11,textAlign:"center",padding:9,fontSize:8.5,fontWeight:800,color:"#4ade80"}}>
-                    🔔 Lembrar quem deve
+                    🔔 A app avisa quem falta
                   </div>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-around",marginTop:9,paddingTop:9,borderTop:"1px solid #23271b"}}>
-                  <span style={{fontSize:12,opacity:0.35}}>⚽</span><span style={{fontSize:12,opacity:1}}>💸</span><span style={{fontSize:12,opacity:0.35}}>📊</span><span style={{fontSize:12,opacity:0.35}}>👤</span>
+                  <span style={{fontSize:12,opacity:1}}>⚽</span><span style={{fontSize:12,opacity:0.35}}>💸</span><span style={{fontSize:12,opacity:0.35}}>📊</span><span style={{fontSize:12,opacity:0.35}}>👤</span>
                 </div>
               </div>
             </div>

@@ -1921,6 +1921,21 @@ function faltaPara(alvo,agora=new Date()){
 
 // ── LANDING VIEW ────────────────────────────────────────────────────────────
 function LandingView({setView}) {
+  // Contagem animada do "confirmados" do mockup: a única animação da
+  // landing, e só porque mostra literalmente a promessa do título — a
+  // lista a encher-se sozinha — em vez de a dizer só em palavras.
+  const [confirmados,setConfirmados]=useState(0);
+  useEffect(()=>{
+    const alvo=8, duracao=900, inicio=performance.now();
+    let frame;
+    const passo=(agora)=>{
+      const t=Math.min(1,(agora-inicio)/duracao);
+      setConfirmados(Math.round(t*alvo));
+      if(t<1) frame=requestAnimationFrame(passo);
+    };
+    frame=requestAnimationFrame(passo);
+    return ()=>cancelAnimationFrame(frame);
+  },[]);
   const jogo=proximaQuarta();
   // Mês abreviado: por extenso, "Quarta-feira, 16 de Setembro" parte-se a meio
   // da frase na largura do cartão.
@@ -2032,10 +2047,10 @@ function LandingView({setView}) {
                   <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"9px 10px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
                       <div style={{fontSize:6.5,letterSpacing:1.2,color:"#565c4d"}}>CONFIRMADOS</div>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#4ade80",lineHeight:1}}>8<span style={{color:"#565c4d"}}>/12</span></div>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#4ade80",lineHeight:1}}>{confirmados}<span style={{color:"#565c4d"}}>/12</span></div>
                     </div>
                     <div style={{height:4,borderRadius:99,background:"#23271b",marginTop:6,overflow:"hidden"}}>
-                      <div style={{width:"66%",height:"100%",background:"#1ea851",borderRadius:99}}/>
+                      <div style={{width:`${(confirmados/12)*100}%`,height:"100%",background:"#1ea851",borderRadius:99}}/>
                     </div>
                   </div>
                   {presencas.map((p)=>(

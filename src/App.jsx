@@ -1730,8 +1730,10 @@ function AvisoNotificacoes({playerId,groupId}) {
     setAPedir(false);
   };
 
-  const caixa={background:"#14160f",border:"2px solid rgba(212,175,55,0.45)",borderRadius:14,padding:14,marginBottom:14};
-  const titulo={fontSize:13,fontWeight:800,color:"#d4af37",marginBottom:4};
+  // Neutro, não dourado: a contagem decrescente do FieldHeader já é o
+  // dourado deste ecrã, e a Regra do Ouro Raro do DESIGN.md só permite um.
+  const caixa={background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:14,marginBottom:14};
+  const titulo={fontSize:13,fontWeight:800,color:"white",marginBottom:4};
   const texto={fontSize:12,color:"#8a9080",lineHeight:1.5};
   const adiarBtn={background:"transparent",border:"none",color:"#565c4d",fontSize:11,cursor:"pointer",marginTop:10,padding:0};
 
@@ -1773,7 +1775,7 @@ function AvisoNotificacoes({playerId,groupId}) {
       <div style={{...texto,marginBottom:12}}>
         Avisamos-te quando <strong style={{color:"#a8ae9c"}}>abrir vaga</strong>, quando o jogo for marcado e quando tiveres contas por acertar. Sem isto, tens de andar a espreitar a app.
       </div>
-      <button onClick={ativar} disabled={aPedir} style={{width:"100%",padding:"13px",background:aPedir?"#3d3319":"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:aPedir?"default":"pointer"}}>
+      <button onClick={ativar} disabled={aPedir} style={{width:"100%",padding:"13px",background:aPedir?"#0d0f0a":"#1c2016",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:aPedir?"default":"pointer"}}>
         {aPedir?"A pedir...":"Ativar notificações"}
       </button>
       <button onClick={()=>adiar(7)} style={adiarBtn}>Agora não</button>
@@ -4307,11 +4309,11 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           if(!ctx) return null;
           const myVote = mvpVotes.find(v=>v.voter_id===player.id&&v.game_date===ctx.gameDate);
           return (
-            <div style={{background:"linear-gradient(135deg,rgba(212,175,55,0.15),rgba(212,175,55,0.05))",border:"2px solid rgba(212,175,55,0.4)",borderRadius:14,padding:14,marginBottom:8,animation:"pulse-gold 2s ease-in-out infinite"}}>
+            <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:14,marginBottom:8}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                 <span style={{fontSize:22}}>⭐</span>
                 <div>
-                  <div style={{fontSize:14,fontWeight:800,color:"#d4af37"}}>{ctx.isPastGame?"MVP da semana passada":(myVote?"Já votaste!":"Vota no MVP do jogo!")}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"white"}}>{ctx.isPastGame?"MVP da semana passada":(myVote?"Já votaste!":"Vota no MVP do jogo!")}</div>
                   <div style={{fontSize:11,color:"#8a9080"}}>{ctx.isPastGame?"Última oportunidade de votar no jogo anterior":(myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?")}</div>
                 </div>
               </div>
@@ -4533,11 +4535,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
         {/* Banner código novo grupo — aparece só quando se cria um grupo */}
         {mostrarConvite&&(
-          <div style={{background:"#14160f",border:"2px solid #d4af37",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
+          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
             <div style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:2,marginBottom:8}}>
               {grupoVazio?"ESTÁS SOZINHO NESTE GRUPO":"O CÓDIGO DO TEU GRUPO É"}
             </div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:8,marginBottom:4}}>{codigoParaConvidar}</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"white",letterSpacing:8,marginBottom:4}}>{codigoParaConvidar}</div>
             <div style={{fontSize:12,color:"#8a9080",marginBottom:14}}>
               {grupoVazio?"Chama a malta — sem jogadores não há jogo":"Partilha com os teus jogadores para entrarem"}
             </div>

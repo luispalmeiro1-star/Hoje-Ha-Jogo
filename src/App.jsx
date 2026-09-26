@@ -1235,8 +1235,10 @@ export default function App() {
   const clearAllHistory = async()=>{ await supabase.from("game_history").delete().eq("group_id",activeGroupId); await supabase.from("debts").delete().eq("group_id",activeGroupId); showToast("Histórico e dívidas limpos ✓"); };
   const sendMessage = async(text,playerId,playerName)=>{
     if(!text.trim()) return;
-    setMessages(prev=>[...prev,{id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()}]);
-    await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:activeGroupId||null});
+    const msg={id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()};
+    setMessages(prev=>[...prev,msg]);
+    const{error}=await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:activeGroupId||null});
+    if(error){ setMessages(prev=>prev.filter(m=>m.id!==msg.id)); showToast("Mensagem não foi enviada — tenta outra vez","err"); }
   };
   const voteForMvp = async(voterId,votedForId,gameDate=gameInfo.date)=>{
     setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameDate)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameDate}]);
@@ -1488,9 +1490,12 @@ function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo, ma
 function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}) {
   const grs=confirmed.filter(p=>["GR","Guarda-Redes"].includes((players.find(pl=>pl.id===p.id))?.position));
   const msgs=[];
+  // Falta de guarda-redes é mais rara e mais acionável do que "quase
+  // completo" — se as duas forem verdade ao mesmo tempo, esta tem de
+  // ganhar, ou o aviso de GR nunca chega a aparecer.
+  if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
   if(confirmed.length>=maxPlayers) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
   else if(confirmed.length>=maxPlayers-3) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${maxPlayers-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
-  if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
   if(confirmed.length>=MIN_PLAYERS&&grs.length>=2&&confirmed.length<maxPlayers) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
   if(notYet.length>0) {} // Removido - já aparece no header
 
@@ -3124,8 +3129,8 @@ function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isA
     onReassign(players.length?players:confirmed,{forcado:false});
   },[phase,isAdmin,assinatura]);
 
-  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid #1ea851",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
-  if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"2px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
+  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #1ea851",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
+  if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"1px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
   return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
 }
 
@@ -3152,7 +3157,7 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       {activeTeams.map((teamName,ti)=>{
         const color=TEAM_COLORS[ti],team=groups[teamName]||[];
-        return <div key={teamName} style={{background:color.bg,border:`2px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`,cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>{movePicker(p,teamName)}</div>;})}</div></div>;
+        return <div key={teamName} style={{background:color.bg,border:`1px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`,cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>{movePicker(p,teamName)}</div>;})}</div></div>;
       })}
       {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #565c4d",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#8a9080",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#8a9080",border:"1px solid #2a332a",cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>{movePicker(p,"SUB")}</div>)}</div></div>}
       {isAdmin&&<p style={{fontSize:10,color:"#565c4d",marginTop:2}}>Toca num jogador para o mover de equipa.</p>}

@@ -1963,9 +1963,36 @@ function LandingView({setView}) {
           <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,color:"white",letterSpacing:0.5,lineHeight:1.05,margin:"0 0 14px"}}>
             Nunca mais perguntes<br/><span style={{color:"#d4af37"}}>quem joga na quarta.</span>
           </h1>
-          <p style={{fontSize:14.5,color:"#8a9080",maxWidth:310,margin:"0 auto 26px",lineHeight:1.6}}>
+          <p style={{fontSize:14.5,color:"#8a9080",maxWidth:310,margin:"0 auto 18px",lineHeight:1.6}}>
             Cada um diz se vai ou não vai, e a lista faz-se sozinha. Quem fica de fora entra em espera. E as contas ficam à vista de todos.
           </p>
+          <p style={{fontSize:12.5,color:"#565c4d",margin:"0 0 22px",fontWeight:700}}>
+            Sem instalar. Abre no browser.
+          </p>
+
+          {/* CTAs
+              A ordem mudou por causa do que os números dizem. O botão do código
+              de convite ocupava o segundo lugar, mas quase ninguém o usa como
+              botão: em 28 dias, 28 pessoas entraram com código e só 2 lhe
+              tocaram — as outras vieram por um link que já traz o código
+              dentro. Quem chega de um post não tem código nenhum, e ficava sem
+              nada para fazer senão o passo mais pesado de todos.
+              Agora o segundo lugar é de quem ainda não decidiu: ver primeiro.
+              O código desce para texto, que é como de facto é usado.
+
+              Sobem para antes do mockup: com 136 visitas frias e só 3 toques
+              em qualquer botão em 28 dias, o mockup sozinho (~440px) empurrava
+              o primeiro botão para bem perto do fim do ecrã visível num
+              telemóvel médio. O mockup continua logo a seguir, a reforçar a
+              decisão, não a bloqueá-la. */}
+          <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320,margin:"0 auto"}}>
+            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
+              ⚽ Criar grupo grátis
+            </button>
+            <button onClick={()=>setView("demo")} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              👀 Ver um grupo a funcionar
+            </button>
+          </div>
 
           {/* Mockup do telemóvel */}
           <div style={{display:"flex",justifyContent:"center",marginBottom:26}}>
@@ -2033,25 +2060,13 @@ function LandingView({setView}) {
             </div>
           </div>
 
-          {/* CTAs
-              A ordem mudou por causa do que os números dizem. O botão do código
-              de convite ocupava o segundo lugar, mas quase ninguém o usa como
-              botão: em 28 dias, 28 pessoas entraram com código e só 2 lhe
-              tocaram — as outras vieram por um link que já traz o código
-              dentro. Quem chega de um post não tem código nenhum, e ficava sem
-              nada para fazer senão o passo mais pesado de todos.
-              Agora o segundo lugar é de quem ainda não decidiu: ver primeiro.
-              O código desce para texto, que é como de facto é usado. */}
-          <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320,margin:"0 auto"}}>
-            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
-              ⚽ Criar grupo grátis
-            </button>
-            <button onClick={()=>setView("demo")} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
-              👀 Ver um grupo a funcionar
-            </button>
-          </div>
+          {/* Prova social honesta: número real do grupo 37 (PRODUCT.md),
+              não um testemunho inventado. */}
+          <p style={{fontSize:12,color:"#8a9080",maxWidth:300,margin:"18px auto 0",lineHeight:1.5}}>
+            É assim que <strong style={{color:"#d8d8d8"}}>27 jogadores</strong> organizam o jogo de quarta — sem grupo de WhatsApp a mais.
+          </p>
 
-          <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{marginTop:14,background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:4,textDecorationColor:"#3a4034"}}>
+          <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{marginTop:18,background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:4,textDecorationColor:"#3a4034"}}>
             📲 Tenho um código de convite
           </button>
 
@@ -2061,7 +2076,7 @@ function LandingView({setView}) {
             </p>
           </div>
 
-          <button onClick={()=>setView("login")} style={{marginTop:14,background:"transparent",border:"none",color:"#22c55e",fontSize:12,cursor:"pointer",fontWeight:700}}>
+          <button onClick={()=>setView("login")} style={{marginTop:14,background:"transparent",border:"none",color:"#1ea851",fontSize:12,cursor:"pointer",fontWeight:700}}>
             Já tenho conta → Entrar
           </button>
         </div>
@@ -2071,16 +2086,16 @@ function LandingView({setView}) {
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#8a9080",textAlign:"center",marginBottom:22}}>FUNCIONALIDADES</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,maxWidth:400,margin:"0 auto"}}>
             {[
-              {icon:LandingIcons.presencas,label:"Presenças"},
-              {icon:LandingIcons.pagamentos,label:"Pagamentos"},
-              {icon:LandingIcons.stats,label:"Stats"},
-              {icon:LandingIcons.mealheiro,label:"Mealheiro"},
-              {icon:LandingIcons.equipas,label:"Equipas"},
-              {icon:LandingIcons.zona,label:"Zona"},
+              {icon:LandingIcons.presencas,label:"A lista faz-se sozinha"},
+              {icon:LandingIcons.pagamentos,label:"Ninguém anda a cobrar"},
+              {icon:LandingIcons.stats,label:"Sabes quem falta mais"},
+              {icon:LandingIcons.mealheiro,label:"As contas sempre à vista"},
+              {icon:LandingIcons.equipas,label:"Sorteadas em segundos"},
+              {icon:LandingIcons.zona,label:"Reforços perto de ti"},
             ].map((f,i)=>(
               <div key={i} style={{textAlign:"center",padding:"16px 6px",background:"#14160f",border:"1px solid #23271b",borderRadius:14}}>
                 <div style={{marginBottom:8,display:"flex",justifyContent:"center"}}>{f.icon}</div>
-                <div style={{fontSize:10.5,fontWeight:700,color:"#c7ccbc",letterSpacing:0.2}}>{f.label}</div>
+                <div style={{fontSize:9.5,fontWeight:700,color:"#c7ccbc",letterSpacing:0.1,lineHeight:1.3}}>{f.label}</div>
               </div>
             ))}
           </div>

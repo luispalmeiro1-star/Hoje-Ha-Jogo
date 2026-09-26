@@ -3657,14 +3657,22 @@ function BadgesCard({player, history=[], attendance=[]}) {
 
 // ── GRÁFICO MEALHEIRO ─────────────────────────────────────────────────────────
 function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
-  const jogos = history.filter(h=>h.players_count>0).slice().reverse();
+  const jogos = history.filter(h=>h.players_count>0);
   if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
 
+  // Agrupado por data (jogos + pagamentos avulsos), não só por jogo — assim o
+  // saldo acumulado do gráfico fecha sempre com o saldo do mealheiro, mesmo
+  // quando há pagamentos registados fora de um jogo.
+  const porData = {};
+  history.forEach(h=>{
+    porData[h.date] = (porData[h.date]||0) + Number(h.collected||0) - (h.players_count>0 ? Number(rent) : 0);
+  });
+
   let saldo = 0;
-  const data = jogos.map(h=>{
-    saldo += Number(h.collected||0) - Number(rent);
+  const data = Object.keys(porData).sort().map(chave=>{
+    saldo += porData[chave];
     return {
-      date: new Date(h.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"}),
+      date: new Date(chave).toLocaleDateString("pt-PT",{day:"numeric",month:"short"}),
       saldo: Math.round(saldo*100)/100,
     };
   });

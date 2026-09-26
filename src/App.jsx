@@ -311,8 +311,8 @@ const DEFAULT_RENT = 22;
 const AVATAR_COLORS = ["#1ea851","#2563eb","#7c3aed","#dc2626","#d97706","#0891b2","#be185d","#065f46"];
 const TEAM_COLORS = [
   { bg: "rgba(30,168,81,0.15)", border: "#1ea851", text: "#4ade80", name: "EQUIPA A" },
-  { bg: "rgba(37,99,235,0.15)", border: "#2563eb", text: "#60a5fa", name: "EQUIPA B" },
-  { bg: "rgba(217,119,6,0.15)", border: "#d97706", text: "#fbbf24", name: "EQUIPA C" },
+  { bg: "rgba(124,58,237,0.15)", border: "#7c3aed", text: "#c4b5fd", name: "EQUIPA B" },
+  { bg: "rgba(234,88,12,0.15)", border: "#ea580c", text: "#fdba74", name: "EQUIPA C" },
 ];
 
 const SPORT_CONFIG = {
@@ -3233,14 +3233,14 @@ function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,show
   const expenses=history.filter(g=>Number(g.collected)<0);
   return (
     <div style={{marginTop:16}}>
-      {showHero&&<div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
-        <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.2)"}}>
-          <div><div style={{fontSize:9,opacity:0.7}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#86efac"}}>+{totalReceived}€</div></div>
-          <div><div style={{fontSize:9,opacity:0.7}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{gamesPlayed*rent}€</div></div>
-          {totalExpenses<0&&<div><div style={{fontSize:9,opacity:0.7}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>{totalExpenses}€</div></div>}
-          <div><div style={{fontSize:9,opacity:0.7}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
+      {showHero&&<div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
+        <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:"#8a9080",marginBottom:6}}>SALDO ATUAL</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"#4ade80":"#f87171"}}>{piggybank>=0?"+":""}{piggybank}€</div>
+        <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid #23271b"}}>
+          <div><div style={{fontSize:9,color:"#8a9080"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
+          <div><div style={{fontSize:9,color:"#8a9080"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
+          {totalExpenses<0&&<div><div style={{fontSize:9,color:"#8a9080"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
+          <div><div style={{fontSize:9,color:"#8a9080"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
         </div>
       </div>}
       {!showHero&&<div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
@@ -3688,7 +3688,7 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
           <XAxis dataKey="date" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
           <YAxis tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
-          <Line type="monotone" dataKey="saldo" stroke="#0891b2" strokeWidth={2} dot={{fill:"#0891b2",r:3}} activeDot={{r:5}}/>
+          <Line type="monotone" dataKey="saldo" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -3865,9 +3865,9 @@ function ZonaView({player, players=[], onBack, showToast}) {
       </div>
       <div className="body">
         {/* Explicação */}
-        <div style={{background:"rgba(37,99,235,0.1)",border:"1px solid rgba(37,99,235,0.3)",borderRadius:12,padding:"12px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"flex-start"}}>
+        <div style={{background:"rgba(30,168,81,0.1)",border:"1px solid rgba(30,168,81,0.3)",borderRadius:12,padding:"12px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"flex-start"}}>
           <span style={{fontSize:20,flexShrink:0}}>💡</span>
-          <div style={{fontSize:12,color:"#93c5fd",lineHeight:1.5}}>
+          <div style={{fontSize:12,color:"#4ade80",lineHeight:1.5}}>
             Marca a tua disponibilidade e zona para que outros jogadores te encontrem quando precisam de reforços. Podes também encontrar jogadores disponíveis perto de ti para completar um jogo.
           </div>
         </div>
@@ -3890,7 +3890,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
             <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>DIAS HABITUAIS</div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               {DAYS.map(([label,day])=>(
-                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#2563eb":"#23271b"}`,background:availDays.includes(day)?"rgba(37,99,235,0.15)":"#0f0f0f",color:availDays.includes(day)?"#93c5fd":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#1ea851":"#23271b"}`,background:availDays.includes(day)?"rgba(30,168,81,0.15)":"#0f0f0f",color:availDays.includes(day)?"#4ade80":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
                   {label}
                 </button>
               ))}
@@ -5699,7 +5699,7 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .paid-yes{background:rgba(34,197,94,0.2);color:#4ade80;}.paid-no{background:rgba(239,68,68,0.2);color:#f87171;}
 .tabs{display:flex;gap:2px;background:#14160f;border-radius:10px;padding:3px;margin-bottom:14px;border:1px solid #23271b;}
 .tab{flex:1;padding:7px 2px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:#8a9080;font-size:15px;font-family:'DM Sans',sans-serif;transition:all .15s;}
-.tab-active{background:linear-gradient(180deg,#2fd66b,#1ea851);color:#04240f;}
+.tab-active{background:#23271b;color:#ffffff;}
 .guest-locked{background:#0f1c14;border:2px dashed #23271b;border-radius:10px;padding:14px;text-align:center;font-size:13px;color:#8a9080;}
 .guest-hint{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);border-radius:10px;padding:9px 12px;font-size:11px;color:#fbbf24;font-weight:600;margin-bottom:8px;}
 .add-guest-row{display:flex;gap:8px;margin-bottom:8px;}

@@ -1329,12 +1329,12 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <div style={{width:"100%",maxWidth:480,background:"#0f100b",borderTop:"1px solid #23271b",borderRadius:"20px 20px 0 0",padding:"28px 24px 24px",display:"flex",flexDirection:"column",gap:20}}>
         <div style={{display:"flex",justifyContent:"flex-end"}}>
-          {!isLast && <button onClick={onDone} style={{background:"none",border:"none",color:"#6b7280",fontSize:13,fontWeight:700,cursor:"pointer"}}>Saltar</button>}
+          {!isLast && <button onClick={onDone} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer"}}>Saltar</button>}
         </div>
         <div style={{textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:14,minHeight:180}}>
           <div style={{fontSize:56}}>{s.icon}</div>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1}}>{s.title}</div>
-          <p style={{fontSize:14,color:"#9ca3af",lineHeight:1.5,margin:0,maxWidth:360}}>{s.text}</p>
+          <p style={{fontSize:14,color:"#8a9080",lineHeight:1.5,margin:0,maxWidth:360}}>{s.text}</p>
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:6}}>
           {slides.map((_,i)=><div key={i} style={{width:i===step?18:6,height:6,borderRadius:3,background:i===step?"#d4af37":"#23271b",transition:"width 0.2s"}}/>)}
@@ -1354,7 +1354,7 @@ function DebtRow({debt, onPayDebt}) {
   return (
     <div style={{background:"#1a1410",borderRadius:8,padding:"8px 10px",marginBottom:5,border:"1px solid #92400e"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:12,color:"#6b7280"}}>{debt.description} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
+        <span style={{fontSize:12,color:"#8a9080"}}>{debt.description} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
         <div style={{display:"flex",gap:6}}>
           <div style={{background:"rgba(239,68,68,0.15)",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"#f87171"}}>💸 Em dívida</div>
           <button style={{background:"#1ea851",border:"none",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
@@ -1405,7 +1405,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
                 {[{label:"🔥 Série Atual",value:`${p.current_streak||0} jogos`},{label:"🏆 Melhor Série",value:`${p.best_streak||0} jogos`},{label:"💰 Total Pago",value:`${p.total_paid||0}€`},{label:"🧤 Posição",value:p.position||"Polivalente"},{label:"⭐ MVPs",value:`${mvps} vez${mvps!==1?"es":"ez"}`},{label:"📈 Presença",value:`${pPct}%`}]
                   .map((s,si)=>(
                   <div key={si} style={{background:"#0a1a0a",borderRadius:8,padding:"8px 10px"}}>
-                    <div style={{fontSize:10,color:"#6b7280",marginBottom:2}}>{s.label}</div>
+                    <div style={{fontSize:10,color:"#8a9080",marginBottom:2}}>{s.label}</div>
                     <div style={{fontSize:13,fontWeight:800,color:"white"}}>{s.value}</div>
                   </div>
                 ))}
@@ -1662,7 +1662,7 @@ function SegueNos() {
   if(!redes.length) return null;
   return (
     <div style={{marginTop:14}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>SEGUE-NOS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>SEGUE-NOS</div>
       <div style={{display:"flex",gap:8}}>
         {redes.map(r=>(
           <a key={r.chave} href={r.href} target="_blank" rel="noopener noreferrer"
@@ -1728,7 +1728,7 @@ function AvisoNotificacoes({playerId,groupId}) {
   const caixa={background:"#14160f",border:"2px solid rgba(212,175,55,0.45)",borderRadius:14,padding:14,marginBottom:14};
   const titulo={fontSize:13,fontWeight:800,color:"#d4af37",marginBottom:4};
   const texto={fontSize:12,color:"#8a9080",lineHeight:1.5};
-  const adiarBtn={background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer",marginTop:10,padding:0};
+  const adiarBtn={background:"transparent",border:"none",color:"#565c4d",fontSize:11,cursor:"pointer",marginTop:10,padding:0};
 
   // Depois de um bloqueio, nenhum código consegue voltar a perguntar — só a
   // própria pessoa nas definições. Por isso aqui não há botão: há instruções.
@@ -1790,32 +1790,32 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
     <div style={{background:"#14160f",borderBottom:"1px solid #23271b",padding:"16px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:3}}>GRUPO</div>
+          <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:3}}>GRUPO</div>
           <div style={{fontSize:20,fontWeight:800,color:"white",letterSpacing:0.5}}>{gameInfo.app_name||"Hoje Há Jogo"}</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/></button>
+          <button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#8a9080",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/></button>
           {isViewingHistory&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"5px 10px",cursor:"pointer",color:"#d4af37",fontSize:10,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
-          {canFwd&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
+          {canFwd&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"7px",cursor:"pointer",color:"#8a9080",display:"flex",alignItems:"center"}} onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
           {extraRight}
         </div>
       </div>
       {isViewingHistory?(
         <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #23271b"}}>
-          <div style={{fontSize:11,color:"#6b7280",fontWeight:700,letterSpacing:1,marginBottom:10,textTransform:"capitalize"}}>{formatDisplayDate(effectiveDate)}</div>
+          <div style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,marginBottom:10,textTransform:"capitalize"}}>{formatDisplayDate(effectiveDate)}</div>
           {historyGame?(
             <div>
               <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:10}}>
-                <div><div style={{fontSize:28,fontWeight:800,color:"#4ade80",lineHeight:1}}>{historyGame.players_count}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>JOGADORES</div></div>
-                <div><div style={{fontSize:28,fontWeight:800,color:"#fbbf24",lineHeight:1}}>{historyGame.collected}€</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>RECEBIDO</div></div>
-                {historyGame.winner_team&&<div><div style={{fontSize:28,fontWeight:800,color:"#60a5fa",lineHeight:1}}>Equipa {historyGame.winner_team}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>VENCEDOR</div></div>}
-                {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:9,color:"#4b5563",letterSpacing:1,marginTop:2}}>MVP</div></div>}
+                <div><div style={{fontSize:28,fontWeight:800,color:"#4ade80",lineHeight:1}}>{historyGame.players_count}</div><div style={{fontSize:9,color:"#565c4d",letterSpacing:1,marginTop:2}}>JOGADORES</div></div>
+                <div><div style={{fontSize:28,fontWeight:800,color:"#fbbf24",lineHeight:1}}>{historyGame.collected}€</div><div style={{fontSize:9,color:"#565c4d",letterSpacing:1,marginTop:2}}>RECEBIDO</div></div>
+                {historyGame.winner_team&&<div><div style={{fontSize:28,fontWeight:800,color:"#60a5fa",lineHeight:1}}>Equipa {historyGame.winner_team}</div><div style={{fontSize:9,color:"#565c4d",letterSpacing:1,marginTop:2}}>VENCEDOR</div></div>}
+                {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:9,color:"#565c4d",letterSpacing:1,marginTop:2}}>MVP</div></div>}
               </div>
               {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
-                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#6b7280",fontWeight:600}}>{a.player_name}</span>)}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#8a9080",fontWeight:600}}>{a.player_name}</span>)}</div>
               )}
             </div>
-          ):<div style={{fontSize:13,color:"#4b5563"}}>Sem registo para esta semana</div>}
+          ):<div style={{fontSize:13,color:"#565c4d"}}>Sem registo para esta semana</div>}
         </div>
       ):isLive?(
         <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #1ea85133",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1824,45 +1824,45 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               <div style={{width:6,height:6,borderRadius:"50%",background:"#1ea851"}}/>
               <span style={{fontSize:11,color:"#4ade80",fontWeight:800,letterSpacing:1}}>A JOGAR</span>
             </div>
-            <div style={{fontSize:13,color:"#9ca3af",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
+            <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
             <div style={{display:"flex",gap:8,marginTop:4}}>
-              <span style={{fontSize:12,color:"#6b7280"}}>{gameInfo.time}</span>
-              {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#6b7280"}}>{gameInfo.location}</span></>}
+              <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
+              {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.location}</span></>}
             </div>
           </div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1,marginBottom:4}}>JOGADORES</div>
+            <div style={{fontSize:10,color:"#565c4d",fontWeight:700,letterSpacing:1,marginBottom:4}}>JOGADORES</div>
             <div style={{fontSize:40,fontWeight:900,color:"#4ade80",lineHeight:1}}>{confirmed.length}</div>
           </div>
         </div>
       ):isOver?(
         <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #23271b"}}>
           <div style={{background:"#23271b",border:"1px solid #23271b",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
-            <span style={{fontSize:11,color:"#6b7280",fontWeight:800,letterSpacing:1}}>JOGO TERMINADO</span>
+            <span style={{fontSize:11,color:"#8a9080",fontWeight:800,letterSpacing:1}}>JOGO TERMINADO</span>
           </div>
-          <div style={{fontSize:13,color:"#9ca3af",textTransform:"capitalize",marginBottom:4}}>{formatDisplayDate(gameInfo.date)}</div>
-          <div style={{fontSize:12,color:"#4b5563"}}>A aguardar fecho automático...</div>
+          <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize",marginBottom:4}}>{formatDisplayDate(gameInfo.date)}</div>
+          <div style={{fontSize:12,color:"#565c4d"}}>A aguardar fecho automático...</div>
         </div>
       ):(
         <>
           <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #23271b"}}>
             <div>
-              <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>PRÓXIMO JOGO</div>
-              <div style={{fontSize:13,color:"#9ca3af",fontWeight:600,marginBottom:4,textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
+              <div style={{fontSize:10,color:"#565c4d",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>PRÓXIMO JOGO</div>
+              <div style={{fontSize:13,color:"#8a9080",fontWeight:600,marginBottom:4,textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={{fontSize:12,color:"#6b7280"}}>{gameInfo.time}</span>
-                {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#6b7280",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gameInfo.location}</span></>}
+                <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
+                {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#8a9080",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gameInfo.location}</span></>}
               </div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:10,color:"#4b5563",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>FALTAM</div>
+              <div style={{fontSize:10,color:"#565c4d",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>FALTAM</div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,color:"#d4af37",lineHeight:1,letterSpacing:2}}>{cdStr}</div>
             </div>
           </div>
           <div style={{marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-              <span style={{fontSize:11,color:"#4b5563",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
-              <span style={{fontSize:11,color:pct>=100?"#f87171":"#4b5563",fontWeight:700}}>{confirmed.length} / {maxPlayers}</span>
+              <span style={{fontSize:11,color:"#565c4d",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
+              <span style={{fontSize:11,color:pct>=100?"#f87171":"#565c4d",fontWeight:700}}>{confirmed.length} / {maxPlayers}</span>
             </div>
             <div style={{height:6,background:"#23271b",borderRadius:99,overflow:"hidden"}}>
               <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:pct>=100?"#dc2626":"#1ea851",borderRadius:99,transition:"width 0.6s"}}/>
@@ -2604,7 +2604,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       </div>
 
       <div style={{width:"100%",maxWidth:340,background:"#14160f",border:"2px solid #d4af37",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:6}}>CÓDIGO DO GRUPO</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:2,marginBottom:6}}>CÓDIGO DO GRUPO</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,color:"#d4af37",letterSpacing:8,marginBottom:14}}>{inviteCode}</div>
         <BotaoWhatsApp code={inviteCode} groupName={groupName} style={{marginBottom:8}}/>
         <button onClick={()=>{navigator.clipboard.writeText(inviteMessage(inviteCode,groupName)).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);showToast("Convite copiado ✓");});}} style={{width:"100%",padding:"12px",background:"transparent",border:"1px solid #23271b",borderRadius:12,color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
@@ -2617,7 +2617,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:340,padding:"15px",background:"transparent",border:"1px solid #23271b",borderRadius:12,color:"#8a9080",fontWeight:700,fontSize:14,cursor:"pointer"}}>
         {loading?"A entrar...":"Entrar na app →"}
       </button>
-      <div style={{color:"#4b5563",fontSize:11.5,marginTop:12,maxWidth:300,lineHeight:1.5}}>
+      <div style={{color:"#565c4d",fontSize:11.5,marginTop:12,maxWidth:300,lineHeight:1.5}}>
         O código fica sempre disponível dentro da app.
       </div>
     </div>
@@ -2687,7 +2687,7 @@ function PedidoPendenteView({groupName=null, status="pending", onTryAnother, onL
       <button onClick={onTryAnother} style={{width:"100%",maxWidth:300,padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>
         Tentar outro código
       </button>
-      <button onClick={onLogout} style={{width:"100%",maxWidth:300,padding:"14px",background:"transparent",border:"none",color:"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+      <button onClick={onLogout} style={{width:"100%",maxWidth:300,padding:"14px",background:"transparent",border:"none",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
         Sair
       </button>
     </div>
@@ -2747,7 +2747,7 @@ function EntrarVagaView({code, setView}) {
         ? <>Aparece em <strong style={{color:"#d4af37"}}>{info.location}</strong> no dia marcado. Boa sorte!</>
         : <>O jogo já está cheio, mas ficaste em lista de espera — se alguém desistir, entras automaticamente.</>}
     </div>
-    <div style={{color:"#4b5563",fontSize:12,marginBottom:28}}>{new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
+    <div style={{color:"#565c4d",fontSize:12,marginBottom:28}}>{new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
     <a href="https://hojehajogo.pt" style={{padding:"12px 24px",background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:12,color:"#04240f",fontWeight:800,fontSize:13,textDecoration:"none"}}>Conhecer a Hoje Há Jogo →</a>
   </>);
 
@@ -3014,7 +3014,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=fal
             setView(item.key);
           }} style={{flex:1,padding:"8px 4px 10px",background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
             <span style={{fontSize:20}}>{item.icon}</span>
-            <span style={{fontSize:9,fontWeight:700,color:isActive?"#d4af37":"#4b5563",letterSpacing:0.5}}>{item.label}</span>
+            <span style={{fontSize:9,fontWeight:700,color:isActive?"#d4af37":"#565c4d",letterSpacing:0.5}}>{item.label}</span>
             {isActive&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:"#d4af37",borderRadius:99}}/>}
             {item.key==="financas"&&hasDebts&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
             {item.key==="chat"&&unreadChat&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
@@ -3096,7 +3096,7 @@ function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isA
 
   if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid #1ea851",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
   if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"2px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
-  return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
+  return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
 }
 
 // ── AUTO TEAMS DISPLAY ───────────────────────────────────────────────────────
@@ -3108,11 +3108,11 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
   const activeTeams=["A","B","C"].filter(t=>groups[t]?.length>0);
   const subs=groups["SUB"]||[];
   const teamOptions=["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType));
-  if(activeTeams.length===0) return <div style={{background:"#14160f",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#6b7280"}}>As equipas formam-se automaticamente quando os jogadores confirmam presença.</div>;
+  if(activeTeams.length===0) return <div style={{background:"#14160f",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#8a9080"}}>As equipas formam-se automaticamente quando os jogadores confirmam presença.</div>;
   const movePicker=(p,currentTeam)=>isAdmin&&movingId===p.id&&(
     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:3}}>
       {[...teamOptions,"SUB"].filter(t=>t!==currentTeam).map(t=>(
-        <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:10,padding:"3px 8px",borderRadius:8,border:"1px solid #23271b",background:"#0a1a0a",color:"#9ca3af",fontWeight:700,cursor:"pointer"}}>
+        <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:10,padding:"3px 8px",borderRadius:8,border:"1px solid #23271b",background:"#0a1a0a",color:"#8a9080",fontWeight:700,cursor:"pointer"}}>
           → {t==="SUB"?"Suplente":`Equipa ${t}`}
         </button>
       ))}
@@ -3124,8 +3124,8 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
         const color=TEAM_COLORS[ti],team=groups[teamName]||[];
         return <div key={teamName} style={{background:color.bg,border:`2px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`,cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>{movePicker(p,teamName)}</div>;})}</div></div>;
       })}
-      {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #4b5563",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#9ca3af",border:"1px solid #2a332a",cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>{movePicker(p,"SUB")}</div>)}</div></div>}
-      {isAdmin&&<p style={{fontSize:10,color:"#4b5563",marginTop:2}}>Toca num jogador para o mover de equipa.</p>}
+      {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #565c4d",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#8a9080",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#8a9080",border:"1px solid #2a332a",cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>{movePicker(p,"SUB")}</div>)}</div></div>}
+      {isAdmin&&<p style={{fontSize:10,color:"#565c4d",marginTop:2}}>Toca num jogador para o mover de equipa.</p>}
     </div>
   );
 }
@@ -3174,7 +3174,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
           <p className="section-label" style={{margin:0}}><Icon name="star" size={12}/> MVP DA SEMANA PASSADA</p>
           <MvpCountdownBadge deadline={prazoFinal}/>
         </div>
-        <p style={{fontSize:12,color:"#6b7280",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo assim que a contagem chegar a zero.</p>
+        <p style={{fontSize:12,color:"#8a9080",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo assim que a contagem chegar a zero.</p>
       </div>
     );
   }
@@ -3213,7 +3213,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
       </div>
       {myVote&&(
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:8,flexWrap:"wrap"}}>
-          <p style={{fontSize:11,color:"#6b7280",margin:0}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>
+          <p style={{fontSize:11,color:"#8a9080",margin:0}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>
           {onRemoveVote&&(
             <button onClick={()=>onRemoveVote(currentUserId)} style={{background:"transparent",border:"1px solid #3a4030",borderRadius:8,padding:"5px 10px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
               Retirar voto
@@ -3244,20 +3244,20 @@ function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,show
         </div>
       </div>}
       {!showHero&&<div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
-        <div><div style={{fontSize:9,color:"#6b7280"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
-        <div><div style={{fontSize:9,color:"#6b7280"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
-        {totalExpenses<0&&<div><div style={{fontSize:9,color:"#6b7280"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
-        <div><div style={{fontSize:9,color:"#6b7280"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
+        <div><div style={{fontSize:9,color:"#8a9080"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
+        <div><div style={{fontSize:9,color:"#8a9080"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
+        {totalExpenses<0&&<div><div style={{fontSize:9,color:"#8a9080"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
+        <div><div style={{fontSize:9,color:"#8a9080"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
       </div>}
-      <div style={{fontSize:11,color:"#6b7280",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {rent}€ do aluguer · {cost}€ por jogador</div>
+      <div style={{fontSize:11,color:"#8a9080",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {rent}€ do aluguer · {cost}€ por jogador</div>
       <TreasurerBalances groupId={groupId} isAdmin={isAdmin}/>
       {expenses.length>0&&<>
-        <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
+        <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
         {expenses.map((e,i)=>(
           <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
-              <div style={{fontSize:12,color:"#9ca3af"}}>{e.description||"Despesa"}</div>
-              <div style={{fontSize:10,color:"#4b5563",marginTop:2}}>{new Date(e.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}</div>
+              <div style={{fontSize:12,color:"#8a9080"}}>{e.description||"Despesa"}</div>
+              <div style={{fontSize:10,color:"#565c4d",marginTop:2}}>{new Date(e.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}</div>
             </div>
             <span style={{fontSize:13,fontWeight:700,color:"#f87171"}}>{e.collected}€</span>
           </div>
@@ -3325,7 +3325,7 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span>
               </div>
               {myDebts.map(d=><div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:12,color:"#9ca3af"}}>{d.description}</span>
+                <span style={{fontSize:12,color:"#8a9080"}}>{d.description}</span>
                 <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
               </div>)}
             </div>
@@ -3347,7 +3347,7 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
         <ExpandableSection icon="💰" title="Mealheiro detalhado" subtitle="Histórico financeiro completo">
           <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} showHero={false} rent={rentPerGame}/>
         </ExpandableSection>
-        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
+        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>
     </div>
   );
@@ -3377,7 +3377,7 @@ function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effect
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span>
               </div>
               {myDebts.map(d=><div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:12,color:"#9ca3af"}}>{d.description}</span>
+                <span style={{fontSize:12,color:"#8a9080"}}>{d.description}</span>
                 <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
               </div>)}
             </div>
@@ -3387,7 +3387,7 @@ function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effect
             </div>}
           </div>}
         {othersDebts.length>0&&<><p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p><div style={{display:"flex",flexDirection:"column",gap:6}}>{othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px"}}><Avatar player={m} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span></div>)}</div></>}
-        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:20,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
+        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:20,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>
     </div>
   );
@@ -3426,7 +3426,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         {tab==="pessoal"&&<>
           {/* Stats grid sempre visível */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-            {stats.map((s,i)=><div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
+            {stats.map((s,i)=><div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#8a9080",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
           </div>
           {/* Conquistas sempre visível */}
           <BadgesCard player={player} history={history} attendance={attendance}/>
@@ -3464,7 +3464,7 @@ function HistoricoPessoalCard({player, attendance=[], history=[]}) {
     .sort((a,b)=>new Date(b.game_date)-new Date(a.game_date));
 
   if(myGames.length===0) return (
-    <div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>
+    <div style={{textAlign:"center",padding:"24px 0",color:"#565c4d",fontSize:13}}>
       <div style={{fontSize:32,marginBottom:8}}>📋</div>
       Ainda não há jogos registados
     </div>
@@ -3481,7 +3481,7 @@ function HistoricoPessoalCard({player, attendance=[], history=[]}) {
             {g.gameInfo?.winner_team&&<div style={{fontSize:11,color:"#93c5fd",marginTop:2}}>🏆 Equipa {g.gameInfo.winner_team} venceu</div>}
           </div>
           <div style={{textAlign:"right"}}>
-            {g.gameInfo?.players_count&&<div style={{fontSize:11,color:"#4b5563"}}>{g.gameInfo.players_count} jogadores</div>}
+            {g.gameInfo?.players_count&&<div style={{fontSize:11,color:"#565c4d"}}>{g.gameInfo.players_count} jogadores</div>}
             <div style={{fontSize:11,color:"#4ade80",fontWeight:700,marginTop:2}}>✓ Presente</div>
           </div>
         </div>
@@ -3508,13 +3508,13 @@ function TreasurerBalances({groupId, isAdmin=false}) {
 
   return (
     <div style={{marginBottom:12}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>💰 SALDOS PENDENTES DOS TESOUREIROS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>💰 SALDOS PENDENTES DOS TESOUREIROS</div>
       {balances.map((b,i)=>(
         <div key={i} style={{background:"rgba(212,175,55,0.08)",border:"1px solid rgba(212,175,55,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:"#d4af37"}}>{b.treasurer_name}</div>
-              <div style={{fontSize:10,color:"#6b7280"}}>Jogo de {new Date(b.game_date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
+              <div style={{fontSize:10,color:"#8a9080"}}>Jogo de {new Date(b.game_date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37"}}>{b.amount}€</div>
@@ -3574,17 +3574,17 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
         <span style={{fontSize:20}}>💰</span>
         <div>
           <div style={{fontSize:13,fontWeight:800,color:"#d4af37"}}>És o Tesoureiro deste jogo</div>
-          <div style={{fontSize:11,color:"#6b7280"}}>Recolhido até agora: {myCollected}€</div>
+          <div style={{fontSize:11,color:"#8a9080"}}>Recolhido até agora: {myCollected}€</div>
         </div>
       </div>
       {/* Lista de pagamentos */}
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
+        <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
         {confirmed.map(p=>(
           <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #23271b"}}>
             <Avatar player={p} size={24}/>
             <span style={{flex:1,fontSize:12,color:"white"}}>{p.name}</span>
-            <button onClick={()=>handleTogglePaid(p.id)} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${p.paid?"#1ea851":"#23271b"}`,background:p.paid?"rgba(30,168,81,0.15)":"#14160f",color:p.paid?"#4ade80":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+            <button onClick={()=>handleTogglePaid(p.id)} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${p.paid?"#1ea851":"#23271b"}`,background:p.paid?"rgba(30,168,81,0.15)":"#14160f",color:p.paid?"#4ade80":"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
               {p.paid?"✓ Pago":"Não pagou"}
             </button>
           </div>
@@ -3596,13 +3596,13 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
           💸 Registar transferência para o admin
         </button>
         :<div>
-          <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>Valor transferido (€)</div>
+          <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>Valor transferido (€)</div>
           <div style={{display:"flex",gap:6}}>
             <input className="text-input" type="number" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} placeholder={String(myCollected)} style={{flex:1,marginBottom:0}}/>
             <button onClick={handleTransfer} disabled={loading} style={{padding:"8px 14px",background:"#d4af37",border:"none",borderRadius:8,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>
               {loading?"...":"✓"}
             </button>
-            <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#23271b",border:"none",borderRadius:8,color:"#6b7280",fontSize:12,cursor:"pointer"}}>✕</button>
+            <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#23271b",border:"none",borderRadius:8,color:"#8a9080",fontSize:12,cursor:"pointer"}}>✕</button>
           </div>
         </div>
       )}
@@ -3634,7 +3634,7 @@ function BadgesCard({player, history=[], attendance=[]}) {
 
   return (
     <div style={{marginBottom:14}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:earned.length>0&&locked.length>0?8:0}}>
         {earned.map(b=>(
           <div key={b.id} title={b.desc} style={{background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
@@ -3647,7 +3647,7 @@ function BadgesCard({player, history=[], attendance=[]}) {
         {locked.map(b=>(
           <div key={b.id} title={b.desc} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6,opacity:0.4}}>
             <span style={{fontSize:16,filter:"grayscale(1)"}}>{b.icon}</span>
-            <span style={{fontSize:11,fontWeight:700,color:"#4b5563"}}>{b.label}</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#565c4d"}}>{b.label}</span>
           </div>
         ))}
       </div>}
@@ -3658,7 +3658,7 @@ function BadgesCard({player, history=[], attendance=[]}) {
 // ── GRÁFICO MEALHEIRO ─────────────────────────────────────────────────────────
 function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
   const jogos = history.filter(h=>h.players_count>0);
-  if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
+  if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#565c4d",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
 
   // Agrupado pela data real em que o dinheiro entrou (closed_at), não pela
   // data do jogo a que um pagamento avulso diz respeito — um pré-pagamento
@@ -3682,11 +3682,11 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="date" tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#4b5563",fontSize:9}} tickLine={false} axisLine={false}/>
+          <XAxis dataKey="date" tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
           <Line type="monotone" dataKey="saldo" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
         </LineChart>
@@ -3698,7 +3698,7 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
 // ── GRÁFICO PRESENÇAS PESSOAIS ────────────────────────────────────────────────
 function GraficoPresencas({player, attendance=[]}) {
   const myGames = attendance.filter(a=>a.player_id===player.id);
-  if(myGames.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Ainda não há jogos suficientes</div>;
+  if(myGames.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#565c4d",fontSize:12}}>Ainda não há jogos suficientes</div>;
 
   const byMonth = {};
   myGames.forEach(a=>{
@@ -3712,11 +3712,11 @@ function GraficoPresencas({player, attendance=[]}) {
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
       <ResponsiveContainer width="100%" height={140}>
         <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="label" tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <XAxis dataKey="label" tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
           <Line type="monotone" dataKey="jogos" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
         </LineChart>
@@ -3732,15 +3732,15 @@ function GraficoRanking({members=[], currentPlayer}) {
     .slice(0,8)
     .map(p=>({name:p.name.split(" ")[0],jogos:p.total_games||0,isMe:p.id===currentPlayer?.id}));
 
-  if(data.length===0) return <div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:12}}>Ainda não há jogos registados</div>;
+  if(data.length===0) return <div style={{textAlign:"center",padding:"20px 0",color:"#565c4d",fontSize:12}}>Ainda não há jogos registados</div>;
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="name" tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#6b7280",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <XAxis dataKey="name" tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
           <Line type="monotone" dataKey="jogos" stroke="#d4af37" strokeWidth={2} dot={(props)=>{
             const{cx,cy,payload}=props;
@@ -3767,7 +3767,7 @@ function SeasonStatsCard({player, groupId}) {
   },[player?.id, groupId]);
 
   if(seasons.length===0) return (
-    <div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>
+    <div style={{textAlign:"center",padding:"24px 0",color:"#565c4d",fontSize:13}}>
       Nenhuma época anterior registada
     </div>
   );
@@ -3789,7 +3789,7 @@ function SeasonStatsCard({player, groupId}) {
               <div key={j} style={{background:"#0a0b08",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
                 <div style={{fontSize:18,marginBottom:4}}>{stat.icon}</div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white"}}>{stat.value}</div>
-                <div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
+                <div style={{fontSize:9,color:"#8a9080",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
               </div>
             ))}
           </div>
@@ -3879,7 +3879,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:"white"}}>Estou disponível para jogar</div>
-              <div style={{fontSize:11,color:"#4b5563"}}>Aparece na lista de disponíveis da tua zona</div>
+              <div style={{fontSize:11,color:"#565c4d"}}>Aparece na lista de disponíveis da tua zona</div>
             </div>
             <button onClick={()=>handleToggleAvailable(!available)} style={{width:48,height:26,borderRadius:13,border:"none",background:available?"#1ea851":"#374151",cursor:"pointer",position:"relative",transition:"background 0.2s"}}>
               <div style={{width:20,height:20,borderRadius:10,background:"white",position:"absolute",top:3,left:available?24:4,transition:"left 0.2s"}}/>
@@ -3887,10 +3887,10 @@ function ZonaView({player, players=[], onBack, showToast}) {
           </div>
           {/* Dias disponíveis */}
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>DIAS HABITUAIS</div>
+            <div style={{fontSize:11,color:"#8a9080",marginBottom:6}}>DIAS HABITUAIS</div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               {DAYS.map(([label,day])=>(
-                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#1ea851":"#23271b"}`,background:availDays.includes(day)?"rgba(30,168,81,0.15)":"#0f0f0f",color:availDays.includes(day)?"#4ade80":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#1ea851":"#23271b"}`,background:availDays.includes(day)?"rgba(30,168,81,0.15)":"#0f0f0f",color:availDays.includes(day)?"#4ade80":"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
                   {label}
                 </button>
               ))}
@@ -3898,20 +3898,20 @@ function ZonaView({player, players=[], onBack, showToast}) {
           </div>
           {/* Contacto */}
           <div style={{marginBottom:10}}>
-            <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>CONTACTO WHATSAPP</div>
+            <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>CONTACTO WHATSAPP</div>
             <input className="text-input" value={zoneContact} onChange={e=>setZoneContact(e.target.value)} placeholder="Ex: 9XX XXX XXX" style={{marginBottom:0}} type="tel"/>
           </div>
           {/* Notas */}
           <div>
-            <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>NOTA (opcional)</div>
+            <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>NOTA (opcional)</div>
             <div style={{display:"flex",gap:6}}>
               <input className="text-input" value={availNotes} onChange={e=>setAvailNotes(e.target.value)} placeholder="Ex: disponível após as 21h..." style={{flex:1,marginBottom:0}}/>
-              <button onClick={saveNotes} style={{padding:"8px 12px",background:"#23271b",border:"1px solid #23271b",borderRadius:8,color:"#9ca3af",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>Guardar</button>
+              <button onClick={saveNotes} style={{padding:"8px 12px",background:"#23271b",border:"1px solid #23271b",borderRadius:8,color:"#8a9080",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>Guardar</button>
             </div>
           </div>
           <div>
-            <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>A MINHA ZONA</div>
-            <button onClick={()=>setShowPicker(v=>!v)} style={{width:"100%",background:"#0f0f0f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",color:zone?"white":"#4b5563",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+            <div style={{fontSize:11,color:"#8a9080",marginBottom:6}}>A MINHA ZONA</div>
+            <button onClick={()=>setShowPicker(v=>!v)} style={{width:"100%",background:"#0f0f0f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",color:zone?"white":"#565c4d",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
               {zone||"Seleciona o teu concelho..."}<span>▼</span>
             </button>
             {showPicker&&(
@@ -3930,7 +3930,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
         {zone&&<>
           <p className="section-label">📍 DISPONÍVEIS EM {zone.toUpperCase()}</p>
           {myZonePlayers.length===0
-            ?<div style={{textAlign:"center",padding:"20px 0",color:"#4b5563",fontSize:13}}>Nenhum jogador disponível na tua zona</div>
+            ?<div style={{textAlign:"center",padding:"20px 0",color:"#565c4d",fontSize:13}}>Nenhum jogador disponível na tua zona</div>
             :<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
               {myZonePlayers.map(p=>(
                 <div key={p.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px"}}>
@@ -3938,7 +3938,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
                     <Avatar player={p} size={36}/>
                     <div style={{flex:1}}>
                       <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
-                      <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone}</div>
+                      <div style={{fontSize:11,color:"#565c4d"}}>📍 {p.zone}</div>
                     </div>
                   </div>
                   {p.zone_contact&&<a href={`https://wa.me/351${p.zone_contact.replace(/\s+/g,"").replace(/^\+351/,"").replace(/^351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
@@ -3960,7 +3960,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
                   <Avatar player={p} size={36}/>
                   <div style={{flex:1}}>
                     <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
-                    <div style={{fontSize:11,color:"#4b5563"}}>📍 {p.zone||"Zona não definida"}</div>
+                    <div style={{fontSize:11,color:"#565c4d"}}>📍 {p.zone||"Zona não definida"}</div>
                   </div>
                 </div>
                 {p.zone_contact&&<a href={`https://wa.me/351${p.zone_contact.replace(/\s+/g,"").replace(/^\+351/,"").replace(/^351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
@@ -3972,7 +3972,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
         </>}
 
         {availablePlayers.length===0&&!zone&&(
-          <div style={{textAlign:"center",padding:"30px 0",color:"#4b5563",fontSize:13}}>
+          <div style={{textAlign:"center",padding:"30px 0",color:"#565c4d",fontSize:13}}>
             <div style={{fontSize:32,marginBottom:8}}>🌍</div>
             <div>Define a tua zona e marca disponibilidade</div>
             <div style={{fontSize:11,marginTop:4}}>para encontrares jogadores perto de ti</div>
@@ -4005,9 +4005,9 @@ function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
             <div key={msg.id} style={{display:"flex",gap:8,flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end"}}>
               {!isMe&&<Avatar player={pl} size={28}/>}
               <div style={{maxWidth:"75%"}}>
-                {!isMe&&<div style={{fontSize:10,color:"#6b7280",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
+                {!isMe&&<div style={{fontSize:10,color:"#8a9080",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
                 <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b"}}>{msg.message}</div>
-                <div style={{fontSize:9,color:"#9ca3af",marginTop:2,textAlign:isMe?"right":"left"}}>{formatTime(new Date(msg.created_at).getTime())}</div>
+                <div style={{fontSize:9,color:"#8a9080",marginTop:2,textAlign:isMe?"right":"left"}}>{formatTime(new Date(msg.created_at).getTime())}</div>
               </div>
             </div>
           );
@@ -4074,29 +4074,29 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             </label>
           </div>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1,marginBottom:2}}>{player.name}</div>
-          <div style={{fontSize:11,color:"#6b7280",marginBottom:16}}>{player.is_admin?"⚡ Admin":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}</div>
+          <div style={{fontSize:11,color:"#8a9080",marginBottom:16}}>{player.is_admin?"⚡ Admin":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}</div>
           {/* Stats rápidas */}
           <div style={{display:"flex",justifyContent:"center",gap:24}}>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#4ade80",lineHeight:1}}>{player.total_games||0}</div>
-              <div style={{fontSize:10,color:"#6b7280",fontWeight:700,letterSpacing:1}}>JOGOS</div>
+              <div style={{fontSize:10,color:"#8a9080",fontWeight:700,letterSpacing:1}}>JOGOS</div>
             </div>
             <div style={{width:1,background:"#23271b"}}/>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f59e0b",lineHeight:1}}>{player.current_streak||0}</div>
-              <div style={{fontSize:10,color:"#6b7280",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
+              <div style={{fontSize:10,color:"#8a9080",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
             </div>
             <div style={{width:1,background:"#23271b"}}/>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#60a5fa",lineHeight:1}}>{player.best_streak||0}</div>
-              <div style={{fontSize:10,color:"#6b7280",fontWeight:700,letterSpacing:1}}>RECORDE</div>
+              <div style={{fontSize:10,color:"#8a9080",fontWeight:700,letterSpacing:1}}>RECORDE</div>
             </div>
           </div>
         </div>
 
         {/* Cor do avatar */}
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>COR DO AVATAR</div>
+          <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>COR DO AVATAR</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {AVATAR_COLORS.map(c=><button key={c} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
@@ -4106,7 +4106,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <div style={{marginBottom:12}}>
           <button onClick={()=>setEditOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700,color:"white"}}>✏️ Editar perfil</span>
-            <span style={{fontSize:12,color:"#4b5563"}}>{editOpen?"▲":"▼"}</span>
+            <span style={{fontSize:12,color:"#565c4d"}}>{editOpen?"▲":"▼"}</span>
           </button>
           {editOpen&&<div style={{background:"#14160f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
             <label className="field-label">Nome</label>
@@ -4132,7 +4132,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
               if(newPw) setTimeout(()=>onLogout(),800);
               else setEditOpen(false);
             }}><Icon name="check" size={15}/> {newPw?"GUARDAR E SAIR":"GUARDAR"}</button>
-            {newPw&&<p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>}
+            {newPw&&<p style={{fontSize:11,color:"#8a9080",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>}
           </div>}
         </div>
 
@@ -4141,10 +4141,10 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 
         {/* Ações */}
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
-          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#9ca3af",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="people" size={14}/> Os meus grupos
           </button>
-          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#9ca3af",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="key" size={14}/> Entrar noutro grupo
           </button>
           <button onClick={onSwitchAccount} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -4156,7 +4156,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <div style={{marginTop:14}}>
           <button onClick={()=>setBugOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700,color:"white"}}>🐛 Reportar problema</span>
-            <span style={{fontSize:12,color:"#4b5563"}}>{bugOpen?"▲":"▼"}</span>
+            <span style={{fontSize:12,color:"#565c4d"}}>{bugOpen?"▲":"▼"}</span>
           </button>
           {bugOpen&&<div style={{background:"#14160f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
             {bugSent?(
@@ -4176,7 +4176,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <SegueNos/>
 
         <div style={{marginTop:18,textAlign:"center"}}>
-          <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{fontSize:11.5,color:"#4b5563",textDecoration:"underline"}}>
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{fontSize:11.5,color:"#565c4d",textDecoration:"underline"}}>
             Política de Privacidade
           </a>
         </div>
@@ -4254,11 +4254,11 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           </button>
         </div>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
-          <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,width:"100%"}}>POSIÇÃO:</span>
+          <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>POSIÇÃO:</span>
           {cfg.positions.map(pos=>{
             const active=(player.position||cfg.positions[0])===pos;
             const isGk=pos===cfg.gkPosition;
-            return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#6b7280"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+            return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
           })}
         </div>
         {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id);return pl?.team&&pl.team!=="SUB";})&&(
@@ -4277,7 +4277,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
                 <span style={{fontSize:22}}>⭐</span>
                 <div>
                   <div style={{fontSize:14,fontWeight:800,color:"#d4af37"}}>{ctx.isPastGame?"MVP da semana passada":(myVote?"Já votaste!":"Vota no MVP do jogo!")}</div>
-                  <div style={{fontSize:11,color:"#6b7280"}}>{ctx.isPastGame?"Última oportunidade de votar no jogo anterior":(myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?")}</div>
+                  <div style={{fontSize:11,color:"#8a9080"}}>{ctx.isPastGame?"Última oportunidade de votar no jogo anterior":(myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?")}</div>
                 </div>
               </div>
               <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)} isPastGame={ctx.isPastGame} closedAt={ctx.closedAt}/>
@@ -4301,7 +4301,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
                 {cfg.positions.map(pos=>{
                   const active=guestPosition===pos;
                   const isGk=pos===cfg.gkPosition;
-                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
                 })}
               </div>
             </div>
@@ -4344,9 +4344,9 @@ function MBWayButton({number, amount, treasurerName=""}) {
       {showNumber&&(
         <div style={{background:"#14160f",border:"1px solid #0077b6",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
-            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>NÚMERO MBWAY</div>
+            <div style={{fontSize:10,color:"#565c4d",marginBottom:2}}>NÚMERO MBWAY</div>
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#00a0e4",letterSpacing:2}}>{number}</div>
-            <div style={{fontSize:10,color:"#4b5563",marginTop:2}}>Valor: {amount}€</div>
+            <div style={{fontSize:10,color:"#565c4d",marginTop:2}}>Valor: {amount}€</div>
           </div>
           <button onClick={handleCopy} style={{background:"rgba(0,160,228,0.15)",border:"1px solid #0077b6",borderRadius:8,padding:"8px 12px",color:copied?"#4ade80":"#00a0e4",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             {copied?"✓ Copiado!":"Copiar"}
@@ -4364,7 +4364,7 @@ function ExpandableListSection({label, color="#4ade80", children}) {
     <div style={{marginBottom:8,marginTop:8}}>
       <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:`rgba(255,255,255,0.03)`,border:`1px solid #23271b`,borderRadius:12,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <span style={{fontSize:13,fontWeight:700,color}}>{label}</span>
-        <span style={{fontSize:12,color:"#4b5563"}}>{open?"▲":"▼"}</span>
+        <span style={{fontSize:12,color:"#565c4d"}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<div style={{marginTop:4}}>{children}</div>}
     </div>
@@ -4499,11 +4499,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {/* Banner código novo grupo — aparece só quando se cria um grupo */}
         {mostrarConvite&&(
           <div style={{background:"#14160f",border:"2px solid #d4af37",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:2,marginBottom:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:2,marginBottom:8}}>
               {grupoVazio?"ESTÁS SOZINHO NESTE GRUPO":"O CÓDIGO DO TEU GRUPO É"}
             </div>
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:8,marginBottom:4}}>{codigoParaConvidar}</div>
-            <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>
+            <div style={{fontSize:12,color:"#8a9080",marginBottom:14}}>
               {grupoVazio?"Chama a malta — sem jogadores não há jogo":"Partilha com os teus jogadores para entrarem"}
             </div>
             <BotaoWhatsApp code={codigoParaConvidar} groupName={gameInfo?.app_name} style={{marginBottom:8}}/>
@@ -4517,7 +4517,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             </div>
             {/* Só deixamos fechar quando já há gente no grupo. Com o grupo
                 vazio, este cartão é a coisa mais útil do ecrã. */}
-            {!grupoVazio&&<button onClick={()=>{setNewGroupCode(null);setConviteFechado(true);}} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>Fechar</button>}
+            {!grupoVazio&&<button onClick={()=>{setNewGroupCode(null);setConviteFechado(true);}} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:11,cursor:"pointer"}}>Fechar</button>}
           </div>
         )}
 
@@ -4605,11 +4605,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             </div>
           )}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
-            <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{
               const active=(myself.position||cfg.positions[0])===pos;
               const isGk=pos===cfg.gkPosition;
-              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#6b7280"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
             })}
           </div>
           <ExpandableConfirmed confirmed={confirmed} onTogglePaid={onTogglePaid} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
@@ -4624,10 +4624,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 <button onClick={async()=>{
                   await supabase.from("game_info").update({treasurer_id:null,treasurer_name:null}).eq("group_id",groupId);
                   showToast("Tesoureiro removido");
-                }} style={{background:"transparent",border:"none",color:"#4b5563",fontSize:11,cursor:"pointer"}}>✕ Remover</button>
+                }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:11,cursor:"pointer"}}>✕ Remover</button>
               </div>
               :<div>
-                <div style={{fontSize:11,color:"#4b5563",marginBottom:8}}>Nomeia um tesoureiro para este jogo</div>
+                <div style={{fontSize:11,color:"#565c4d",marginBottom:8}}>Nomeia um tesoureiro para este jogo</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {members.filter(m=>!m.is_guest).map(m=>(
                     <button key={m.id} onClick={async()=>{
@@ -4642,7 +4642,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             }
           </ExpandableSection>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
-          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#6b7280"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
+          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
           {/* Convidar */}
@@ -4657,7 +4657,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 {cfg.positions.map(pos=>{
                   const active=guestPosition===pos;
                   const isGk=pos===cfg.gkPosition;
-                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
                 })}
               </div>
             </div>
@@ -4671,10 +4671,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
             :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
               <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
-              <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
+              <p style={{fontSize:11,color:"#8a9080",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
               <div style={{display:"flex",gap:8}}>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#6b7280"}} onClick={()=>setShowReset(false)}>Cancelar</button>
+                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#8a9080"}} onClick={()=>setShowReset(false)}>Cancelar</button>
               </div>
             </div>}
         </>}
@@ -4689,7 +4689,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
                 {["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType)).map(t=>(
-                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#9ca3af"}}>
+                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#8a9080"}}>
                     {winnerTeam===t?"🏆":""} Equipa {t}
                   </button>
                 ))}
@@ -4727,7 +4727,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {adminTab==="historico"&&<>
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.filter(h=>h.players_count>0).length===0
-            ?<div style={{textAlign:"center",padding:"24px 0",color:"#4b5563",fontSize:13}}>Nenhum jogo no histórico</div>
+            ?<div style={{textAlign:"center",padding:"24px 0",color:"#565c4d",fontSize:13}}>Nenhum jogo no histórico</div>
             :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()} gameInfo={gameInfo} piggybank={piggybank} isAdmin={!!currentUser?.is_admin}/>)
           }
         </>}
@@ -4779,7 +4779,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             </div>
             <div style={{marginBottom:12}}>
               <label className="field-label">📅 Dias habituais</label>
-              <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
+              <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["Dom",0],["Seg",1],["Ter",2],["Qua",3],["Qui",4],["Sex",5],["Sáb",6]].map(([label,day])=>{
                   const active=(editGameDays||[3]).includes(day);
@@ -4789,7 +4789,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                       const next=active?curr.filter(d=>d!==day):[...curr,day].sort((a,b)=>a-b);
                       if(next.length===0) return;
                       setEditGameDays(next); setEdited(true);
-                    }} style={{padding:"7px 12px",borderRadius:20,border:`1px solid ${active?"#1ea851":"#23271b"}`,background:active?"#14160f":"#14160f",color:active?"#4ade80":"#6b7280",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                    }} style={{padding:"7px 12px",borderRadius:20,border:`1px solid ${active?"#1ea851":"#23271b"}`,background:active?"#14160f":"#14160f",color:active?"#4ade80":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
                       {label}
                     </button>
                   );
@@ -4807,28 +4807,28 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
               <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
               <label className="field-label" style={{marginTop:8}}>🏟️ Custo do aluguer por jogo (€)</label>
-              <p style={{fontSize:11,color:"#6b7280",marginBottom:6}}>Quanto o grupo paga pelo campo em cada jogo. É isto que o mealheiro desconta.</p>
+              <p style={{fontSize:11,color:"#8a9080",marginBottom:6}}>Quanto o grupo paga pelo campo em cada jogo. É isto que o mealheiro desconta.</p>
               <input className="text-input" type="number" step="0.5" min="0" value={editRent} onChange={e=>{setEditRent(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
             </div>
             <label className="field-label">⚽ Tipo de jogo</label>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {Object.entries(SPORT_CONFIG).map(([key,c])=>(
-                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#1ea851":"#23271b"}`,background:editSportType===key?"rgba(30,168,81,0.15)":"#14160f",color:editSportType===key?"#4ade80":"#6b7280",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
+                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#1ea851":"#23271b"}`,background:editSportType===key?"rgba(30,168,81,0.15)":"#14160f",color:editSportType===key?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
               ))}
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
               {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30,32]).map(n=>(
-                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#1ea851":"#23271b"}`,background:(editMaxPlayers||12)===n?"#14160f":"#14160f",color:(editMaxPlayers||12)===n?"#4ade80":"#6b7280",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#1ea851":"#23271b"}`,background:(editMaxPlayers||12)===n?"#14160f":"#14160f",color:(editMaxPlayers||12)===n?"#4ade80":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
             </div>
             <label className="field-label">🎲 Recolocação automática de equipas</label>
-            <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
+            <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
-                <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#1ea851":"#23271b"}`,background:editAutoReassign===v?"rgba(30,168,81,0.15)":"#14160f",color:editAutoReassign===v?"#4ade80":"#6b7280",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
+                <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#1ea851":"#23271b"}`,background:editAutoReassign===v?"rgba(30,168,81,0.15)":"#14160f",color:editAutoReassign===v?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
@@ -4846,7 +4846,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
               <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>
             </div>
-            <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
+            <p style={{fontSize:11,color:"#8a9080",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
           </ExpandableSection>
           <ExpandableSection icon="🔔" title="Notificações" subtitle="Enviar notificações ao grupo">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -4939,7 +4939,7 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
             </div>
             <div>
               <div style={{color:"white",fontSize:14,fontWeight:700}}>Entrar com código</div>
-              <div style={{color:"#4b5563",fontSize:12}}>Tens um código de convite</div>
+              <div style={{color:"#565c4d",fontSize:12}}>Tens um código de convite</div>
             </div>
           </button>
           <button onClick={onCriarGrupo} style={{width:"100%",background:"transparent",border:"1px dashed #23271b",borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
@@ -4947,8 +4947,8 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
               <Icon name="plus" size={18}/>
             </div>
             <div>
-              <div style={{color:"#9ca3af",fontSize:14,fontWeight:700}}>Criar grupo</div>
-              <div style={{color:"#4b5563",fontSize:12}}>Sou o organizador</div>
+              <div style={{color:"#8a9080",fontSize:14,fontWeight:700}}>Criar grupo</div>
+              <div style={{color:"#565c4d",fontSize:12}}>Sou o organizador</div>
             </div>
           </button>
         </div>
@@ -4992,22 +4992,22 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
         </div>}
         <div style={{display:"flex",gap:20,marginBottom:h.winner_team?0:10}}>
           <div>
-            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>JOGADORES</div>
+            <div style={{fontSize:10,color:"#565c4d",marginBottom:2}}>JOGADORES</div>
             <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
           </div>
           <div>
-            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>RECOLHIDO</div>
+            <div style={{fontSize:10,color:"#565c4d",marginBottom:2}}>RECOLHIDO</div>
             <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.collected||0}€</div>
           </div>
           {h.collected>0&&<div>
-            <div style={{fontSize:10,color:"#4b5563",marginBottom:2}}>POR JOGO</div>
+            <div style={{fontSize:10,color:"#565c4d",marginBottom:2}}>POR JOGO</div>
             <div style={{fontSize:18,fontWeight:800,color:"#d4af37"}}>{h.players_count>0?Math.round(h.collected/h.players_count):0}€</div>
           </div>}
         </div>
         {/* Definir vencedor se não está definido */}
         {!h.winner_team&&h.players_count>0&&(
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
-            <span style={{fontSize:11,color:"#6b7280"}}>Vencedor:</span>
+            <span style={{fontSize:11,color:"#8a9080"}}>Vencedor:</span>
             {["A","B","C"].slice(0,numTeamsFor(h.players_count,sportType)).map(t=>(
               <button key={t} onClick={async()=>{
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
@@ -5020,7 +5020,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
           </div>
         )}
         {/* Botão ver jogadores */}
-        {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#4b5563",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+        {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#565c4d",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           {loadingJogadores?"A carregar...":open?"▲ Ocultar jogadores":`▼ Ver ${h.players_count} jogadores`}
         </button>}
         {h.players_count>0&&<PartilharResumoButton historyGame={h} gameInfo={gameInfo} effectiveDate={h.date} piggybank={piggybank} isAdmin={isAdmin}/>}
@@ -5046,9 +5046,9 @@ function ExpandableSection({icon, title, subtitle, children}) {
         <div style={{width:36,height:36,background:"rgba(255,255,255,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>{icon}</div>
         <div style={{flex:1}}>
           <div style={{color:"white",fontSize:13,fontWeight:700}}>{title}</div>
-          <div style={{color:"#4b5563",fontSize:11}}>{subtitle}</div>
+          <div style={{color:"#565c4d",fontSize:11}}>{subtitle}</div>
         </div>
-        <span style={{color:"#4b5563",fontSize:12}}>{open?"▲":"▼"}</span>
+        <span style={{color:"#565c4d",fontSize:12}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<div style={{background:"#0f0f0f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>{children}</div>}
     </div>
@@ -5103,13 +5103,13 @@ function PendingRequestsPanel({groupId, showToast}) {
             <Avatar player={r.players} size={34}/>
             <div style={{flex:1,minWidth:0}}>
               <div style={{color:"white",fontWeight:700,fontSize:13}}>{r.players?.name}</div>
-              <div style={{color:"#6b7280",fontSize:10.5}}>@{r.players?.username}{r.players?.phone?` · ${r.players.phone}`:""}</div>
+              <div style={{color:"#8a9080",fontSize:10.5}}>@{r.players?.username}{r.players?.phone?` · ${r.players.phone}`:""}</div>
             </div>
             {confirmRejectId===r.player_id ? (
               <>
                 <span style={{color:"#f87171",fontSize:10.5,fontWeight:700}}>Recusar?</span>
                 <button onClick={()=>respond(r.player_id,false)} disabled={busyId===r.player_id} style={{background:"#dc2626",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"white",fontWeight:700,fontSize:11,cursor:"pointer"}}>Sim</button>
-                <button onClick={()=>setConfirmRejectId(null)} disabled={busyId===r.player_id} style={{background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>Não</button>
+                <button onClick={()=>setConfirmRejectId(null)} disabled={busyId===r.player_id} style={{background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>Não</button>
               </>
             ) : (
               <>
@@ -5232,7 +5232,7 @@ function RegistarDespesaButton({groupId, showToast, reloadAll}) {
       <span style={{fontSize:22}}>🧾</span>
       <div>
         <div style={{color:"#f87171",fontSize:13,fontWeight:800}}>Registar Despesa</div>
-        <div style={{color:"#6b7280",fontSize:11}}>Bola, coletes, campo, etc.</div>
+        <div style={{color:"#8a9080",fontSize:11}}>Bola, coletes, campo, etc.</div>
       </div>
     </button>
   );
@@ -5248,7 +5248,7 @@ function RegistarDespesaButton({groupId, showToast, reloadAll}) {
         <button onClick={handleRegistar} disabled={loading} style={{flex:1,padding:"10px",background:"#dc2626",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           {loading?"A guardar...":"✓ Confirmar"}
         </button>
-        <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#9ca3af",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
           Cancelar
         </button>
       </div>
@@ -5280,7 +5280,7 @@ function ReiniciarMealheiroButton({groupId, showToast, reloadAll}) {
       <span style={{fontSize:22}}>💰</span>
       <div>
         <div style={{color:"#22d3ee",fontSize:13,fontWeight:800}}>Reiniciar Mealheiro</div>
-        <div style={{color:"#6b7280",fontSize:11}}>Limpa dívidas e histórico financeiro</div>
+        <div style={{color:"#8a9080",fontSize:11}}>Limpa dívidas e histórico financeiro</div>
       </div>
     </button>
   );
@@ -5288,14 +5288,14 @@ function ReiniciarMealheiroButton({groupId, showToast, reloadAll}) {
   return (
     <div style={{background:"rgba(8,145,178,0.1)",border:"2px solid #0891b2",borderRadius:12,padding:14,marginBottom:8}}>
       <div style={{fontSize:13,fontWeight:700,color:"#22d3ee",marginBottom:8}}>💰 Reiniciar Mealheiro</div>
-      <div style={{fontSize:11,color:"#9ca3af",marginBottom:12}}>
+      <div style={{fontSize:11,color:"#8a9080",marginBottom:12}}>
         Isto vai limpar todas as dívidas e o histórico financeiro. As stats dos jogadores e o histórico de jogos são mantidos.
       </div>
       <div style={{display:"flex",gap:8}}>
         <button onClick={handleReiniciar} disabled={loading} style={{flex:1,padding:"10px",background:"#0891b2",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           {loading?"A reiniciar...":"✓ Confirmar"}
         </button>
-        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#9ca3af",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
           Cancelar
         </button>
       </div>
@@ -5369,7 +5369,7 @@ function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupI
       <span style={{fontSize:22}}>🏁</span>
       <div>
         <div style={{color:"#c084fc",fontSize:13,fontWeight:800}}>Terminar Época</div>
-        <div style={{color:"#6b7280",fontSize:11}}>Guarda stats e limpa o histórico</div>
+        <div style={{color:"#8a9080",fontSize:11}}>Guarda stats e limpa o histórico</div>
       </div>
     </button>
   );
@@ -5378,17 +5378,17 @@ function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupI
     <div style={{background:"rgba(124,58,237,0.1)",border:"2px solid #7c3aed",borderRadius:12,padding:14}}>
       <div style={{fontSize:13,fontWeight:700,color:"#c084fc",marginBottom:10}}>🏁 Terminar Época</div>
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:11,color:"#6b7280",marginBottom:4}}>NOME DA ÉPOCA</div>
+        <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>NOME DA ÉPOCA</div>
         <input className="text-input" value={seasonName} onChange={e=>setSeasonName(e.target.value)} placeholder="Ex: 2024-2025"/>
       </div>
-      <div style={{fontSize:11,color:"#9ca3af",marginBottom:12}}>
+      <div style={{fontSize:11,color:"#8a9080",marginBottom:12}}>
         Isto vai guardar as stats individuais, limpar o histórico, dívidas e presenças. Esta ação não pode ser revertida.
       </div>
       <div style={{display:"flex",gap:8}}>
         <button onClick={handleTerminar} disabled={loading} style={{flex:1,padding:"10px",background:"#7c3aed",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           {loading?"A guardar...":"✓ Confirmar"}
         </button>
-        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#9ca3af",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
           Cancelar
         </button>
       </div>
@@ -5446,11 +5446,11 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:3}}>{group.name}</div>
-          <div style={{color:"#4b5563",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{color:"#565c4d",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
             {group.time&&<span>🕐 {group.time}</span>}
             {group.location&&<span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>📍 {group.location}</span>}
           </div>
-          {status&&<div style={{marginTop:4,fontSize:11,color:"#9ca3af"}}>{status.msg} · {status.confirmed} confirmados</div>}
+          {status&&<div style={{marginTop:4,fontSize:11,color:"#8a9080"}}>{status.msg} · {status.confirmed} confirmados</div>}
           {pg.is_admin&&<div style={{marginTop:4}}><span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>Admin</span></div>}
         </div>
         {loading===pg.group_id
@@ -5463,7 +5463,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       <div style={{borderTop:"1px solid #23271b",padding:"8px 16px",display:"flex",gap:8}}>
         {pg.is_admin
           ?<>
-            <button onClick={()=>setShowOptions(v=>!v)} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer",fontWeight:600}}>
+            <button onClick={()=>setShowOptions(v=>!v)} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer",fontWeight:600}}>
               ⚙️ Gerir grupo
             </button>
           </>
@@ -5487,7 +5487,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       {showNewAdmin&&<div style={{borderTop:"1px solid #23271b",padding:"12px 16px"}}>
         <div style={{fontSize:12,fontWeight:700,color:"white",marginBottom:8}}>Escolhe o novo admin:</div>
         {members.length===0
-          ?<div style={{fontSize:12,color:"#6b7280"}}>Não há outros membros no grupo.</div>
+          ?<div style={{fontSize:12,color:"#8a9080"}}>Não há outros membros no grupo.</div>
           :<div style={{display:"flex",flexDirection:"column",gap:6}}>
             {members.map(m=>(
               <button key={m.id} onClick={()=>handleNewAdmin(m.id)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:12,cursor:"pointer",fontWeight:700,textAlign:"left"}}>
@@ -5496,7 +5496,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
             ))}
           </div>
         }
-        <button onClick={()=>setShowNewAdmin(false)} style={{width:"100%",marginTop:8,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer"}}>Cancelar</button>
+        <button onClick={()=>setShowNewAdmin(false)} style={{width:"100%",marginTop:8,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>Cancelar</button>
       </div>}
     </div>
   );
@@ -5543,10 +5543,10 @@ function OpenSlotCard({gameInfo, groupId, showToast}) {
   return (
     <div style={{marginBottom:12}}>
       <label className="field-label">🌐 Vaga aberta para este jogo</label>
-      <p style={{fontSize:11,color:"#6b7280",marginBottom:8}}>Gera um link que qualquer pessoa pode usar para se juntar a este jogo, sem precisar de conta nem de aprovação — útil quando falta gente para completar.</p>
+      <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Gera um link que qualquer pessoa pode usar para se juntar a este jogo, sem precisar de conta nem de aprovação — útil quando falta gente para completar.</p>
       <div style={{display:"flex",gap:8,marginBottom:enabled?12:0}}>
         {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
-          <button key={l} disabled={saving} onClick={()=>handleToggle(v)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${enabled===v?"#1ea851":"#23271b"}`,background:enabled===v?"rgba(30,168,81,0.15)":"#14160f",color:enabled===v?"#4ade80":"#6b7280",fontWeight:800,fontSize:13,cursor:saving?"default":"pointer"}}>{l}</button>
+          <button key={l} disabled={saving} onClick={()=>handleToggle(v)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${enabled===v?"#1ea851":"#23271b"}`,background:enabled===v?"rgba(30,168,81,0.15)":"#14160f",color:enabled===v?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:saving?"default":"pointer"}}>{l}</button>
         ))}
       </div>
       {enabled&&code&&(
@@ -5614,14 +5614,14 @@ function GroupCodeCard({groupId, isAdmin=false, showToast=()=>{}}) {
 
   return (
     <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px"}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#4b5563",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0}}>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4af37",letterSpacing:5}}>{code}</div>
         <div style={{display:"flex",gap:6}}>
-          {isAdmin&&<button onClick={handleRefreshCode} title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          {isAdmin&&<button onClick={handleRefreshCode} title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             🔄
           </button>}
-          <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?"rgba(212,175,55,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#d4af37":"#23271b"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#d4af37":"#6b7280",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?"rgba(212,175,55,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#d4af37":"#23271b"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#d4af37":"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             QR
           </button>
           <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
@@ -5635,7 +5635,7 @@ function GroupCodeCard({groupId, isAdmin=false, showToast=()=>{}}) {
       {showQR&&(
         <div style={{textAlign:"center",padding:"12px 0 4px"}}>
           <div ref={qrRef} style={{display:"inline-block",background:"#14160f",padding:8,borderRadius:8}}/>
-          <div style={{fontSize:11,color:"#4b5563",marginTop:8}}>Aponta a câmara para entrar no grupo</div>
+          <div style={{fontSize:11,color:"#565c4d",marginTop:8}}>Aponta a câmara para entrar no grupo</div>
         </div>
       )}
     </div>
@@ -5658,12 +5658,12 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
 
-.field-nav-btn{background:transparent;border:none;border-radius:8px;padding:6px;color:#9ca3af;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.field-nav-btn{background:transparent;border:none;border-radius:8px;padding:6px;color:#8a9080;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .field-nav-btn:hover{background:rgba(255,255,255,0.05);}
 .body{flex:1;background:#0a0b08;color:#f0f0f0;padding:16px 16px 48px;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .topbar-name{font-size:14px;color:#4ade80;font-weight:700;}
-.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#6b7280;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8a9080;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
 .av-guest{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;}
 .btn-primary{background:#1ea851;color:white;border:none;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
 .btn-primary:hover{background:#178742;}
@@ -5676,7 +5676,7 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .btn-nao:hover{border-color:#5c2c2c;color:#f0b8b8;}
 .btn-add{background:#1ea851;color:white;border:none;border-radius:10px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
 .btn-danger-full{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;width:100%;text-align:center;}
-.icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;color:#6b7280;cursor:pointer;display:flex;align-items:center;}
+.icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;color:#8a9080;cursor:pointer;display:flex;align-items:center;}
 .icon-ghost:hover{background:#1a2e1a;color:#f0f0f0;}
 .icon-danger{background:rgba(239,68,68,0.15);border:none;border-radius:8px;padding:7px;color:#f87171;cursor:pointer;display:flex;flex-shrink:0;}
 .status-banner{border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
@@ -5688,12 +5688,12 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .player-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px;}
 .list-row{display:flex;align-items:center;gap:8px;background:#14160f;border-radius:10px;padding:9px 12px;border:1px solid #23271b;}
 .row-guest{border-color:rgba(168,85,247,0.3);background:#1d1730;}
-.list-num{font-size:10px;color:#6b7280;width:14px;text-align:center;flex-shrink:0;}
+.list-num{font-size:10px;color:#8a9080;width:14px;text-align:center;flex-shrink:0;}
 .list-info{display:flex;flex-direction:column;flex:1;min-width:0;}
 .list-name{font-size:13px;font-weight:700;color:#f0f0f0;}
 .guest-sub{font-size:10px;color:#a855f7;margin-top:1px;}
 .admin-chip{color:#d4af37;}
-.empty-msg{font-size:12px;color:#6b7280;text-align:center;padding:12px 0;}
+.empty-msg{font-size:12px;color:#8a9080;text-align:center;padding:12px 0;}
 .paid-chip,.paid-btn{font-size:11px;font-weight:700;border-radius:8px;padding:4px 9px;flex-shrink:0;}
 .paid-chip{border:none;}.paid-btn{border:none;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;}
 .paid-yes{background:rgba(34,197,94,0.2);color:#4ade80;}.paid-no{background:rgba(239,68,68,0.2);color:#f87171;}

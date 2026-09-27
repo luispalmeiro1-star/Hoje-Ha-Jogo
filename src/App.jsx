@@ -3723,17 +3723,32 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
     };
   });
 
+  // Com poucos pontos, uma linha entre eles não mostra uma tendência — é só
+  // um traço. Abaixo de 5, uma lista "data -> saldo" diz o mesmo sem fingir
+  // uma evolução que ainda não existe; o gráfico completo só entra quando
+  // há dados suficientes para uma linha fazer sentido.
   return (
     <div style={{marginTop:8}}>
       <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
-      <ResponsiveContainer width="100%" height={160}>
-        <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="date" tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
-          <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
-          <Line type="monotone" dataKey="saldo" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
-        </LineChart>
-      </ResponsiveContainer>
+      {data.length<5 ? (
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {data.map((d,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"8px 12px"}}>
+              <span style={{fontSize:12,color:"#8a9080"}}>{d.date}</span>
+              <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:d.saldo>=0?"#4ade80":"#f87171"}}>{d.saldo>=0?"+":""}{d.saldo}€</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
+            <XAxis dataKey="date" tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
+            <YAxis tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
+            <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
+            <Line type="monotone" dataKey="saldo" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

@@ -1305,6 +1305,7 @@ export default function App() {
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
+      {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
       {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
     </div>
@@ -4115,6 +4116,46 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
   );
 }
 
+// ── NOVIDADES ────────────────────────────────────────────────────────────────
+// Lista fixa no código, mais recente primeiro — sem tabela nova. Adiciona-se
+// uma entrada aqui sempre que sai uma funcionalidade que valha a pena contar.
+const NOVIDADES = [
+  {id:"chat-moderar",   date:"27/09/2026", title:"Chat: apagar mensagens",              desc:"Já dá para apagar as tuas próprias mensagens. Quem é admin também pode apagar mensagens de qualquer pessoa no grupo."},
+  {id:"menos-scroll",   date:"27/09/2026", title:"Menos scroll até à lista de presenças", desc:"A posição e as equipas automáticas escondem-se agora num cartão que abres quando precisares."},
+  {id:"chat-nao-lida",  date:"26/09/2026", title:"Aviso de mensagem nova no chat",       desc:"Um ponto vermelho no botão do Chat mostra quando alguém escreveu algo que ainda não viste."},
+];
+function temNovidadeNaoLida(playerId) {
+  if(!NOVIDADES.length || !playerId) return false;
+  try { return localStorage.getItem(`novidades_vistas_${playerId}`) !== NOVIDADES[0].id; }
+  catch(e){ return false; }
+}
+function marcarNovidadesVistas(playerId) {
+  if(!playerId) return;
+  try { localStorage.setItem(`novidades_vistas_${playerId}`, NOVIDADES[0].id); } catch(e){}
+}
+function NovidadesView({player, onBack}) {
+  useEffect(()=>{ marcarNovidadesVistas(player.id); },[player.id]);
+  return (
+    <div className="screen">
+      <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
+          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>NOVIDADES</span>
+        </div>
+      </div>
+      <div style={{padding:16}}>
+        {NOVIDADES.map(n=>(
+          <div key={n.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+            <div style={{fontSize:10,color:"#8a9080",marginBottom:4,fontWeight:700,letterSpacing:0.5}}>{n.date}</div>
+            <div style={{fontSize:15,fontWeight:800,color:"white",marginBottom:4}}>{n.title}</div>
+            <div style={{fontSize:13,color:"#8a9080",lineHeight:1.5}}>{n.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── PROFILE VIEW ─────────────────────────────────────────────────────────────
 function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onMudarGrupo,onEntrarCodigo,activeGroupId=null,showToast=()=>{}}) {
   const [newName,setNewName]=useState(player.name);
@@ -4345,6 +4386,10 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           </button>
           <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona
+          </button>
+          <button onClick={()=>setView("novidades")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+            📣 Novidades
+            {temNovidadeNaoLida(player.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
         </div>
         <ExpandableCard title={`⚙️ A MINHA POSIÇÃO (${player.position||cfg.positions[0]})`}>
@@ -4629,6 +4674,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           </button>
           <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona
+          </button>
+          <button onClick={()=>setView("novidades")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+            📣 Novidades
+            {temNovidadeNaoLida(currentUser.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
         </div>
         {/* Mesma linguagem visual das abas de baixo (Jogo/Equipas/Jogadores/

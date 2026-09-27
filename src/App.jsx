@@ -601,7 +601,7 @@ export default function App() {
     // (ex.: reabrir o onboarding depois de já ter sido marcado como visto).
     const seq=++loadPlayersSeqRef.current;
     // Buscar players via player_groups — status é por grupo
-    const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin").eq("group_id",gid).eq("membership_status","active");
+    const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin,absence_reason").eq("group_id",gid).eq("membership_status","active");
     if(!pg||pg.length===0){ if(seq===loadPlayersSeqRef.current) setPlayers([]); return; }
     const pids=pg.map(x=>x.player_id);
     const{data:playersData}=await supabase.from("players").select(PLAYER_COLS).in("id",pids).order("id");
@@ -609,7 +609,7 @@ export default function App() {
     // Merge: dados do player + status do grupo
     const merged=playersData.map(p=>{
       const pgRow=pg.find(x=>x.player_id===p.id);
-      return {...p, status:pgRow?.status||"out", paid:pgRow?.paid||false, confirmed_at:pgRow?.confirmed_at||null, team:pgRow?.team||null, is_admin:pgRow?.is_admin||false};
+      return {...p, status:pgRow?.status||"out", paid:pgRow?.paid||false, confirmed_at:pgRow?.confirmed_at||null, team:pgRow?.team||null, is_admin:pgRow?.is_admin||false, absence_reason:pgRow?.absence_reason||null};
     });
     if(seq===loadPlayersSeqRef.current) setPlayers(merged);
   },[]);
@@ -1056,13 +1056,17 @@ export default function App() {
   // O "destino" é opcional. O jogador diz explicitamente o que quer ("in" ou
   // "nao_vou") pelos dois botões; o admin continua a carregar num botão só,
   // que alterna entre dentro e fora como sempre fez.
-  const togglePresence = async(playerId,destino=null)=>{
+  const togglePresence = async(playerId,destino=null,motivo=null)=>{
     const p=players.find(pl=>pl.id===playerId); if(!p) return;
     let ns,na;
     const querJogar = destino ? destino==="in" : (p.status!=="in"&&p.status!=="wait");
     if(!querJogar){ns="nao_vou";na=null;}
     else if(confirmed.length<maxPlayers){ns="in";na=Date.now();}
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
+    // "Lesionado" é só um motivo do "não vou" deste jogo — não um estado à
+    // parte. Qualquer outra transição limpa o motivo, para não sobreviver
+    // para o jogo seguinte por engano.
+    const reason = ns==="nao_vou" ? motivo : null;
     // O ecrã muda já, antes de se falar com o servidor. Sem isto, carregar em
     // "confirmar presença" não dava sinal nenhum até a resposta voltar — e
     // ainda menos quando havia equipas para resortear a seguir, que é outra
@@ -1074,14 +1078,14 @@ export default function App() {
     // mostrar uma coisa que não chegou a ser gravada.
     if(ns==="in") marcarPasso("confirmou_presenca");
     const antes=players;
-    setPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
-    const{error}=await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false}).eq("player_id",playerId).eq("group_id",activeGroupId);
+    setPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
+    const{error}=await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false,absence_reason:reason}).eq("player_id",playerId).eq("group_id",activeGroupId);
     if(error){
       setPlayers(antes);
       showToast("Não foi possível atualizar a presença","err");
       return;
     }
-    if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
+    if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
     if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
   };
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
@@ -1235,7 +1239,7 @@ export default function App() {
       await supabase.from("players").delete().in("id",guestIds);
     }
     // Reset status de todos em player_groups
-    await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("group_id",gid);
+    await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null,absence_reason:null}).eq("group_id",gid);
     const{data:grp}=gid?await supabase.from("groups").select("game_days").eq("id",gid).maybeSingle():{data:null};
     const gameDays=grp?.game_days||[3];
     const nextDate=getNextGameDate(gameDays);
@@ -1321,7 +1325,7 @@ export default function App() {
       {view==="entrar-vaga"    && <EntrarVagaView code={vagaCode} setView={setView}/>}
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={(destino,motivo)=>togglePresence(liveUser.id,destino,motivo)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -4347,7 +4351,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
   const cfg=sportConfig(sportType);
   const isIn=player.status==="in",isWait=player.status==="wait",isNao=player.status==="nao_vou";
   const [confirming,setConfirming]=useState(false);
-  const handleToggle=async(destino)=>{setConfirming(true);await onToggle(destino);setTimeout(()=>setConfirming(false),600);};
+  const handleToggle=async(destino,motivo)=>{setConfirming(true);await onToggle(destino,motivo);setTimeout(()=>setConfirming(false),600);};
   const waitPos=waiting.findIndex(p=>p.id===player.id)+1;
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
   const totalDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
@@ -4376,22 +4380,26 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             não vai é uma resposta como outra qualquer: tira a pessoa da lista
             de quem falta responder e liberta já o lugar para a lista de espera,
             em vez de deixar o grupo à espera de uma resposta que não vem. */}
-        {isIn||isWait?(
+        {isIn||isWait?(<>
           <button className="btn-big btn-red" onClick={()=>handleToggle("nao_vou")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
           </button>
-        ):isNao?(
+          <button onClick={()=>handleToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
+        </>):isNao?(
           <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
           </button>
         ):(
-          <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <div style={{marginBottom:14}}>
+          <div style={{display:"flex",gap:8}}>
             <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
               {confirming?"⏳":<><Icon name="check" size={18}/> VOU JOGAR</>}
             </button>
             <button className="btn-big btn-nao" onClick={()=>handleToggle("nao_vou")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
               {confirming?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
+          </div>
+          <button onClick={()=>handleToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 0",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
           </div>
         )}
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
@@ -4553,7 +4561,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait",isAdminNao=myself.status==="nao_vou";
   const [confirmingSelf,setConfirmingSelf]=useState(false);
-  const handleSelfToggle=async(destino)=>{setConfirmingSelf(true);await onTogglePresence(currentUser.id,destino);setTimeout(()=>setConfirmingSelf(false),600);};
+  const handleSelfToggle=async(destino,motivo)=>{setConfirmingSelf(true);await onTogglePresence(currentUser.id,destino,motivo);setTimeout(()=>setConfirmingSelf(false),600);};
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -4756,16 +4764,17 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <span className="sb-icon">{isAdminIn?"✅":isAdminWait?"⏳":isAdminNao?"❌":"⚽"}</span>
             <div><div className="sb-title">{isAdminIn?"Também vais jogar!":isAdminWait?"Estás na lista de espera":isAdminNao?"Disseste que não vais":"Também vais jogar?"}</div><div className="sb-sub">{isAdminIn?"Estás dentro":isAdminWait?"Aguarda vaga":isAdminNao?"Se mudares de ideias, ainda vais a tempo":"Confirma a tua presença"}</div></div>
           </div>
-          {isAdminIn||isAdminWait?(
+          {isAdminIn||isAdminWait?(<>
             <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
             </button>
-          ):isAdminNao?(
+            <button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"0 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
+          </>):isAdminNao?(
             <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
             </button>
-          ):(
-            <div style={{display:"flex",gap:8,marginBottom:12}}>
+          ):(<>
+            <div style={{display:"flex",gap:8,marginBottom:0}}>
               <button className="btn-big btn-green" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
                 {confirmingSelf?"⏳":<><Icon name="check" size={18}/> VOU JOGAR</>}
               </button>
@@ -4773,7 +4782,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 {confirmingSelf?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
               </button>
             </div>
-          )}
+            <button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
+          </>)}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{
@@ -4814,7 +4824,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           </ExpandableSection>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
-          {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
+          {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span></div>)}</div></ExpandableListSection>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
           {/* Convidar */}
           <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>

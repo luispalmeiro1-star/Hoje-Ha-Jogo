@@ -3167,7 +3167,7 @@ function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isA
     onReassign(players.length?players:confirmed,{forcado:false});
   },[phase,isAdmin,assinatura]);
 
-  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #1ea851",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
+  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #ffffff",background:"#23271b",color:"#ffffff",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
   if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"1px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
   return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
 }
@@ -3260,6 +3260,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
         <p className="section-label" style={{margin:0}}><Icon name="star" size={12}/> {isPastGame?"MVP DA SEMANA PASSADA":"MVP DA SEMANA"}</p>
         {isPastGame&&<MvpCountdownBadge deadline={prazoFinal}/>}
       </div>
+      <p style={{fontSize:11,color:"#565c4d",margin:"0 0 8px"}}>🔒 O teu voto é secreto — só tu sabes em quem votaste.</p>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {/* A própria pessoa aparece na lista, mas a linha dela não é um botão.
             Antes era retirada da lista de vez, e o efeito era este: não podia
@@ -3267,7 +3268,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
             votado nela (mal) — ficava sem saber o resultado que mais lhe
             interessa. Continua a não poder votar em si própria; só passa a ver
             a contagem, como vê a dos outros. */}
-        {[...confirmed].filter(p=>!p.is_guest).sort((a,b)=>a.name.localeCompare(b.name,"pt")).map(p=>{
+        {[...confirmed].filter(p=>!p.is_guest).sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)||a.name.localeCompare(b.name,"pt")).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
           const souEu=p.id===currentUserId;
           const linha={display:"flex",alignItems:"center",gap:10,borderRadius:10,padding:"8px 12px",textAlign:"left",width:"100%"};
@@ -3760,7 +3761,7 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
   // há dados suficientes para uma linha fazer sentido.
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
       {data.length<5 ? (
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {data.map((d,i)=>(
@@ -3773,8 +3774,8 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
       ) : (
         <ResponsiveContainer width="100%" height={160}>
           <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-            <XAxis dataKey="date" tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
-            <YAxis tick={{fill:"#565c4d",fontSize:9}} tickLine={false} axisLine={false}/>
+            <XAxis dataKey="date" tick={{fill:"#565c4d",fontSize:10}} tickLine={false} axisLine={false}/>
+            <YAxis tick={{fill:"#565c4d",fontSize:10}} tickLine={false} axisLine={false}/>
             <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
             <Line type="monotone" dataKey="saldo" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
           </LineChart>
@@ -3801,11 +3802,11 @@ function GraficoPresencas({player, attendance=[]}) {
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
       <ResponsiveContainer width="100%" height={140}>
         <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="label" tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <XAxis dataKey="label" tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false} allowDecimals={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
           <Line type="monotone" dataKey="jogos" stroke="#4ade80" strokeWidth={2} dot={{fill:"#4ade80",r:3}} activeDot={{r:5}}/>
         </LineChart>
@@ -3825,11 +3826,11 @@ function GraficoRanking({members=[], currentPlayer}) {
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="name" tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
+          <XAxis dataKey="name" tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false}/>
+          <YAxis tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false} allowDecimals={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
           <Line type="monotone" dataKey="jogos" stroke="#4ade80" strokeWidth={2} dot={(props)=>{
             const{cx,cy,payload}=props;
@@ -4135,7 +4136,7 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
               {!isMe&&<Avatar player={pl} size={28}/>}
               <div style={{maxWidth:"75%"}}>
                 {!isMe&&<div style={{fontSize:10,color:"#8a9080",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
-                <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b"}}>{msg.message}</div>
+                <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b",wordBreak:"break-word",overflowWrap:"break-word"}}>{msg.message}</div>
                 <div style={{display:"flex",gap:6,justifyContent:isMe?"flex-end":"flex-start",alignItems:"center",marginTop:2}}>
                   <span style={{fontSize:9,color:"#8a9080"}}>{formatTime(new Date(msg.created_at).getTime())}</span>
                   {(isMe||player.is_admin)&&onDeleteMessage&&<button onClick={()=>{ if(window.confirm(isMe?"Apagar esta mensagem?":`Apagar a mensagem de ${msg.player_name}?`)) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:9,cursor:"pointer",padding:0}}>Apagar</button>}

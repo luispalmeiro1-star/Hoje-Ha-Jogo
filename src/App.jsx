@@ -4099,7 +4099,7 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
                 <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b"}}>{msg.message}</div>
                 <div style={{display:"flex",gap:6,justifyContent:isMe?"flex-end":"flex-start",alignItems:"center",marginTop:2}}>
                   <span style={{fontSize:9,color:"#8a9080"}}>{formatTime(new Date(msg.created_at).getTime())}</span>
-                  {isMe&&onDeleteMessage&&<button onClick={()=>{ if(window.confirm("Apagar esta mensagem?")) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:9,cursor:"pointer",padding:0}}>Apagar</button>}
+                  {(isMe||player.is_admin)&&onDeleteMessage&&<button onClick={()=>{ if(window.confirm(isMe?"Apagar esta mensagem?":`Apagar a mensagem de ${msg.player_name}?`)) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:9,cursor:"pointer",padding:0}}>Apagar</button>}
                 </div>
               </div>
             </div>

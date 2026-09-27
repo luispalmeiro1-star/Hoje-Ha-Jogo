@@ -4347,19 +4347,19 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             🌍 Zona
           </button>
         </div>
-        <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
-          <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>POSIÇÃO:</span>
-          {cfg.positions.map(pos=>{
-            const active=(player.position||cfg.positions[0])===pos;
-            const isGk=pos===cfg.gkPosition;
-            return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
-          })}
-        </div>
-        {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id);return pl?.team&&pl.team!=="SUB";})&&(
-          <div style={{marginBottom:14}}>
-            <div style={{background:"rgba(30,168,81,0.1)",border:"1px solid rgba(30,168,81,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,fontSize:12,color:"#4ade80",fontWeight:700,textAlign:"center"}}>{confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
-            <AutoTeamsDisplay confirmed={confirmed} players={players}/>
+        <ExpandableCard title={`⚙️ A MINHA POSIÇÃO (${player.position||cfg.positions[0]})`}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {cfg.positions.map(pos=>{
+              const active=(player.position||cfg.positions[0])===pos;
+              const isGk=pos===cfg.gkPosition;
+              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+            })}
           </div>
+        </ExpandableCard>
+        {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id);return pl?.team&&pl.team!=="SUB";})&&(
+          <ExpandableCard title={confirmed.length>=15?"🏆 EQUIPAS (3 de 5)":"⚽ EQUIPAS"}>
+            <AutoTeamsDisplay confirmed={confirmed} players={players}/>
+          </ExpandableCard>
         )}
         {(()=>{
           const ctx=mvpVotingContext(gameInfo,confirmed,lastClosedGame,player.id);
@@ -4631,13 +4631,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             🌍 Zona
           </button>
         </div>
-        <div style={{display:"flex",gap:8,marginBottom:14}}>
-          <button onClick={()=>setAdminTab("dividas")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:debts.length>0?"#f87171":"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            💸 Dívidas{debts.length>0?` (${debts.length})`:""}
-          </button>
-          <button onClick={()=>setAdminTab("historico")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            📋 Histórico
-          </button>
+        {/* Mesma linguagem visual das abas de baixo (Jogo/Equipas/Jogadores/
+            Gerir) — antes eram botões soltos com outro estilo para o mesmo
+            tipo de ação (mudar de secção). */}
+        <div className="tabs" style={{marginBottom:14}}>
+          {[["dividas",`💸 Dívidas${debts.length>0?` (${debts.length})`:""}`],["historico","📋 Histórico"]].map(([k,l])=>(
+            <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)}>{l}</button>
+          ))}
         </div>
         {/* O último jogo a sério, não a última linha do histórico: pagar uma
             dívida grava lá uma linha com zero jogadores e a data do próximo
@@ -4677,6 +4677,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         </div>
 
         {adminTab==="jogo"&&<>
+          <ExpandableCard title={isAdminIn?"✅ Também vais jogar":isAdminWait?"⏳ Estás em espera":isAdminNao?"❌ Disseste que não vais":"⚽ Confirma a tua presença"} defaultOpen={!isAdminIn&&!isAdminWait&&!isAdminNao}>
           <div className={`status-banner sb-${isAdminIn?"in":isAdminWait?"wait":isAdminNao?"nao":"out"}`} style={{marginBottom:10}}>
             <span className="sb-icon">{isAdminIn?"✅":isAdminWait?"⏳":isAdminNao?"❌":"⚽"}</span>
             <div><div className="sb-title">{isAdminIn?"Também vais jogar!":isAdminWait?"Estás na lista de espera":isAdminNao?"Disseste que não vais":"Também vais jogar?"}</div><div className="sb-sub">{isAdminIn?"Estás dentro":isAdminWait?"Aguarda vaga":isAdminNao?"Se mudares de ideias, ainda vais a tempo":"Confirma a tua presença"}</div></div>
@@ -4707,6 +4708,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
             })}
           </div>
+          </ExpandableCard>
           <ExpandableConfirmed confirmed={confirmed} onTogglePaid={onTogglePaid} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {/* Tesoureiro */}
           <ExpandableSection icon="💰" title="Tesoureiro" subtitle={treasurerName?`${treasurerName} é o tesoureiro`:"Nomeia o tesoureiro do jogo"}>

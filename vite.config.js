@@ -17,8 +17,16 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          // Sem isto, o Android gera sozinho uma versão "adaptativa" do ícone
+          // ao instalar — e fá-lo esticando e desfocando o ícone normal, que
+          // é o "ícone grande e desfocado" reportado ao abrir a app pela
+          // primeira vez. Estas duas têm o logótipo encolhido para caber na
+          // zona segura (o círculo central que sobrevive a qualquer máscara
+          // do launcher), com a mesma cor de fundo à volta.
+          { src: '/icon-192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {

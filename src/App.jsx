@@ -4597,7 +4597,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   const [editTime,setEditTime]=useState(gameInfo.time);
   const [editAppName,setEditAppName]=useState(gameInfo.app_name||"Hoje Há Jogo");
   const [editCost,setEditCost]=useState(gameInfo.cost_per_player||3);
-  const [edited,setEdited]=useState(false);
+  // A antiga secção "Configurações" era um único formulário com ~40 campos
+  // e um só botão — dividida em 3 blocos, cada um com o seu próprio estado
+  // de "há alterações" e o seu próprio "guardar", para mudar só o local do
+  // jogo não obrigar a rever (nem arriscar tocar) no resto.
+  const [editedNome,setEditedNome]=useState(false);
+  const [editedJogo,setEditedJogo]=useState(false);
+  const [editedFormato,setEditedFormato]=useState(false);
   const [winnerTeam,setWinnerTeam]=useState(null);
   const [debtPlayer,setDebtPlayer]=useState("");
   const [debtAmount,setDebtAmount]=useState("");
@@ -4973,12 +4979,12 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           <ExpandableSection icon="🌐" title="Vaga aberta" subtitle="Link para desconhecidos entrarem sem conta, só para este jogo">
             <OpenSlotCard gameInfo={gameInfo} groupId={gid} showToast={showToast}/>
           </ExpandableSection>
-          <ExpandableSection icon="⚙️" title="Configurações" subtitle="Nome, dias habituais e informações do jogo">
+          <ExpandableSection icon="📅" title="Nome e dias" subtitle="Nome do grupo e dias habituais de jogo">
             <div style={{marginBottom:12}}>
               <label className="field-label">🏟️ Nome do grupo</label>
-              <input className="text-input" value={editAppName} onChange={e=>{setEditAppName(e.target.value);setEdited(true);}} placeholder="Nome do grupo/app..."/>
+              <input className="text-input" value={editAppName} onChange={e=>{setEditAppName(e.target.value);setEditedNome(true);}} placeholder="Nome do grupo/app..."/>
             </div>
-            <div style={{marginBottom:12}}>
+            <div style={{marginBottom:4}}>
               <label className="field-label">📅 Dias habituais</label>
               <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -4989,7 +4995,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                       const curr=editGameDays||[3];
                       const next=active?curr.filter(d=>d!==day):[...curr,day].sort((a,b)=>a-b);
                       if(next.length===0) return;
-                      setEditGameDays(next); setEdited(true);
+                      setEditGameDays(next); setEditedNome(true);
                     }} style={{padding:"10px 14px",borderRadius:20,border:`1px solid ${active?"#ffffff":"#23271b"}`,background:active?"#23271b":"#14160f",color:active?"#ffffff":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
                       {label}
                     </button>
@@ -4997,30 +5003,51 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 })}
               </div>
             </div>
-            <div style={{marginBottom:12}}>
-              <label className="field-label">⚽ Informações do jogo</label>
+            <button className={`btn-save ${editedNome?"btn-save-active":""}`} disabled={!editedNome} style={{marginTop:12}} onClick={async()=>{
+              onUpdateGameInfo({app_name:editAppName});
+              if(groupId||currentUser?.group_id){
+                const{error}=await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{})}).eq("id",groupId||currentUser.group_id);
+                if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
+              }
+              setEditedNome(false);}}>
+              <Icon name="check" size={13}/> {editedNome?"GUARDAR":"SEM ALTERAÇÕES"}
+            </button>
+          </ExpandableSection>
+          <ExpandableSection icon="⚽" title="Jogo" subtitle="Local, data, hora e valores">
+            <div style={{marginBottom:4}}>
               <label className="field-label"><Icon name="pin" size={11}/> Local</label>
-              <input className="text-input" value={editLoc} onChange={e=>{setEditLoc(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
+              <input className="text-input" value={editLoc} onChange={e=>{setEditLoc(e.target.value);setEditedJogo(true);}} style={{marginBottom:8}}/>
               <div className="date-time-row">
-                <div style={{flex:1}}><label className="field-label"><Icon name="cal" size={11}/> Data</label><input className="text-input" type="date" value={editDate} onChange={e=>{setEditDate(e.target.value);setEdited(true);}}/></div>
-                <div style={{width:100}}><label className="field-label"><Icon name="clock" size={11}/> Hora</label><input className="text-input" type="time" value={editTime} onChange={e=>{setEditTime(e.target.value);setEdited(true);}}/></div>
+                <div style={{flex:1}}><label className="field-label"><Icon name="cal" size={11}/> Data</label><input className="text-input" type="date" value={editDate} onChange={e=>{setEditDate(e.target.value);setEditedJogo(true);}}/></div>
+                <div style={{width:100}}><label className="field-label"><Icon name="clock" size={11}/> Hora</label><input className="text-input" type="time" value={editTime} onChange={e=>{setEditTime(e.target.value);setEditedJogo(true);}}/></div>
               </div>
               <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
-              <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
+              <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEditedJogo(true);}} style={{marginBottom:8}}/>
               <label className="field-label" style={{marginTop:8}}>🏟️ Custo do aluguer por jogo (€)</label>
               <p style={{fontSize:11,color:"#8a9080",marginBottom:6}}>Quanto o grupo paga pelo campo em cada jogo. É isto que o mealheiro desconta.</p>
-              <input className="text-input" type="number" step="0.5" min="0" value={editRent} onChange={e=>{setEditRent(e.target.value);setEdited(true);}} style={{marginBottom:8}}/>
+              <input className="text-input" type="number" step="0.5" min="0" value={editRent} onChange={e=>{setEditRent(e.target.value);setEditedJogo(true);}} style={{marginBottom:8}}/>
             </div>
+            <button className={`btn-save ${editedJogo?"btn-save-active":""}`} disabled={!editedJogo} onClick={async()=>{
+              onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,cost_per_player:Number(editCost)});
+              if(groupId||currentUser?.group_id){
+                const{error}=await supabase.from("groups").update({rent_per_game:Number(editRent)||0}).eq("id",groupId||currentUser.group_id);
+                if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
+              }
+              setEditedJogo(false);}}>
+              <Icon name="check" size={13}/> {editedJogo?"GUARDAR":"SEM ALTERAÇÕES"}
+            </button>
+          </ExpandableSection>
+          <ExpandableSection icon="🎽" title="Formato e equipas" subtitle="Tipo de jogo, máximo de jogadores e equipas">
             <label className="field-label">⚽ Tipo de jogo</label>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {Object.entries(SPORT_CONFIG).map(([key,c])=>(
-                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#23271b"}`,background:editSportType===key?"#23271b":"#14160f",color:editSportType===key?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
+                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEditedFormato(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#23271b"}`,background:editSportType===key?"#23271b":"#14160f",color:editSportType===key?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
               ))}
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
               {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30,32]).map(n=>(
-                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#ffffff":"#23271b"}`,background:(editMaxPlayers||12)===n?"#23271b":"#14160f",color:(editMaxPlayers||12)===n?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#ffffff":"#23271b"}`,background:(editMaxPlayers||12)===n?"#23271b":"#14160f",color:(editMaxPlayers||12)===n?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
@@ -5029,7 +5056,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
-                <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#ffffff":"#23271b"}`,background:editAutoReassign===v?"#23271b":"#14160f",color:editAutoReassign===v?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
+                <button key={l} onClick={()=>{setEditAutoReassign(v);setEditedFormato(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#ffffff":"#23271b"}`,background:editAutoReassign===v?"#23271b":"#14160f",color:editAutoReassign===v?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
             <label className="field-label">🎨 Nomes e cores das equipas</label>
@@ -5040,23 +5067,22 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               return (
                 <div key={letter} style={{marginBottom:10}}>
                   <label className="field-label">Equipa {letter}</label>
-                  <input className="text-input" style={{marginBottom:6}} placeholder={`Equipa ${letter}`} value={cfg.name||""} onChange={e=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],name:e.target.value}}));setEdited(true);}}/>
+                  <input className="text-input" style={{marginBottom:6}} placeholder={`Equipa ${letter}`} value={cfg.name||""} onChange={e=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],name:e.target.value}}));setEditedFormato(true);}}/>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {TEAM_COLOR_PRESETS.map(preset=>(
-                      <button key={preset.hex} onClick={()=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],color:preset.hex}}));setEdited(true);}} style={{width:28,height:28,padding:0,borderRadius:"50%",background:preset.hex,border:currentColor===preset.hex?"3px solid white":"1px solid #23271b",cursor:"pointer"}}/>
+                      <button key={preset.hex} onClick={()=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],color:preset.hex}}));setEditedFormato(true);}} style={{width:28,height:28,padding:0,borderRadius:"50%",background:preset.hex,border:currentColor===preset.hex?"3px solid white":"1px solid #23271b",cursor:"pointer"}}/>
                     ))}
                   </div>
                 </div>
               );
             })}
-            <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
-              onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
+            <button className={`btn-save ${editedFormato?"btn-save-active":""}`} disabled={!editedFormato} onClick={async()=>{
               if(groupId||currentUser?.group_id){
-                const{error}=await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,rent_per_game:Number(editRent)||0,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
-                if(error){ showToast("Não foi possível guardar as definições. Tenta outra vez.","err"); return; }
+                const{error}=await supabase.from("groups").update({max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
+                if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
               }
-              setEdited(false);}}>
-              <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
+              setEditedFormato(false);}}>
+              <Icon name="check" size={13}/> {editedFormato?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>
           </ExpandableSection>
           <ExpandableSection icon="👤" title="Adicionar Membro" subtitle="Criar conta para um jogador">

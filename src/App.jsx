@@ -3847,17 +3847,23 @@ function ZonaView({player, players=[], onBack, showToast}) {
   const [availDays, setAvailDays] = useState(player.availability_days||[]);
   const [availNotes, setAvailNotes] = useState(player.availability_notes||"");
   const [zoneContact, setZoneContact] = useState(player.zone_contact||"");
+  const [zoneSearch, setZoneSearch] = useState("");
 
   const DAYS = [["Dom","0"],["Seg","1"],["Ter","2"],["Qua","3"],["Qui","4"],["Sex","5"],["Sáb","6"]];
 
   const toggleDay = async(day) => {
+    const prev = availDays;
     const next = availDays.includes(day) ? availDays.filter(d=>d!==day) : [...availDays, day];
     setAvailDays(next);
-    await supabase.from("players").update({availability_days:next}).eq("id",player.id);
+    const {error} = await supabase.from("players").update({availability_days:next}).eq("id",player.id);
+    if(error){ setAvailDays(prev); showToast("Não foi possível guardar. Tenta outra vez.","err"); }
   };
 
   const saveNotes = async() => {
-    await supabase.from("players").update({availability_notes:availNotes, zone_contact:zoneContact}).eq("id",player.id);
+    const digitos = zoneContact.replace(/\D/g,"");
+    if(zoneContact.trim() && digitos.length<9){ showToast("Número de WhatsApp inválido — precisa de 9 dígitos","err"); return; }
+    const {error} = await supabase.from("players").update({availability_notes:availNotes, zone_contact:zoneContact}).eq("id",player.id);
+    if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
     showToast("Disponibilidade guardada ✓");
   };
 
@@ -3876,16 +3882,20 @@ function ZonaView({player, players=[], onBack, showToast}) {
   },[]);
 
   const handleToggleAvailable = async(val) => {
+    if(val && !zone){ showToast("Escolhe primeiro a tua zona","err"); return; }
     setAvailable(val);
-    await supabase.from("players").update({available:val, zone:val?zone:null}).eq("id",player.id);
+    const {error} = await supabase.from("players").update({available:val, zone:val?zone:null}).eq("id",player.id);
+    if(error){ setAvailable(!val); showToast("Não foi possível atualizar. Tenta outra vez.","err"); return; }
     if(val) showToast("Estás disponível! 🌍");
     else showToast("Removido da lista de disponíveis");
   };
 
   const handleZone = async(z) => {
+    const zonaAnterior = zone;
     setZone(z);
     setShowPicker(false);
-    await supabase.from("players").update({zone:z}).eq("id",player.id);
+    const {error} = await supabase.from("players").update({zone:z}).eq("id",player.id);
+    if(error){ setZone(zonaAnterior); showToast("Não foi possível atualizar a zona. Tenta outra vez.","err"); return; }
     if(available) showToast("Zona atualizada ✓");
   };
 
@@ -3948,16 +3958,19 @@ function ZonaView({player, players=[], onBack, showToast}) {
           </div>
           <div>
             <div style={{fontSize:11,color:"#8a9080",marginBottom:6}}>A MINHA ZONA</div>
-            <button onClick={()=>setShowPicker(v=>!v)} style={{width:"100%",background:"#0f0f0f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",color:zone?"white":"#565c4d",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+            <button onClick={()=>{setShowPicker(v=>!v);setZoneSearch("");}} style={{width:"100%",background:"#0f0f0f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",color:zone?"white":"#565c4d",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
               {zone||"Seleciona o teu concelho..."}<span>▼</span>
             </button>
             {showPicker&&(
-              <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,marginTop:4,maxHeight:200,overflowY:"auto"}}>
-                {CONCELHOS_PT.map(c=>(
-                  <button key={c} onClick={()=>handleZone(c)} style={{width:"100%",padding:"10px 14px",background:zone===c?"#14160f":"transparent",border:"none",color:zone===c?"#4ade80":"white",fontSize:13,cursor:"pointer",textAlign:"left",borderBottom:"1px solid #23271b"}}>
-                    {c}
-                  </button>
-                ))}
+              <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,marginTop:4}}>
+                <input className="text-input" autoFocus value={zoneSearch} onChange={e=>setZoneSearch(e.target.value)} placeholder="Pesquisar concelho..." style={{margin:8,width:"calc(100% - 16px)"}}/>
+                <div style={{maxHeight:200,overflowY:"auto"}}>
+                  {[...CONCELHOS_PT].sort((a,b)=>a.localeCompare(b,"pt")).filter(c=>c.toLowerCase().includes(zoneSearch.toLowerCase())).map(c=>(
+                    <button key={c} onClick={()=>handleZone(c)} style={{width:"100%",padding:"10px 14px",background:zone===c?"#14160f":"transparent",border:"none",color:zone===c?"#4ade80":"white",fontSize:13,cursor:"pointer",textAlign:"left",borderBottom:"1px solid #23271b"}}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

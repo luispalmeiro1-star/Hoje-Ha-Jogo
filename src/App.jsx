@@ -4053,7 +4053,7 @@ function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
       </div>
       <div style={{padding:"10px 16px",background:"#14160f",borderTop:"1px solid #23271b",display:"flex",gap:8,flexShrink:0}}>
         <input className="text-input" style={{flex:1}} placeholder="Escreve uma mensagem..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onSendMessage(text),setText(""))}/>
-        <button className="btn-add" onClick={()=>{onSendMessage(text);setText("");}}><Icon name="send" size={16}/></button>
+        <button className="btn-add" disabled={!text.trim()} onClick={()=>{onSendMessage(text);setText("");}} style={{opacity:text.trim()?1:0.4,cursor:text.trim()?"pointer":"default"}}><Icon name="send" size={16}/></button>
       </div>
     </div>
   );

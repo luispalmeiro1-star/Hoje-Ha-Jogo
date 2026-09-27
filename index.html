@@ -20,6 +20,9 @@
       #splash-hoje{font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;font-weight:400;color:white;letter-spacing:2px;}
       #splash-ha{font-family:'Bebas Neue',Impact,sans-serif;font-size:32px;font-weight:400;color:white;letter-spacing:2px;}
       #splash-jogo{font-family:'Bebas Neue',Impact,sans-serif;font-size:58px;font-weight:400;color:#d4af37;letter-spacing:3px;margin-top:4px;}
+      .landing-list{list-style:none;padding:0;margin:0 0 26px;}
+      .landing-list li{padding-left:20px;position:relative;margin-bottom:8px;color:#8a9080;}
+      .landing-list li::before{content:"—";position:absolute;left:0;color:#d4af37;font-weight:700;}
     </style>
     <!-- Quem tem o JavaScript desligado ficava a olhar para o ecrã de arranque
          para sempre, porque é JavaScript que o remove. O conteúdo estava lá
@@ -122,7 +125,7 @@
         </p>
 
         <h2 style="font-size:16px;color:#d4af37;margin:0 0 10px;">O que faz</h2>
-        <ul style="margin:0 0 26px;padding-left:20px;color:#8a9080;">
+        <ul class="landing-list">
           <li><strong style="color:#d8dbd2;">Presenças</strong> — quem vai, quem falta e lista de espera automática.</li>
           <li><strong style="color:#d8dbd2;">Pagamentos</strong> — quem pagou, quem deve, e pagamento por MB WAY.</li>
           <li><strong style="color:#d8dbd2;">Mealheiro</strong> — o dinheiro do grupo sempre à vista.</li>
@@ -132,7 +135,7 @@
         </ul>
 
         <h2 style="font-size:16px;color:#d4af37;margin:0 0 10px;">Como funciona</h2>
-        <ol style="margin:0 0 26px;padding-left:20px;color:#8a9080;">
+        <ol class="landing-list">
           <li>Crias o grupo em menos de dois minutos.</li>
           <li>Partilhas o código de convite com a malta.</li>
           <li>Cada um confirma presença no telemóvel.</li>

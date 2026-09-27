@@ -4746,15 +4746,15 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             jogo, que ficava à frente de tudo e fazia esta pergunta desaparecer
             sem ninguém ter respondido a ela. */}
         {(()=>{ const ultimoJogo=history.find(h=>h.players_count>0); return ultimoJogo&&ultimoJogo.winner_team===null&&(
-          <div style={{background:"rgba(37,99,235,0.12)",border:"2px solid #2563eb",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-            <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
+          <div style={{background:"rgba(217,119,6,0.12)",border:"2px solid #d97706",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#fbbf24",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
             <div style={{display:"flex",gap:8}}>
               {["A","B","C"].slice(0,numTeamsFor(ultimoJogo.players_count,sportType)).map(t=>(
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",ultimoJogo.id);
                   showToast(`${teamLabel(teamConfig,t)} registada como vencedora ✓`);
                   setAdminTab("historico");
-                }} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #2563eb",background:"rgba(37,99,235,0.15)",color:"#93c5fd",fontWeight:800,fontSize:14,cursor:"pointer"}}>
+                }} style={{flex:1,padding:"12px 10px",borderRadius:10,border:"1px solid #d97706",background:"rgba(217,119,6,0.15)",color:"#fbbf24",fontWeight:800,fontSize:14,cursor:"pointer"}}>
                   {teamLabel(teamConfig,t)}
                 </button>
               ))}
@@ -4772,7 +4772,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
               )}
               {k==="jogadores"&&pwResetCount>0&&(
-                <span style={{position:"absolute",top:4,right:8,width:9,height:9,borderRadius:"50%",background:"#2563eb",boxShadow:"0 0 0 2px #14160f"}}/>
+                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pwResetCount}</span>
               )}
             </button>
           ))}
@@ -4890,15 +4890,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
                 {["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType)).map(t=>(
-                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#8a9080"}}>
+                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"12px 10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#8a9080"}}>
                     {winnerTeam===t?"🏆":""} {teamLabel(teamConfig,t)}
                   </button>
                 ))}
               </div>
               {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 {teamLabel(teamConfig,winnerTeam)} venceu!</div>}
             </>}
-          <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
-          <GroupCodeCard groupId={groupId} isAdmin={true} showToast={showToast}/>
         </>}
 
         {adminTab==="dividas"&&<>
@@ -4935,6 +4933,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {adminTab==="jogadores"&&(
           <>
           <PasswordResetRequestsPanel adminId={currentUser.id} showToast={showToast}/>
+          {members.length===0&&<p className="empty-msg">Ainda não há jogadores neste grupo.</p>}
           <div className="player-list">
             {members.map(p=>(
               <div key={p.id} className="list-row" style={{flexWrap:"wrap",paddingBottom:12,alignItems:"flex-start",gap:8}}>
@@ -4943,8 +4942,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
                   <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
                 </div>
-                <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
-                {!p.is_admin&&<button className="icon-danger" onClick={()=>onRemovePlayer(p.id)}><Icon name="trash" size={13}/></button>}
+                <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:11}} onClick={()=>{ if(window.confirm(p.status==="in"||p.status==="wait"?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`)) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
+                {!p.is_admin&&<button className="icon-danger" onClick={()=>{ if(window.confirm(`Remover ${p.name} do grupo?`)) onRemovePlayer(p.id); }} aria-label={`Remover ${p.name}`}><Icon name="trash" size={13}/></button>}
                 {editPassId===p.id
                   ?<div style={{width:"100%",marginTop:6}}>
                       {/* A via recomendada: a pessoa escolhe a sua própria
@@ -4952,15 +4951,15 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
                         <BotaoEnviarLink playerId={p.id} nome={p.name} showToast={showToast}/>
                         <span style={{fontSize:11,color:"#8a9080"}}>ele escolhe a dele</span>
-                        <button className="icon-ghost" style={{marginLeft:"auto"}} onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button>
+                        <button className="icon-ghost" style={{marginLeft:"auto"}} onClick={()=>setEditPassId(null)} aria-label="Cancelar"><Icon name="x" size={13}/></button>
                       </div>
                       <div style={{fontSize:10.5,color:"#565c4d",marginBottom:6}}>ou escreve tu uma:</div>
                       <div style={{display:"flex",gap:6}}>
                         <input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)}/>
-                        <button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}}><Icon name="check" size={13}/></button>
+                        <button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}} aria-label="Guardar password"><Icon name="check" size={13}/></button>
                       </div>
                     </div>
-                  :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}}><Icon name="key" size={14}/></button>}
+                  :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}} aria-label={`Mudar password de ${p.name}`}><Icon name="key" size={14}/></button>}
                 {passDefinida?.nome===p.name&&<PasswordDefinida nome={passDefinida.nome} valor={passDefinida.valor} onFechar={()=>setPassDefinida(null)} showToast={showToast}/>}
               </div>
             ))}
@@ -4990,7 +4989,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                       const next=active?curr.filter(d=>d!==day):[...curr,day].sort((a,b)=>a-b);
                       if(next.length===0) return;
                       setEditGameDays(next); setEdited(true);
-                    }} style={{padding:"7px 12px",borderRadius:20,border:`1px solid ${active?"#1ea851":"#23271b"}`,background:active?"#14160f":"#14160f",color:active?"#4ade80":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                    }} style={{padding:"10px 14px",borderRadius:20,border:`1px solid ${active?"#ffffff":"#23271b"}`,background:active?"#23271b":"#14160f",color:active?"#ffffff":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
                       {label}
                     </button>
                   );
@@ -5014,13 +5013,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <label className="field-label">⚽ Tipo de jogo</label>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {Object.entries(SPORT_CONFIG).map(([key,c])=>(
-                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#1ea851":"#23271b"}`,background:editSportType===key?"rgba(30,168,81,0.15)":"#14160f",color:editSportType===key?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
+                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#23271b"}`,background:editSportType===key?"#23271b":"#14160f",color:editSportType===key?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
               ))}
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
               {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30,32]).map(n=>(
-                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#1ea851":"#23271b"}`,background:(editMaxPlayers||12)===n?"#14160f":"#14160f",color:(editMaxPlayers||12)===n?"#4ade80":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEdited(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#ffffff":"#23271b"}`,background:(editMaxPlayers||12)===n?"#23271b":"#14160f",color:(editMaxPlayers||12)===n?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
@@ -5029,7 +5028,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
-                <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#1ea851":"#23271b"}`,background:editAutoReassign===v?"rgba(30,168,81,0.15)":"#14160f",color:editAutoReassign===v?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
+                <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#ffffff":"#23271b"}`,background:editAutoReassign===v?"#23271b":"#14160f",color:editAutoReassign===v?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
             <label className="field-label">🎨 Nomes e cores das equipas</label>
@@ -5039,6 +5038,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               const currentColor=cfg.color||TEAM_COLOR_PRESETS[i].hex;
               return (
                 <div key={letter} style={{marginBottom:10}}>
+                  <label className="field-label">Equipa {letter}</label>
                   <input className="text-input" style={{marginBottom:6}} placeholder={`Equipa ${letter}`} value={cfg.name||""} onChange={e=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],name:e.target.value}}));setEdited(true);}}/>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {TEAM_COLOR_PRESETS.map(preset=>(
@@ -5050,16 +5050,23 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             })}
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,rent_per_game:Number(editRent)||0,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
+              if(groupId||currentUser?.group_id){
+                const{error}=await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,rent_per_game:Number(editRent)||0,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
+                if(error){ showToast("Não foi possível guardar as definições. Tenta outra vez.","err"); return; }
+              }
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>
           </ExpandableSection>
           <ExpandableSection icon="👤" title="Adicionar Membro" subtitle="Criar conta para um jogador">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <label className="field-label">Nome</label>
               <input className="text-input" placeholder="Nome..." value={newName} onChange={e=>setNewName(e.target.value)}/>
+              <label className="field-label">Utilizador</label>
               <input className="text-input" placeholder="Utilizador..." value={newUsername} onChange={e=>setNewUsername(normalizeUsername(e.target.value))} autoCapitalize="none"/>
+              <label className="field-label">Telemóvel (opcional)</label>
               <input className="text-input" placeholder="Telemóvel (opcional)..." value={newPhone} onChange={e=>setNewPhone(e.target.value)}/>
+              <label className="field-label">Password inicial</label>
               <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
               <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>
             </div>
@@ -5067,8 +5074,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           </ExpandableSection>
           <ExpandableSection icon="🔔" title="Notificações" subtitle="Enviar notificações ao grupo">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(30,168,81,0.15)",color:"#4ade80",border:"1px solid rgba(30,168,81,0.4)"}} onClick={async()=>{const ok=await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⚽ Novo jogo disponível</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(34,211,238,0.15)",color:"#22d3ee",border:"1px solid rgba(34,211,238,0.4)"}} onClick={async()=>{
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(8,145,178,0.15)",color:"#0891b2",border:"1px solid rgba(8,145,178,0.4)"}} onClick={async()=>{const ok=await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>⚽ Novo jogo disponível</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(234,88,12,0.15)",color:"#ea580c",border:"1px solid rgba(234,88,12,0.4)"}} onClick={async()=>{
                 /* Só a quem falta responder. Ia para o grupo inteiro, o que
                    acordava quem já tinha confirmado e — agora que dizer "não
                    vou" é possível — também quem já tinha dito que não ia.
@@ -5079,7 +5086,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 const ok=await onSendPush("⏰ Lembrete de presença!",`Ainda não respondeste ao jogo de ${formatDisplayDate(gameInfo.date)} às ${gameInfo.time}. Vais?`,alvos);
                 showToast(ok?`Lembrete enviado a ${alvos.length} ${alvos.length===1?"pessoa":"pessoas"} ✓`:"Não foi possível enviar a notificação",ok?"ok":"err");
               }}>⏰ Lembrete — Marcar presença{notYet.length>0?` (${notYet.length})`:""}</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.4)"}} onClick={async()=>{
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(220,38,38,0.15)",color:"#f87171",border:"1px solid rgba(220,38,38,0.4)"}} onClick={async()=>{
                 /* Mesmo problema: o aviso de pagamento ia a toda a gente,
                    incluindo quem já tinha pago e quem nem sequer vai jogar. */
                 const devedores=confirmed.filter(p=>!p.is_guest&&!p.paid).map(p=>p.id);
@@ -5087,14 +5094,15 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 const ok=await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`,devedores);
                 showToast(ok?`Aviso enviado a ${devedores.length} ${devedores.length===1?"pessoa":"pessoas"} ✓`:"Não foi possível enviar a notificação",ok?"ok":"err");
               }}>💸 Lembrete — Pagamento{(()=>{const n=confirmed.filter(p=>!p.is_guest&&!p.paid).length;return n>0?` (${n})`:"";})()}</button>
-              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(192,132,252,0.15)",color:"#c084fc",border:"1px solid rgba(192,132,252,0.4)"}} onClick={async()=>{const ok=await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!",mvpAudienceIds(gameInfo,confirmed,lastClosedGame));showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>🏆 MVP aberto para votação</button>
+              <button className="btn-primary" style={{justifyContent:"center",background:"rgba(124,58,237,0.15)",color:"#c4b5fd",border:"1px solid rgba(124,58,237,0.4)"}} onClick={async()=>{const ok=await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!",mvpAudienceIds(gameInfo,confirmed,lastClosedGame));showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err");}}>🏆 MVP aberto para votação</button>
             </div>
           </ExpandableSection>
           <ExpandableSection icon="💳" title="Pagamentos" subtitle="Configurar MBWay para receber pagamentos">
             <label className="field-label">📱 Número MBWay do tesoureiro</label>
             <input className="text-input" type="tel" value={mbwayNumber} onChange={e=>setMbwayNumber(e.target.value.replace(/[^0-9\s+]/g,""))} placeholder="9XX XXX XXX" style={{marginBottom:8}}/>
             <button className={`btn-save ${mbwayNumber?"btn-save-active":""}`} onClick={async()=>{
-              await supabase.from("groups").update({mbway_number:mbwayNumber.trim()||null}).eq("id",groupId||currentUser.group_id);
+              const{error}=await supabase.from("groups").update({mbway_number:mbwayNumber.trim()||null}).eq("id",groupId||currentUser.group_id);
+              if(error){ showToast("Não foi possível guardar o número. Tenta outra vez.","err"); return; }
               setMbwaySaved(true); setTimeout(()=>setMbwaySaved(false),2000);
               showToast("Número MBWay guardado ✓");
             }}>
@@ -5312,8 +5320,8 @@ function PendingRequestsPanel({groupId, showToast}) {
   if(requests.length===0) return null;
 
   return (
-    <div style={{background:"rgba(212,175,55,0.08)",border:"2px solid #d4af37",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-      <div style={{color:"#d4af37",fontWeight:800,fontSize:13,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>🔔 {requests.length} pedido{requests.length>1?"s":""} de entrada</div>
+    <div style={{background:"#14160f",border:"2px solid #23271b",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+      <div style={{color:"white",fontWeight:800,fontSize:13,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>🔔 {requests.length} pedido{requests.length>1?"s":""} de entrada</div>
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {requests.map(r=>(
           <div key={r.player_id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
@@ -5382,9 +5390,9 @@ function PasswordResetRequestsPanel({adminId, showToast}) {
   if(requests.length===0 && !definida) return null;
 
   return (
-    <div style={{background:"rgba(212,175,55,0.08)",border:"2px solid #d4af37",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+    <div style={{background:"#14160f",border:"2px solid #23271b",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
       {definida && <PasswordDefinida nome={definida.nome} valor={definida.valor} onFechar={()=>setDefinida(null)} showToast={showToast}/>}
-      {requests.length>0 && <div style={{color:"#d4af37",fontWeight:800,fontSize:13,margin:definida?"12px 0 10px":"0 0 10px",display:"flex",alignItems:"center",gap:6}}>🔑 {requests.length} pedido{requests.length>1?"s":""} de nova password</div>}
+      {requests.length>0 && <div style={{color:"white",fontWeight:800,fontSize:13,margin:definida?"12px 0 10px":"0 0 10px",display:"flex",alignItems:"center",gap:6}}>🔑 {requests.length} pedido{requests.length>1?"s":""} de nova password</div>}
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {requests.map(r=>(
           <div key={r.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px"}}>

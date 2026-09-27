@@ -1152,8 +1152,10 @@ export default function App() {
     if(limparPassword(newPassword)) updates.password=await hashPassword(limparPassword(newPassword));
     if(Object.keys(updates).length===0) return;
     const localUpdates={...updates}; delete localUpdates.password;
+    const antes=players;
     if(Object.keys(localUpdates).length>0) setPlayers(prev=>prev.map(p=>p.id===id?{...p,...localUpdates}:p));
-    await supabase.from("players").update(updates).eq("id",id);
+    const{error}=await supabase.from("players").update(updates).eq("id",id);
+    if(error){ setPlayers(antes); showToast("Não foi possível atualizar o perfil","err"); return; }
     showToast("Perfil atualizado ✓");
   };
   const markOnboardingSeen = async(id)=>{
@@ -3224,7 +3226,7 @@ function MvpCountdownBadge({deadline}) {
   const urgente=ms<60*60000;
   const texto=h>0?`${h}h ${m}min`:`${m}min`;
   return (
-    <div style={{display:"inline-flex",alignItems:"center",gap:5,background:urgente?"rgba(239,68,68,0.15)":"rgba(217,119,6,0.15)",border:`1px solid ${urgente?"#ef4444":"#d97706"}`,borderRadius:999,padding:"3px 10px",fontSize:11,fontWeight:800,color:urgente?"#f87171":"#d97706",animation:urgente?"pulse-gold 1.2s ease-in-out infinite":"none",whiteSpace:"nowrap"}}>
+    <div style={{display:"inline-flex",alignItems:"center",gap:5,background:urgente?"rgba(220,38,38,0.15)":"rgba(217,119,6,0.15)",border:`1px solid ${urgente?"#dc2626":"#d97706"}`,borderRadius:999,padding:"3px 10px",fontSize:11,fontWeight:800,color:urgente?"#f87171":"#d97706",animation:urgente?"pulse-gold 1.2s ease-in-out infinite":"none",whiteSpace:"nowrap"}}>
       <Icon name="clock" size={11}/> {texto}
     </div>
   );
@@ -3265,7 +3267,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
             votado nela (mal) — ficava sem saber o resultado que mais lhe
             interessa. Continua a não poder votar em si própria; só passa a ver
             a contagem, como vê a dos outros. */}
-        {confirmed.filter(p=>!p.is_guest).map(p=>{
+        {[...confirmed].filter(p=>!p.is_guest).sort((a,b)=>a.name.localeCompare(b.name,"pt")).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
           const souEu=p.id===currentUserId;
           const linha={display:"flex",alignItems:"center",gap:10,borderRadius:10,padding:"8px 12px",textAlign:"left",width:"100%"};
@@ -3286,7 +3288,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:8,flexWrap:"wrap"}}>
           <p style={{fontSize:11,color:"#8a9080",margin:0}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>
           {onRemoveVote&&(
-            <button onClick={()=>onRemoveVote(currentUserId)} style={{background:"transparent",border:"1px solid #3a4030",borderRadius:8,padding:"5px 10px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+            <button onClick={()=>onRemoveVote(currentUserId)} style={{background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"10px 14px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
               Retirar voto
             </button>
           )}
@@ -3478,18 +3480,18 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
   const myDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const myPct=totalGames>0?Math.round(((player.total_games||0)/totalGames)*100):0;
   const myMvps=mvpCounts[player.name]||0;
-  const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#1ea851"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#2563eb"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"}];
+  const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#4ade80"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#ffffff"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"}];
   return (
     <div className="screen">
       <div style={{background:"#14160f",padding:"16px 16px 14px",borderBottom:"1px solid #23271b"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-          <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
+          <button className="field-nav-btn" onClick={onBack} aria-label="Voltar"><Icon name="left" size={14}/></button>
           <Avatar player={player} size={36}/>
-          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
+          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:11,color:"#8a9080"}}>{player.is_admin?"Admin ★":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
-        <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
+        <div className="tabs" style={{marginBottom:0}}>
           {[["pessoal","⚽ Pessoal"],["grupo","🏆 Grupo"],["epocas","🏁 Épocas"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#04240f":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
+            <button key={k} className={`tab ${tab===k?"tab-active":""}`} onClick={()=>setTab(k)} style={{fontSize:11}}>{l}</button>
           ))}
         </div>
       </div>
@@ -3497,7 +3499,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         {tab==="pessoal"&&<>
           {/* Stats grid sempre visível */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-            {stats.map((s,i)=><div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#8a9080",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
+            {stats.map((s,i)=><div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
           </div>
           {/* Conquistas sempre visível */}
           <BadgesCard player={player} history={history} attendance={attendance}/>
@@ -3701,19 +3703,20 @@ function BadgesCard({player, history=[], attendance=[]}) {
   const earned = badges.filter(b=>b.earned);
   const locked = badges.filter(b=>!b.earned);
 
-  if(badges.every(b=>!b.earned)) return null;
-
   return (
     <div style={{marginBottom:14}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
-      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:earned.length>0&&locked.length>0?8:0}}>
-        {earned.map(b=>(
-          <div key={b.id} title={b.desc} style={{background:"rgba(212,175,55,0.15)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
-            <span style={{fontSize:16}}>{b.icon}</span>
-            <span style={{fontSize:11,fontWeight:700,color:"#d4af37"}}>{b.label}</span>
-          </div>
-        ))}
-      </div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
+      {earned.length===0
+        ?<div style={{fontSize:12,color:"#565c4d",padding:"6px 0"}}>Ainda sem conquistas — a primeira sai já no teu primeiro jogo.</div>
+        :<div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:locked.length>0?8:0}}>
+          {earned.map(b=>(
+            <div key={b.id} title={b.desc} style={{background:"rgba(74,222,128,0.15)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:16}}>{b.icon}</span>
+              <span style={{fontSize:11,fontWeight:700,color:"#4ade80"}}>{b.label}</span>
+            </div>
+          ))}
+        </div>
+      }
       {locked.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
         {locked.map(b=>(
           <div key={b.id} title={b.desc} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6,opacity:0.4}}>
@@ -3804,7 +3807,7 @@ function GraficoPresencas({player, attendance=[]}) {
           <XAxis dataKey="label" tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false}/>
           <YAxis tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
-          <Line type="monotone" dataKey="jogos" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
+          <Line type="monotone" dataKey="jogos" stroke="#4ade80" strokeWidth={2} dot={{fill:"#4ade80",r:3}} activeDot={{r:5}}/>
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -3828,10 +3831,10 @@ function GraficoRanking({members=[], currentPlayer}) {
           <XAxis dataKey="name" tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false}/>
           <YAxis tick={{fill:"#8a9080",fontSize:9}} tickLine={false} axisLine={false} allowDecimals={false}/>
           <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
-          <Line type="monotone" dataKey="jogos" stroke="#d4af37" strokeWidth={2} dot={(props)=>{
+          <Line type="monotone" dataKey="jogos" stroke="#4ade80" strokeWidth={2} dot={(props)=>{
             const{cx,cy,payload}=props;
-            return <circle key={payload.name} cx={cx} cy={cy} r={payload.isMe?5:3} fill={payload.isMe?"#d4af37":"#1ea851"} stroke="none"/>;
-          }} activeDot={{r:5,fill:"#d4af37"}}/>
+            return <circle key={payload.name} cx={cx} cy={cy} r={payload.isMe?5:3} fill={payload.isMe?"#ffffff":"#4ade80"} stroke="none"/>;
+          }} activeDot={{r:5,fill:"#ffffff"}}/>
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -3841,6 +3844,8 @@ function GraficoRanking({members=[], currentPlayer}) {
 // ── SEASON STATS VIEW ────────────────────────────────────────────────────────
 function SeasonStatsCard({player, groupId}) {
   const [seasons, setSeasons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(()=>{
     if(!player||!groupId) return;
@@ -3849,9 +3854,15 @@ function SeasonStatsCard({player, groupId}) {
       .eq("player_id", player.id)
       .eq("group_id", groupId)
       .order("season", {ascending:false})
-      .then(({data})=>{ if(data) setSeasons(data); });
+      .then(({data,error})=>{ setLoading(false); if(error){ setLoadError(true); return; } if(data) setSeasons(data); });
   },[player?.id, groupId]);
 
+  if(loading) return null;
+  if(loadError) return (
+    <div style={{textAlign:"center",padding:"24px 0",color:"#f87171",fontSize:13}}>
+      Não foi possível carregar as épocas anteriores. Tenta outra vez mais tarde.
+    </div>
+  );
   if(seasons.length===0) return (
     <div style={{textAlign:"center",padding:"24px 0",color:"#565c4d",fontSize:13}}>
       Nenhuma época anterior registada
@@ -3863,8 +3874,8 @@ function SeasonStatsCard({player, groupId}) {
       {seasons.map((s,i)=>(
         <div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37",letterSpacing:2}}>🏁 {s.season}</div>
-            {s.mvp_count>0&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ {s.mvp_count}x MVP</span>}
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>🏁 {s.season}</div>
+            {s.mvp_count>0&&<span style={{background:"rgba(74,222,128,0.15)",color:"#4ade80",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ {s.mvp_count}x MVP</span>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
             {[
@@ -3875,7 +3886,7 @@ function SeasonStatsCard({player, groupId}) {
               <div key={j} style={{background:"#0a0b08",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
                 <div style={{fontSize:18,marginBottom:4}}>{stat.icon}</div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white"}}>{stat.value}</div>
-                <div style={{fontSize:9,color:"#8a9080",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
+                <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
               </div>
             ))}
           </div>
@@ -4195,15 +4206,19 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
   const [bugOpen,setBugOpen]=useState(false);
   const [bugMsg,setBugMsg]=useState("");
   const [bugSent,setBugSent]=useState(false);
+  const [bugSending,setBugSending]=useState(false);
+  const [avatarSaving,setAvatarSaving]=useState(false);
 
   const submitBug=async()=>{
-    if(!bugMsg.trim()) return;
+    if(!bugMsg.trim()||bugSending) return;
+    setBugSending(true);
     const {error}=await supabase.from("bug_reports").insert({
       group_id:activeGroupId||player.group_id,
       player_id:player.id,
       player_name:player.name,
       message:bugMsg.trim(),
     });
+    setBugSending(false);
     if(error){ showToast("Não foi possível enviar. Tenta outra vez.","err"); return; }
     setBugSent(true);
     setBugMsg("");
@@ -4214,7 +4229,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
     <div className="screen">
       <div style={{background:"#14160f",padding:"14px 16px",borderBottom:"1px solid #23271b"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
+          <button className="field-nav-btn" onClick={onBack} aria-label="Voltar"><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>PERFIL</span>
         </div>
       </div>
@@ -4223,13 +4238,15 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <div style={{textAlign:"center",padding:"24px 0 20px",borderBottom:"1px solid #23271b",marginBottom:16}}>
           <div style={{position:"relative",display:"inline-block",marginBottom:12}}>
             <Avatar player={{...player,avatar_color:color}} size={88}/>
-            <label style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#d4af37",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,border:"2px solid #0a0b08"}}>
-              📷
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={async(e)=>{
+            <label aria-label="Mudar foto de perfil" style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#14160f",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:avatarSaving?"wait":"pointer",fontSize:13,border:"2px solid #0a0b08",opacity:avatarSaving?0.6:1}}>
+              {avatarSaving?"⏳":"📷"}
+              <input type="file" accept="image/*" disabled={avatarSaving} style={{display:"none"}} onChange={async(e)=>{
                 const file=e.target.files[0];
                 if(!file) return;
+                setAvatarSaving(true);
                 const dataUrl=await resizeImageToDataUrl(file);
-                await supabase.from("players").update({avatar_url:dataUrl}).eq("id",player.id);
+                const{error}=await supabase.from("players").update({avatar_url:dataUrl}).eq("id",player.id);
+                if(error){ setAvatarSaving(false); showToast("Não foi possível mudar a foto. Tenta outra vez.","err"); return; }
                 window.location.reload();
               }}/>
             </label>
@@ -4240,26 +4257,27 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
           <div style={{display:"flex",justifyContent:"center",gap:24}}>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#4ade80",lineHeight:1}}>{player.total_games||0}</div>
-              <div style={{fontSize:10,color:"#8a9080",fontWeight:700,letterSpacing:1}}>JOGOS</div>
+              <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>JOGOS</div>
             </div>
             <div style={{width:1,background:"#23271b"}}/>
             <div style={{textAlign:"center"}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f59e0b",lineHeight:1}}>{player.current_streak||0}</div>
-              <div style={{fontSize:10,color:"#8a9080",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d97706",lineHeight:1}}>{player.current_streak||0}</div>
+              <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
             </div>
             <div style={{width:1,background:"#23271b"}}/>
             <div style={{textAlign:"center"}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#60a5fa",lineHeight:1}}>{player.best_streak||0}</div>
-              <div style={{fontSize:10,color:"#8a9080",fontWeight:700,letterSpacing:1}}>RECORDE</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",lineHeight:1}}>{player.best_streak||0}</div>
+              <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>RECORDE</div>
             </div>
           </div>
         </div>
 
         {/* Cor do avatar */}
+        <div style={{fontSize:10.5,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>CONTA</div>
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>COR DO AVATAR</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {AVATAR_COLORS.map(c=><button key={c} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
+          <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>Cor do avatar</div>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            {AVATAR_COLORS.map((c,i)=><button key={c} aria-label={`Cor de avatar ${i+1}`} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:40,height:40,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
         </div>
 
@@ -4283,7 +4301,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             <label className="field-label">Nova password</label>
             <div style={{display:"flex",gap:8}}>
               <input className="text-input" type={showPw?"text":"password"} value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Nova password..."/>
-              <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={15}/></button>
+              <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)} aria-label={showPw?"Esconder password":"Mostrar password"}><Icon name={showPw?"eyeoff":"eye"} size={15}/></button>
             </div>
             <label className="field-label">Confirmar password</label>
             <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
@@ -4298,22 +4316,24 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         </div>
 
         {/* Código do grupo */}
+        <div style={{fontSize:10.5,fontWeight:700,color:"#565c4d",letterSpacing:2,marginTop:16,marginBottom:8}}>GRUPO</div>
         <GroupCodeCard groupId={activeGroupId||player.group_id} isAdmin={!!player.is_admin} showToast={showToast}/>
 
         {/* Ações */}
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
           <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="people" size={14}/> Os meus grupos
           </button>
           <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="key" size={14}/> Entrar noutro grupo
           </button>
-          <button onClick={onSwitchAccount} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={()=>{ if(window.confirm("Trocar de conta? Vais ter de entrar outra vez.")) onSwitchAccount(); }} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="logout" size={14}/> Trocar de conta
           </button>
         </div>
 
         {/* Reportar problema */}
+        <div style={{fontSize:10.5,fontWeight:700,color:"#565c4d",letterSpacing:2,marginTop:16,marginBottom:8}}>SUPORTE</div>
         <div style={{marginTop:14}}>
           <button onClick={()=>setBugOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700,color:"white"}}>🐛 Reportar problema</span>
@@ -4325,8 +4345,8 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             ):(<>
               <label className="field-label">O que aconteceu?</label>
               <textarea className="text-input" rows={4} value={bugMsg} onChange={e=>setBugMsg(e.target.value)} placeholder="Descreve o que viste, o mais detalhado possível..." style={{resize:"vertical",fontFamily:"inherit"}}/>
-              <button className="btn-primary" style={{justifyContent:"center"}} onClick={submitBug} disabled={!bugMsg.trim()}>
-                <Icon name="check" size={15}/> ENVIAR
+              <button className="btn-primary" style={{justifyContent:"center"}} onClick={submitBug} disabled={!bugMsg.trim()||bugSending}>
+                <Icon name="check" size={15}/> {bugSending?"A ENVIAR...":"ENVIAR"}
               </button>
             </>)}
           </div>}
@@ -5811,17 +5831,17 @@ function GroupCodeCard({groupId, isAdmin=false, showToast=()=>{}}) {
 
   return (
     <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px"}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0}}>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4af37",letterSpacing:5}}>{code}</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0,flexWrap:"wrap",gap:8}}>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",letterSpacing:5}}>{code}</div>
         <div style={{display:"flex",gap:6}}>
-          {isAdmin&&<button onClick={handleRefreshCode} title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          {isAdmin&&<button onClick={handleRefreshCode} aria-label="Gerar novo código" title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             🔄
           </button>}
-          <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?"rgba(212,175,55,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#d4af37":"#23271b"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#d4af37":"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          <button onClick={()=>setShowQR(v=>!v)} aria-label="Mostrar código QR" style={{background:showQR?"rgba(74,222,128,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#4ade80":"#23271b"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#4ade80":"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             QR
           </button>
-          <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+          <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"white",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
             <Icon name="copy" size={13}/>{copied?"Copiado!":"Copiar"}
           </button>
           <button onClick={handleShare} style={{background:"#d4af37",border:"none",borderRadius:8,padding:"7px 12px",color:"#0a0b08",fontWeight:800,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>

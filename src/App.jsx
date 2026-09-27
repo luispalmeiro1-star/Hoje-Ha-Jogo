@@ -1365,7 +1365,7 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{width:"100%",maxWidth:480,background:"#0f100b",borderTop:"1px solid #23271b",borderRadius:"20px 20px 0 0",padding:"28px 24px 24px",display:"flex",flexDirection:"column",gap:20}}>
+      <div style={{width:"100%",maxWidth:480,background:"#0f100b",borderTop:"1px solid #23271b",borderRadius:"20px 20px 0 0",padding:"28px 24px 24px",display:"flex",flexDirection:"column",gap:20,boxShadow:"0 -8px 24px rgba(0,0,0,0.6)"}}>
         <div style={{display:"flex",justifyContent:"flex-end"}}>
           {!isLast && <button onClick={onDone} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer"}}>Saltar</button>}
         </div>
@@ -1830,7 +1830,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
   const isLive=now>=gameStart&&now<gameEnd;
   const isOver=now>=gameEnd;
   return (
-    <div style={{background:"#14160f",borderBottom:"1px solid #23271b",padding:"16px"}}>
+    <div style={{background:"#14160f",borderBottom:"1px solid #23271b",padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,0.45)",position:"relative",zIndex:1}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
           <div style={{fontSize:10,fontWeight:700,color:"#565c4d",letterSpacing:2,marginBottom:3}}>GRUPO</div>
@@ -3078,7 +3078,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=fal
     ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}]
     : [{key:"player",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}];
   return (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0b08",borderTop:"1px solid #23271b",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0b08",borderTop:"1px solid #23271b",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)",boxShadow:"0 -8px 24px rgba(0,0,0,0.6)"}}>
       {items.map(item=>{
         const isActive=view===item.key;
         return (
@@ -3103,7 +3103,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=fal
 function ExpandableCard({title, children, defaultOpen=false}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,marginBottom:10,overflow:"hidden"}}>
+    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,marginBottom:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
       <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:"transparent",border:"none",cursor:"pointer",color:"white",fontFamily:"'DM Sans',sans-serif"}}>
         <span style={{fontSize:12,fontWeight:800,letterSpacing:1,color:"#8ba593"}}>{title}</span>
         <span style={{fontSize:14,color:"#4ade80",transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
@@ -3306,7 +3306,7 @@ function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,show
   const expenses=history.filter(g=>Number(g.collected)<0);
   return (
     <div style={{marginTop:16}}>
-      {showHero&&<div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
+      {showHero&&<div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"18px",marginBottom:8,color:"white",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:"#8a9080",marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"#4ade80":"#f87171"}}>{piggybank>=0?"+":""}{piggybank}€</div>
         <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid #23271b"}}>
@@ -5267,7 +5267,7 @@ function ExpandableSection({icon, title, subtitle, children}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:8}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:open?"14px 14px 0 0":14,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:open?"14px 14px 0 0":14,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
         <div style={{width:36,height:36,background:"rgba(255,255,255,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>{icon}</div>
         <div style={{flex:1}}>
           <div style={{color:"white",fontSize:13,fontWeight:700}}>{title}</div>
@@ -5879,6 +5879,12 @@ function getCss() {
   *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+/* "Aceso": em vez de mudar de cor, quem navega por teclado vê um anel
+   dourado à volta do elemento focado — funciona em qualquer fundo e não
+   compete com as cores de estado (verde/vermelho/âmbar) já usadas nos
+   próprios elementos. */
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(212,175,55,0.6);}
+.text-input:focus-visible{box-shadow:0 0 0 2px rgba(212,175,55,0.6);}
 body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
@@ -5890,7 +5896,7 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .topbar-name{font-size:14px;color:#4ade80;font-weight:700;}
 .section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8a9080;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
 .av-guest{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;}
-.btn-primary{background:#1ea851;color:white;border:none;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+.btn-primary{background:#1ea851;color:white;border:none;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-primary:hover{background:#178742;}
 .btn-big{width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;box-shadow:0 6px 16px rgba(0,0,0,0.25);}
 .btn-big:hover{filter:brightness(1.08);}
@@ -5904,7 +5910,7 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 .icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;color:#8a9080;cursor:pointer;display:flex;align-items:center;}
 .icon-ghost:hover{background:#1a2e1a;color:#f0f0f0;}
 .icon-danger{background:rgba(239,68,68,0.15);border:none;border-radius:8px;padding:7px;color:#f87171;cursor:pointer;display:flex;flex-shrink:0;}
-.status-banner{border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.status-banner{border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .sb-in{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);}
 .sb-wait{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);}
 .sb-out{background:#14160f;border:2px solid #23271b;}
@@ -5942,7 +5948,7 @@ select.text-input{appearance:none;}
 .field-label{font-size:11px;font-weight:700;color:#8a9080;display:flex;align-items:center;gap:4px;margin-bottom:4px;}
 .date-time-row{display:flex;gap:10px;}
 .btn-save{width:100%;padding:11px;border-radius:10px;border:2px solid #23271b;background:#0f1c14;color:#8a9080;font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
-.btn-save-active{background:#1ea851;color:white;border-color:#1ea851;cursor:pointer;}
+.btn-save-active{background:#1ea851;color:white;border-color:#1ea851;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-save-active:hover{background:#15803d;}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;font-family:'DM Sans',sans-serif;}
 .toast-ok{background:#1ea851;}.toast-warn{background:#d97706;}.toast-err{background:#dc2626;}

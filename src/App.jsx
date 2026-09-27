@@ -1819,7 +1819,29 @@ function AvisoNotificacoes({playerId,groupId}) {
   );
 }
 
+// Sobe do valor antigo para o novo em vez de saltar direto — o mesmo
+// truque que já fazia a lista do mockup da landing parecer viva.
+function useCountUp(value, duration=500) {
+  const [display, setDisplay] = useState(value);
+  const prevRef = useRef(value);
+  useEffect(()=>{
+    const from = prevRef.current, to = value;
+    if(from===to) return;
+    const inicio = performance.now();
+    let frame;
+    const passo = (agora) => {
+      const t = Math.min(1, (agora-inicio)/duration);
+      setDisplay(Math.round(from + (to-from)*t));
+      if(t<1) frame = requestAnimationFrame(passo);
+      else prevRef.current = to;
+    };
+    frame = requestAnimationFrame(passo);
+    return ()=>cancelAnimationFrame(frame);
+  },[value, duration]);
+  return display;
+}
 function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
+  const confirmadosAnimado=useCountUp(confirmed.length);
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   const now=new Date();
@@ -1905,7 +1927,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
           <div style={{marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <span style={{fontSize:11,color:"#565c4d",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
-              <span style={{fontSize:11,color:pct>=100?"#f87171":"#565c4d",fontWeight:700}}>{confirmed.length} / {maxPlayers}</span>
+              <span style={{fontSize:11,color:pct>=100?"#f87171":"#565c4d",fontWeight:700}}>{confirmadosAnimado} / {maxPlayers}</span>
             </div>
             <div style={{height:6,background:"#23271b",borderRadius:99,overflow:"hidden"}}>
               <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:pct>=100?"#dc2626":"#1ea851",borderRadius:99,transition:"width 0.6s"}}/>
@@ -2151,9 +2173,9 @@ function LandingView({setView}) {
               {icon:LandingIcons.equipas,label:"Sorteadas em segundos"},
               {icon:LandingIcons.zona,label:"Reforços perto de ti"},
             ].map((f,i)=>(
-              <div key={i} style={{textAlign:"center",padding:"16px 6px",background:"#14160f",border:"1px solid #23271b",borderRadius:14}}>
-                <div style={{marginBottom:8,display:"flex",justifyContent:"center"}}>{f.icon}</div>
-                <div style={{fontSize:9.5,fontWeight:700,color:"#c7ccbc",letterSpacing:0.1,lineHeight:1.3}}>{f.label}</div>
+              <div key={i} style={{textAlign:"center",padding:"18px 8px",background:"#14160f",border:"1px solid #23271b",borderRadius:14}}>
+                <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>{f.icon}</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,color:"white",letterSpacing:0.3,lineHeight:1.15}}>{f.label}</div>
               </div>
             ))}
           </div>
@@ -5010,7 +5032,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
               }
               setEditedNome(false);}}>
-              <Icon name="check" size={13}/> {editedNome?"GUARDAR":"SEM ALTERAÇÕES"}
+              <Icon name="check" size={13}/> {editedNome?"GUARDAR":"TUDO GUARDADO"}
             </button>
           </ExpandableSection>
           <ExpandableSection icon="⚽" title="Jogo" subtitle="Local, data, hora e valores">
@@ -5034,7 +5056,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
               }
               setEditedJogo(false);}}>
-              <Icon name="check" size={13}/> {editedJogo?"GUARDAR":"SEM ALTERAÇÕES"}
+              <Icon name="check" size={13}/> {editedJogo?"GUARDAR":"TUDO GUARDADO"}
             </button>
           </ExpandableSection>
           <ExpandableSection icon="🎽" title="Formato e equipas" subtitle="Tipo de jogo, máximo de jogadores e equipas">
@@ -5082,7 +5104,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
               }
               setEditedFormato(false);}}>
-              <Icon name="check" size={13}/> {editedFormato?"GUARDAR":"SEM ALTERAÇÕES"}
+              <Icon name="check" size={13}/> {editedFormato?"GUARDAR":"TUDO GUARDADO"}
             </button>
           </ExpandableSection>
           <ExpandableSection icon="👤" title="Adicionar Membro" subtitle="Criar conta para um jogador">

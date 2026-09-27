@@ -4020,11 +4020,30 @@ function ZonaView({player, players=[], onBack, showToast}) {
   );
 }
 
+// Guardado localmente (não na BD): chega para "há mensagem nova desde a
+// última vez que abri o chat" sem precisar de uma tabela nova.
+function temMensagemNaoLida(messages, groupId, playerId) {
+  if(!messages.length || !groupId) return false;
+  const ultima = messages[messages.length-1];
+  if(ultima.player_id===playerId) return false;
+  try {
+    const visto = Number(localStorage.getItem(`chat_visto_${groupId}_${playerId}`)||0);
+    return new Date(ultima.created_at).getTime() > visto;
+  } catch(e){ return false; }
+}
+function marcarChatVisto(groupId, playerId) {
+  if(!groupId) return;
+  try { localStorage.setItem(`chat_visto_${groupId}_${playerId}`, String(Date.now())); } catch(e){}
+}
+
 // ── CHAT VIEW ────────────────────────────────────────────────────────────────
-function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
+function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onBack}) {
   const [text,setText]=useState("");
   const bottomRef=useRef(null);
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[messages]);
+  // Marca como visto sempre que há mensagens novas enquanto o chat está
+  // aberto, para o ponto vermelho não voltar a acender ao sair.
+  useEffect(()=>{ marcarChatVisto(gameInfo?.group_id, player.id); },[gameInfo?.group_id, player.id, messages.length]);
   return (
     <div className="screen" style={{height:"100vh",display:"flex",flexDirection:"column"}}>
       <div style={{background:"#14160f",padding:"14px 16px",borderBottom:"1px solid #23271b",flexShrink:0}}>
@@ -4283,8 +4302,9 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers} maxItems={1}/>
         {/* Botões rápidos */}
         <div style={{display:"flex",gap:8,marginBottom:14}}>
-          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
             💬 Chat
+            {temMensagemNaoLida(messages,gameInfo.group_id,player.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
           <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona
@@ -4566,8 +4586,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
         {/* Botões rápidos Chat e Zona */}
         <div style={{display:"flex",gap:8,marginBottom:8}}>
-          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
             💬 Chat
+            {temMensagemNaoLida(messages,gameInfo?.group_id,currentUser.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
           <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona

@@ -1240,6 +1240,12 @@ export default function App() {
     const{error}=await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:activeGroupId||null});
     if(error){ setMessages(prev=>prev.filter(m=>m.id!==msg.id)); showToast("Mensagem não foi enviada — tenta outra vez","err"); }
   };
+  const deleteMessage = async(id)=>{
+    const antes=messages;
+    setMessages(prev=>prev.filter(m=>m.id!==id));
+    const{error}=await supabase.from("chat_messages").delete().eq("id",id);
+    if(error){ setMessages(antes); showToast("Não foi possível apagar. Tenta outra vez.","err"); }
+  };
   const voteForMvp = async(voterId,votedForId,gameDate=gameInfo.date)=>{
     setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameDate)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameDate}]);
     const{error}=await supabase.rpc("votar_mvp",{p_group_id:activeGroupId,p_game_date:gameDate,p_voted_for:votedForId});
@@ -1295,7 +1301,7 @@ export default function App() {
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
+      {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
@@ -3149,7 +3155,7 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
   const movePicker=(p,currentTeam)=>isAdmin&&movingId===p.id&&(
     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:3}}>
       {[...teamOptions,"SUB"].filter(t=>t!==currentTeam).map(t=>(
-        <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:10,padding:"3px 8px",borderRadius:8,border:"1px solid #23271b",background:"#0a1a0a",color:"#8a9080",fontWeight:700,cursor:"pointer"}}>
+        <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:12,padding:"8px 12px",borderRadius:8,border:"1px solid #23271b",background:"#0a1a0a",color:"#8a9080",fontWeight:700,cursor:"pointer"}}>
           → {t==="SUB"?"Suplente":`Equipa ${t}`}
         </button>
       ))}
@@ -4050,7 +4056,7 @@ function marcarChatVisto(groupId, playerId) {
 }
 
 // ── CHAT VIEW ────────────────────────────────────────────────────────────────
-function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onBack}) {
+function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDeleteMessage,onBack}) {
   const [text,setText]=useState("");
   const bottomRef=useRef(null);
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[messages]);
@@ -4076,7 +4082,10 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onBack})
               <div style={{maxWidth:"75%"}}>
                 {!isMe&&<div style={{fontSize:10,color:"#8a9080",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
                 <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b"}}>{msg.message}</div>
-                <div style={{fontSize:9,color:"#8a9080",marginTop:2,textAlign:isMe?"right":"left"}}>{formatTime(new Date(msg.created_at).getTime())}</div>
+                <div style={{display:"flex",gap:6,justifyContent:isMe?"flex-end":"flex-start",alignItems:"center",marginTop:2}}>
+                  <span style={{fontSize:9,color:"#8a9080"}}>{formatTime(new Date(msg.created_at).getTime())}</span>
+                  {isMe&&onDeleteMessage&&<button onClick={()=>{ if(window.confirm("Apagar esta mensagem?")) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:9,cursor:"pointer",padding:0}}>Apagar</button>}
+                </div>
               </div>
             </div>
           );
@@ -4407,18 +4416,18 @@ function MBWayButton({number, amount, treasurerName=""}) {
 
   return (
     <div style={{marginTop:8}}>
-      <button onClick={handleMBWay} className="btn-big" style={{background:"linear-gradient(135deg,#00a0e4,#0077b6)",border:"none",color:"white",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+      <button onClick={handleMBWay} className="btn-big" style={{background:"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:"white",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
         <span style={{fontSize:20}}>💳</span>
         <span>PAGAR {amount}€ VIA MBWAY{treasurerName?" a "+treasurerName:""}</span>
       </button>
       {showNumber&&(
-        <div style={{background:"#14160f",border:"1px solid #0077b6",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{background:"#14160f",border:"1px solid #7c3aed",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
             <div style={{fontSize:10,color:"#565c4d",marginBottom:2}}>NÚMERO MBWAY</div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#00a0e4",letterSpacing:2}}>{number}</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#c4b5fd",letterSpacing:2}}>{number}</div>
             <div style={{fontSize:10,color:"#565c4d",marginTop:2}}>Valor: {amount}€</div>
           </div>
-          <button onClick={handleCopy} style={{background:"rgba(0,160,228,0.15)",border:"1px solid #0077b6",borderRadius:8,padding:"8px 12px",color:copied?"#4ade80":"#00a0e4",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          <button onClick={handleCopy} style={{background:"rgba(124,58,237,0.15)",border:"1px solid #7c3aed",borderRadius:8,padding:"8px 12px",color:copied?"#4ade80":"#c4b5fd",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             {copied?"✓ Copiado!":"Copiar"}
           </button>
         </div>

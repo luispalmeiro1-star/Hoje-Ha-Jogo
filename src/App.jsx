@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase.js";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 
 // ── EDGE FUNCTION HELPERS ─────────────────────────────────────────────────────
@@ -1352,11 +1352,13 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
     {icon:"💶",title:"Contas sempre em dia",text:"Vês quanto deves e quando pagaste, sem teres de perguntar a ninguém."},
   ];
   if(isAdmin) slides.push(
+    // Antes eram 5 destes slides (10 ao todo, com os 4 de base + o final) —
+    // mais do que os 3-7 recomendados para não perder gente a meio. Ficam só
+    // os dois que fazem falta já no primeiro dia; o resto (MBWay, vaga
+    // aberta, configurações) mora todo em "Gerir" e descobre-se lá, quando
+    // for preciso.
     {icon:"🔑",title:"Começa por convidar",text:"O convite do teu grupo está no ecrã principal enquanto estiveres sozinho — partilha-o no WhatsApp e quem tocar no link entra direto. Depois fica sempre em \"Gerir\"."},
-    {icon:"⚙️",title:"Configura o grupo",text:"Dia e hora do jogo, custo por jogador, tipo de desporto, máximo de jogadores — tudo em Gerir > Configurações."},
-    {icon:"💸",title:"Controla as dívidas",text:"Depois de cada jogo, a app regista sozinha quem ainda não pagou. Marcas como pago assim que receberes."},
-    {icon:"💶",title:"Pagamentos por MBWay",text:"Define o número de MBWay do grupo e cada jogador sabe logo para onde transferir."},
-    {icon:"🌐",title:"Vaga aberta",text:"Falta um jogador? Gera um link só para esse jogo — qualquer pessoa entra sem conta nem convite."},
+    {icon:"⚙️",title:"O resto está em \"Gerir\"",text:"Dia e hora do jogo, custo, MBWay, dívidas e vaga aberta para quando faltar alguém — tudo aí, para quando precisares."},
   );
   slides.push({icon:"🚀",title:"Pronto a começar!",text:"Podes rever isto sempre que quiseres. Boa sorte e bons jogos!"});
 
@@ -1533,6 +1535,10 @@ function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}
   if(confirmed.length>=maxPlayers) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
   else if(confirmed.length>=maxPlayers-3) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${maxPlayers-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
   if(confirmed.length>=MIN_PLAYERS&&grs.length>=2&&confirmed.length<maxPlayers) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
+  // Um grupo novo, ou logo a seguir ao jogo fechar, passa por aqui com 0
+  // confirmados — e sem nenhuma mensagem, é o momento em que mais falta um
+  // empurrão para ser o primeiro a responder.
+  if(confirmed.length===0) msgs.push({icon:"⚽",text:"Ainda ninguém confirmou — sê o primeiro!",color:"#4ade80",bg:"rgba(74,222,128,0.1)"});
   if(notYet.length>0) {} // Removido - já aparece no header
 
   if(msgs.length===0) return null;

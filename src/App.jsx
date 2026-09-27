@@ -309,11 +309,33 @@ const MIN_PLAYERS = 10;
 const COST = 3;
 const DEFAULT_RENT = 22;
 const AVATAR_COLORS = ["#1ea851","#2563eb","#7c3aed","#dc2626","#d97706","#0891b2","#be185d","#065f46"];
-const TEAM_COLORS = [
-  { bg: "rgba(30,168,81,0.15)", border: "#1ea851", text: "#4ade80", name: "EQUIPA A" },
-  { bg: "rgba(124,58,237,0.15)", border: "#7c3aed", text: "#c4b5fd", name: "EQUIPA B" },
-  { bg: "rgba(234,88,12,0.15)", border: "#ea580c", text: "#fdba74", name: "EQUIPA C" },
+// Paleta segura para a cor de equipa escolhida pelo admin: nenhuma delas
+// colide com uma cor já reservada no sistema (dourado da contagem/CTA,
+// verde-sólido de "confirmar presença", azul do guarda-redes).
+const TEAM_COLOR_PRESETS = [
+  { hex: "#dc2626", bg: "rgba(220,38,38,0.15)",  border: "#dc2626", text: "#f87171" },
+  { hex: "#7c3aed", bg: "rgba(124,58,237,0.15)", border: "#7c3aed", text: "#c4b5fd" },
+  { hex: "#ea580c", bg: "rgba(234,88,12,0.15)",  border: "#ea580c", text: "#fdba74" },
+  { hex: "#be185d", bg: "rgba(190,24,93,0.15)",  border: "#be185d", text: "#f9a8d4" },
+  { hex: "#0891b2", bg: "rgba(8,145,178,0.15)",  border: "#0891b2", text: "#67e8f9" },
+  { hex: "#581c87", bg: "rgba(88,28,135,0.15)",  border: "#581c87", text: "#d8b4fe" },
 ];
+// Antes a Equipa A tinha o verde-sólido (#1ea851) como cor por omissão — a
+// mesma cor reservada ao gesto de "confirmar presença" no DESIGN.md. Corrigido
+// de caminho ao dar às equipas uma cor configurável: a omissão passa a ser o
+// vermelho, que não tem nenhum significado reservado no resto da app.
+const DEFAULT_TEAM_COLORS = [TEAM_COLOR_PRESETS[0], TEAM_COLOR_PRESETS[1], TEAM_COLOR_PRESETS[2]];
+// Nome e cor de cada equipa (A/B/C) são fixos por grupo (guardados em
+// groups.team_config), não por jogo — como uma camisola que não muda de
+// semana para semana, mesmo que os jogadores sejam outros.
+function teamLabel(teamConfig, letter) {
+  return teamConfig?.[letter]?.name?.trim() || `Equipa ${letter}`;
+}
+function teamStyle(teamConfig, letter, index) {
+  const cfg = teamConfig?.[letter];
+  const preset = TEAM_COLOR_PRESETS.find(p=>p.hex===cfg?.color) || DEFAULT_TEAM_COLORS[index] || DEFAULT_TEAM_COLORS[0];
+  return { ...preset, label: teamLabel(teamConfig, letter) };
+}
 
 const SPORT_CONFIG = {
   futsal: {
@@ -557,6 +579,7 @@ export default function App() {
   const [maxPlayers, setMaxPlayers]     = useState(12);
   const [sportType, setSportType]       = useState("futsal");
   const [autoReassignTeams, setAutoReassignTeams] = useState(true);
+  const [teamConfig, setTeamConfig] = useState({});
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
@@ -616,7 +639,7 @@ export default function App() {
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
-    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); } });
+    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game,team_config").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); setTeamConfig(data.team_config||{}); } });
     supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
@@ -1264,7 +1287,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame,teamConfig};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -3085,7 +3108,7 @@ function ExpandableCard({title, children, defaultOpen=false}) {
 }
 
 // ── TEAMS REVEAL ─────────────────────────────────────────────────────────────
-function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isAdmin=false, onMovePlayer}) {
+function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isAdmin=false, onMovePlayer, teamConfig={}}) {
   // As equipas já sorteadas estão guardadas na base de dados. Antes isto não
   // olhava para elas: o estado começava sempre em "idle", por isso bastava
   // recarregar a app (ou o ecrã voltar a montar) para reaparecer o botão
@@ -3140,11 +3163,11 @@ function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isA
 
   if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #1ea851",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
   if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"1px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
-  return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
+  return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
 }
 
 // ── AUTO TEAMS DISPLAY ───────────────────────────────────────────────────────
-function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=false, onMovePlayer}) {
+function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=false, onMovePlayer, teamConfig={}}) {
   const [movingId, setMovingId] = useState(null);
   if(!confirmed.length) return null;
   const groups={};
@@ -3157,7 +3180,7 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:3}}>
       {[...teamOptions,"SUB"].filter(t=>t!==currentTeam).map(t=>(
         <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:12,padding:"8px 12px",borderRadius:8,border:"1px solid #23271b",background:"#0a1a0a",color:"#8a9080",fontWeight:700,cursor:"pointer"}}>
-          → {t==="SUB"?"Suplente":`Equipa ${t}`}
+          → {t==="SUB"?"Suplente":teamLabel(teamConfig,t)}
         </button>
       ))}
     </div>
@@ -3165,8 +3188,8 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       {activeTeams.map((teamName,ti)=>{
-        const color=TEAM_COLORS[ti],team=groups[teamName]||[];
-        return <div key={teamName} style={{background:color.bg,border:`1px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`,cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>{movePicker(p,teamName)}</div>;})}</div></div>;
+        const color=teamStyle(teamConfig,teamName,ti),team=groups[teamName]||[];
+        return <div key={teamName} style={{background:color.bg,border:`1px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>{color.label.toUpperCase()}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`,cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>{movePicker(p,teamName)}</div>;})}</div></div>;
       })}
       {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #565c4d",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#8a9080",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#8a9080",border:"1px solid #2a332a",cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>{movePicker(p,"SUB")}</div>)}</div></div>}
       {isAdmin&&<p style={{fontSize:10,color:"#565c4d",marginTop:2}}>Toca num jogador para o mover de equipa.</p>}
@@ -4320,7 +4343,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{}}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost=3,maxPlayers=12,sportType="futsal",player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onRemoveMvpVote,onSendMessage,onUpdatePosition,onLogout,setView,view,mbwayNumber="",isTreasurer=false,treasurerName="",showToast=()=>{},teamConfig={}}) {
   const cfg=sportConfig(sportType);
   const isIn=player.status==="in",isWait=player.status==="wait",isNao=player.status==="nao_vou";
   const [confirming,setConfirming]=useState(false);
@@ -4403,7 +4426,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         </ExpandableCard>
         {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id);return pl?.team&&pl.team!=="SUB";})&&(
           <ExpandableCard title={confirmed.length>=15?"🏆 EQUIPAS (3 de 5)":"⚽ EQUIPAS"}>
-            <AutoTeamsDisplay confirmed={confirmed} players={players}/>
+            <AutoTeamsDisplay confirmed={confirmed} players={players} teamConfig={teamConfig}/>
           </ExpandableCard>
         )}
         {(()=>{
@@ -4525,7 +4548,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait",isAdminNao=myself.status==="nao_vou";
@@ -4563,6 +4586,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   useEffect(()=>{ setEditRent(rentPerGame); },[rentPerGame]);
   const [editAutoReassign,setEditAutoReassign]=useState(autoReassignTeams);
   useEffect(()=>{ setEditAutoReassign(autoReassignTeams); },[autoReassignTeams]);
+  const [editTeamConfig,setEditTeamConfig]=useState(teamConfig);
+  useEffect(()=>{ setEditTeamConfig(teamConfig); },[teamConfig]);
   // O cartão do convite dependia de uma marca guardada no telemóvel, lida e
   // apagada no mesmo instante: bastava recarregar a página uma vez e nunca mais
   // se via o código. Pior ainda, aparecia por baixo do tutorial de boas-vindas,
@@ -4699,10 +4724,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               {["A","B","C"].slice(0,numTeamsFor(ultimoJogo.players_count,sportType)).map(t=>(
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",ultimoJogo.id);
-                  showToast(`Equipa ${t} registada como vencedora ✓`);
+                  showToast(`${teamLabel(teamConfig,t)} registada como vencedora ✓`);
                   setAdminTab("historico");
                 }} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #2563eb",background:"rgba(37,99,235,0.15)",color:"#93c5fd",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-                  Equipa {t}
+                  {teamLabel(teamConfig,t)}
                 </button>
               ))}
             </div>
@@ -4831,16 +4856,16 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             ?<div className="guest-locked">⚠️ Precisas de {MIN_PLAYERS} confirmados. ({confirmed.length}/{MIN_PLAYERS})</div>
             :<>
               <div style={{background:"#14160f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{numTeamsFor(confirmed.length,sportType)===3?`🏆 3 equipas de ${cfg.teamSize}`:`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
-              <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams} sportType={sportType} isAdmin={true} onMovePlayer={onMovePlayer}/>
+              <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams} sportType={sportType} isAdmin={true} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/>
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
                 {["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType)).map(t=>(
                   <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#8a9080"}}>
-                    {winnerTeam===t?"🏆":""} Equipa {t}
+                    {winnerTeam===t?"🏆":""} {teamLabel(teamConfig,t)}
                   </button>
                 ))}
               </div>
-              {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 Equipa {winnerTeam} venceu!</div>}
+              {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 {teamLabel(teamConfig,winnerTeam)} venceu!</div>}
             </>}
           <p className="section-label" style={{marginTop:14}}><Icon name="key" size={12}/> CÓDIGO DO GRUPO</p>
           <GroupCodeCard groupId={groupId} isAdmin={true} showToast={showToast}/>
@@ -4874,7 +4899,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.filter(h=>h.players_count>0).length===0
             ?<div style={{textAlign:"center",padding:"24px 0",color:"#565c4d",fontSize:13}}>Nenhum jogo no histórico</div>
-            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()} gameInfo={gameInfo} piggybank={piggybank} isAdmin={!!currentUser?.is_admin}/>)
+            :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()} gameInfo={gameInfo} piggybank={piggybank} isAdmin={!!currentUser?.is_admin} teamConfig={teamConfig}/>)
           }
         </>}
         {adminTab==="jogadores"&&(
@@ -4977,9 +5002,25 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 <button key={l} onClick={()=>{setEditAutoReassign(v);setEdited(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#1ea851":"#23271b"}`,background:editAutoReassign===v?"rgba(30,168,81,0.15)":"#14160f",color:editAutoReassign===v?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
+            <label className="field-label">🎨 Nomes e cores das equipas</label>
+            <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Para não ficar sempre "Equipa A/B/C" — o nome e a cor ficam fixos neste grupo, mesmo que os jogadores mudem de jogo para jogo.</p>
+            {["A","B","C"].map((letter,i)=>{
+              const cfg=editTeamConfig[letter]||{};
+              const currentColor=cfg.color||TEAM_COLOR_PRESETS[i].hex;
+              return (
+                <div key={letter} style={{marginBottom:10}}>
+                  <input className="text-input" style={{marginBottom:6}} placeholder={`Equipa ${letter}`} value={cfg.name||""} onChange={e=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],name:e.target.value}}));setEdited(true);}}/>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {TEAM_COLOR_PRESETS.map(preset=>(
+                      <button key={preset.hex} onClick={()=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],color:preset.hex}}));setEdited(true);}} style={{width:28,height:28,padding:0,borderRadius:"50%",background:preset.hex,border:currentColor===preset.hex?"3px solid white":"1px solid #23271b",cursor:"pointer"}}/>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
             <button className={`btn-save ${edited?"btn-save-active":""}`} disabled={!edited} onClick={async()=>{
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,app_name:editAppName,cost_per_player:Number(editCost)});
-              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,rent_per_game:Number(editRent)||0}).eq("id",groupId||currentUser.group_id);
+              if(groupId||currentUser?.group_id) await supabase.from("groups").update({...(editGameDays?{game_days:editGameDays}:{}),max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,rent_per_game:Number(editRent)||0,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
               setEdited(false);}}>
               <Icon name="check" size={13}/> {edited?"GUARDAR":"SEM ALTERAÇÕES"}
             </button>
@@ -5104,7 +5145,7 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
 }
 
 // ── HISTORICO CARD ────────────────────────────────────────────────────────────
-function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, gameInfo, piggybank=0, isAdmin=false}) {
+function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, gameInfo, piggybank=0, isAdmin=false, teamConfig={}}) {
   const [open, setOpen] = useState(false);
   const [jogadores, setJogadores] = useState([]);
   const [loadingJogadores, setLoadingJogadores] = useState(false);
@@ -5126,7 +5167,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:1}}>
             {new Date(h.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})}
           </div>
-          {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20}}>🏆 Equipa {h.winner_team}</span>}
+          {h.winner_team&&<span style={{background:"rgba(37,99,235,0.2)",color:"#93c5fd",fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20}}>🏆 {teamLabel(teamConfig,h.winner_team)}</span>}
           {h.treasurer_name&&<span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20}}>💰 {h.treasurer_name}</span>}
         </div>
         {h.mvp_name&&<div style={{background:"linear-gradient(135deg,rgba(212,175,55,0.2),rgba(212,175,55,0.05))",border:"1px solid rgba(212,175,55,0.3)",borderRadius:10,padding:"8px 12px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
@@ -5157,10 +5198,10 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
             {["A","B","C"].slice(0,numTeamsFor(h.players_count,sportType)).map(t=>(
               <button key={t} onClick={async()=>{
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
-                showToast(`Equipa ${t} registada ✓`);
+                showToast(`${teamLabel(teamConfig,t)} registada ✓`);
                 reloadAll();
               }} style={{padding:"4px 10px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                Equipa {t}
+                {teamLabel(teamConfig,t)}
               </button>
             ))}
           </div>

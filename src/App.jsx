@@ -822,10 +822,13 @@ export default function App() {
   // agendada via cron), em vez de depender de alguém ter a app aberta na hora certa. A subscrição
   // realtime a "game_info" já existente acima trata de atualizar o ecrã assim que o jogo fecha.
 
-  // Saldo do mealheiro: tudo o que entrou menos o aluguer de cada jogo jogado.
-  // Derivado do histórico em vez de guardado em estado próprio, para acompanhar
-  // sempre o valor de aluguer atual do grupo.
-  const piggybank = history.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?Number(rentPerGame):0),0);
+  // Saldo do mealheiro: tudo o que entrou menos o aluguer de cada jogo jogado,
+  // mais quem já pagou o jogo desta semana antes de ele fechar — o dinheiro já
+  // entrou, só o aluguer é que ainda não se desconta (isso só se sabe ao certo
+  // no fecho). Ao fechar o jogo, os "paid" voltam todos a false e o valor já
+  // recolhido passa a vir do histórico, por isso não conta a dobrar.
+  const piggybank = history.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?Number(rentPerGame):0),0)
+    + players.filter(p=>p.status==="in"&&p.paid).length*(gameInfo.cost_per_player||COST);
 
   const members   = players.filter(p=>!p.is_guest);
   const guests    = players.filter(p=>p.is_guest);

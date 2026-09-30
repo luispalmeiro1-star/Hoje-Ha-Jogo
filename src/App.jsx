@@ -3,6 +3,13 @@ import { supabase } from "./supabase.js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 
+// ── CONFIRMAÇÃO ───────────────────────────────────────────────────────────────
+// window.confirm() é a caixa cinzenta nativa do browser, fora do sistema visual
+// da app. askConfirm() é chamado em toda a parte no lugar dela; App() liga
+// _confirmImpl a um modal próprio (ConfirmModal) assim que monta.
+let _confirmImpl = (message)=>Promise.resolve(window.confirm(message));
+function askConfirm(message, opts={}) { return _confirmImpl(message, opts); }
+
 // ── EDGE FUNCTION HELPERS ─────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://juoheqnocyluxsqzcdcr.supabase.co";
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_63hRr7RNMV55-hY1VyaRAA_gt86VwS2";
@@ -581,6 +588,7 @@ export default function App() {
   const [autoReassignTeams, setAutoReassignTeams] = useState(true);
   const [teamConfig, setTeamConfig] = useState({});
   const [toast, setToast]             = useState(null);
+  const [confirmState, setConfirmState] = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
   const [viewingDate, setViewingDate] = useState(null);
@@ -590,6 +598,12 @@ export default function App() {
   const effectiveDate = viewingDate || gameInfo.date;
 
   const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
+  useEffect(()=>{
+    _confirmImpl = (message,opts={})=>new Promise(resolve=>{
+      setConfirmState({message,...opts,resolve});
+    });
+    return ()=>{ _confirmImpl = (message)=>Promise.resolve(window.confirm(message)); };
+  },[]);
   const groupIdRef = useRef(null);
   const loadPlayersSeqRef = useRef(0);
 
@@ -1311,6 +1325,7 @@ export default function App() {
     <div style={{background:"#0a0b08",minHeight:"100vh"}}>
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+      {confirmState&&<ConfirmModal message={confirmState.message} danger={confirmState.danger} confirmLabel={confirmState.confirmLabel} cancelLabel={confirmState.cancelLabel} onConfirm={()=>{confirmState.resolve(true);setConfirmState(null);}} onCancel={()=>{confirmState.resolve(false);setConfirmState(null);}}/>}
       {view==="landing"        && <LandingView setView={setView}/>}
       {view==="demo"           && <DemoView setView={setView} showToast={showToast}/>}
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser} onLeave={leaveGroup} onDelete={deleteGroup}/>}
@@ -1340,6 +1355,21 @@ export default function App() {
       {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
       {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
+    </div>
+  );
+}
+
+// ── MODAL DE CONFIRMAÇÃO ────────────────────────────────────────────────────────
+function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancelar", onConfirm, onCancel}) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:16}}>
+        <div style={{fontSize:14,color:"white",lineHeight:1.5,fontFamily:"'DM Sans',sans-serif"}}>{message}</div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={onCancel} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{cancelLabel}</button>
+          <button onClick={onConfirm} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"linear-gradient(180deg,#2fd66b,#1ea851)",color:danger?"white":"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{confirmLabel||"Confirmar"}</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -4170,7 +4200,7 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
                 <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b",wordBreak:"break-word",overflowWrap:"break-word"}}>{msg.message}</div>
                 <div style={{display:"flex",gap:6,justifyContent:isMe?"flex-end":"flex-start",alignItems:"center",marginTop:2}}>
                   <span style={{fontSize:9,color:"#8a9080"}}>{formatTime(new Date(msg.created_at).getTime())}</span>
-                  {(isMe||player.is_admin)&&onDeleteMessage&&<button onClick={()=>{ if(window.confirm(isMe?"Apagar esta mensagem?":`Apagar a mensagem de ${msg.player_name}?`)) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:9,cursor:"pointer",padding:0}}>Apagar</button>}
+                  {(isMe||player.is_admin)&&onDeleteMessage&&<button onClick={async()=>{ if(await askConfirm(isMe?"Apagar esta mensagem?":`Apagar a mensagem de ${msg.player_name}?`,{danger:true,confirmLabel:"Apagar"})) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#565c4d",fontSize:9,cursor:"pointer",padding:0}}>Apagar</button>}
                 </div>
               </div>
             </div>
@@ -4359,7 +4389,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
           <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="key" size={14}/> Entrar noutro grupo
           </button>
-          <button onClick={()=>{ if(window.confirm("Trocar de conta? Vais ter de entrar outra vez.")) onSwitchAccount(); }} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={async()=>{ if(await askConfirm("Trocar de conta? Vais ter de entrar outra vez.",{danger:true,confirmLabel:"Trocar"})) onSwitchAccount(); }} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="logout" size={14}/> Trocar de conta
           </button>
         </div>
@@ -4436,7 +4466,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           <button className="btn-big btn-red" onClick={()=>handleToggle("nao_vou")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
           </button>
-          <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.')) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
+          <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.',{danger:true,confirmLabel:"Marcar lesão"})) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
         </>):isNao?(
           <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
@@ -4451,7 +4481,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
               {confirming?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
           </div>
-          <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.')) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 0",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
+          <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.',{danger:true,confirmLabel:"Marcar lesão"})) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 0",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
           </div>
         )}
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
@@ -4826,7 +4856,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
             </button>
-            <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.')) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"0 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
+            <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.',{danger:true,confirmLabel:"Marcar lesão"})) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"0 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
           </>):isAdminNao?(
             <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
@@ -4840,7 +4870,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 {confirmingSelf?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
               </button>
             </div>
-            <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.')) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
+            <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.',{danger:true,confirmLabel:"Marcar lesão"})) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
           </>)}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
@@ -4980,8 +5010,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
                   <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
                 </div>
-                <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:11}} onClick={()=>{ if(window.confirm(p.status==="in"||p.status==="wait"?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`)) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
-                {!p.is_admin&&<button className="icon-danger" onClick={()=>{ if(window.confirm(`Remover ${p.name} do grupo?`)) onRemovePlayer(p.id); }} aria-label={`Remover ${p.name}`}><Icon name="trash" size={13}/></button>}
+                <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:11}} onClick={async()=>{ const saindo=p.status==="in"||p.status==="wait"; if(await askConfirm(saindo?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`,{danger:saindo,confirmLabel:saindo?"Marcar":"Confirmar"})) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
+                {!p.is_admin&&<button className="icon-danger" onClick={async()=>{ if(await askConfirm(`Remover ${p.name} do grupo?`,{danger:true,confirmLabel:"Remover"})) onRemovePlayer(p.id); }} aria-label={`Remover ${p.name}`}><Icon name="trash" size={13}/></button>}
                 {editPassId===p.id
                   ?<div style={{width:"100%",marginTop:6}}>
                       {/* A via recomendada: a pessoa escolhe a sua própria
@@ -5750,7 +5780,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
               ⚙️ Gerir grupo
             </button>
           </>
-          :<button onClick={()=>{ if(window.confirm("Tens a certeza que queres sair deste grupo?")) onLeave&&onLeave(pg.group_id); }} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:11,cursor:"pointer",fontWeight:600}}>
+          :<button onClick={async()=>{ if(await askConfirm("Tens a certeza que queres sair deste grupo?",{danger:true,confirmLabel:"Sair"})) onLeave&&onLeave(pg.group_id); }} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:11,cursor:"pointer",fontWeight:600}}>
             🚪 Sair do grupo
           </button>
         }
@@ -5761,7 +5791,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
         <button onClick={handleLeaveAdmin} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:600}}>
           🚪 Sair e nomear novo admin
         </button>
-        <button onClick={()=>{ if(window.confirm("Tens a certeza que queres APAGAR este grupo? Esta ação é irreversível!")) onDelete&&onDelete(pg.group_id); }} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:700}}>
+        <button onClick={async()=>{ if(await askConfirm("Tens a certeza que queres APAGAR este grupo? Esta ação é irreversível!",{danger:true,confirmLabel:"Apagar"})) onDelete&&onDelete(pg.group_id); }} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:700}}>
           🗑️ Apagar grupo
         </button>
       </div>}

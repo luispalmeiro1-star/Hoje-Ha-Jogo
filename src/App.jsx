@@ -4436,7 +4436,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           <button className="btn-big btn-red" onClick={()=>handleToggle("nao_vou")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
           </button>
-          <button onClick={()=>handleToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
+          <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.')) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
         </>):isNao?(
           <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
@@ -4451,7 +4451,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
               {confirming?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
           </div>
-          <button onClick={()=>handleToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 0",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
+          <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.')) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 0",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
           </div>
         )}
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
@@ -4826,7 +4826,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
             </button>
-            <button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"0 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
+            <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.')) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"0 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
           </>):isAdminNao?(
             <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
@@ -4840,7 +4840,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 {confirmingSelf?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
               </button>
             </div>
-            <button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
+            <button onClick={()=>{ if(window.confirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.')) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
           </>)}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>

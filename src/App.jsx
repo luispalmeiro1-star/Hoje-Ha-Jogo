@@ -9,6 +9,11 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 // _confirmImpl a um modal próprio (ConfirmModal) assim que monta.
 let _confirmImpl = (message)=>Promise.resolve(window.confirm(message));
 function askConfirm(message, opts={}) { return _confirmImpl(message, opts); }
+// askChoice: como askConfirm, mas para escolher entre várias opções (ex: "não
+// vou" com ou sem motivo) em vez de um simples sim/não. Resolve para o `value`
+// escolhido, ou null se cancelado.
+let _choiceImpl = (message,options)=>Promise.resolve(window.confirm(message)?options[0].value:null);
+function askChoice(message, options) { return _choiceImpl(message, options); }
 
 // ── EDGE FUNCTION HELPERS ─────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://juoheqnocyluxsqzcdcr.supabase.co";
@@ -589,6 +594,7 @@ export default function App() {
   const [teamConfig, setTeamConfig] = useState({});
   const [toast, setToast]             = useState(null);
   const [confirmState, setConfirmState] = useState(null);
+  const [choiceState, setChoiceState] = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
   const [viewingDate, setViewingDate] = useState(null);
@@ -603,6 +609,12 @@ export default function App() {
       setConfirmState({message,...opts,resolve});
     });
     return ()=>{ _confirmImpl = (message)=>Promise.resolve(window.confirm(message)); };
+  },[]);
+  useEffect(()=>{
+    _choiceImpl = (message,options)=>new Promise(resolve=>{
+      setChoiceState({message,options,resolve});
+    });
+    return ()=>{ _choiceImpl = (message,options)=>Promise.resolve(window.confirm(message)?options[0].value:null); };
   },[]);
   const groupIdRef = useRef(null);
   const loadPlayersSeqRef = useRef(0);
@@ -1326,6 +1338,7 @@ export default function App() {
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {confirmState&&<ConfirmModal message={confirmState.message} danger={confirmState.danger} confirmLabel={confirmState.confirmLabel} cancelLabel={confirmState.cancelLabel} onConfirm={()=>{confirmState.resolve(true);setConfirmState(null);}} onCancel={()=>{confirmState.resolve(false);setConfirmState(null);}}/>}
+      {choiceState&&<ChoiceModal message={choiceState.message} options={choiceState.options} onSelect={(v)=>{choiceState.resolve(v);setChoiceState(null);}} onCancel={()=>{choiceState.resolve(null);setChoiceState(null);}}/>}
       {view==="landing"        && <LandingView setView={setView}/>}
       {view==="demo"           && <DemoView setView={setView} showToast={showToast}/>}
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser} onLeave={leaveGroup} onDelete={deleteGroup}/>}
@@ -1368,6 +1381,24 @@ function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancela
         <div style={{display:"flex",gap:10}}>
           <button onClick={onCancel} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{cancelLabel}</button>
           <button onClick={onConfirm} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"linear-gradient(180deg,#2fd66b,#1ea851)",color:danger?"white":"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{confirmLabel||"Confirmar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Como o ConfirmModal, mas para escolher entre várias opções em vez de um
+// simples sim/não (ex: "não vou" — com ou sem motivo de lesão).
+function ChoiceModal({message, options, onSelect, onCancel}) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14}}>
+        <div style={{fontSize:14,color:"white",lineHeight:1.5,fontFamily:"'DM Sans',sans-serif"}}>{message}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {options.map(opt=>(
+            <button key={opt.value} onClick={()=>onSelect(opt.value)} style={{padding:"11px",borderRadius:10,border:opt.danger?"none":"2px solid #3a2020",background:opt.danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"#14160f",color:opt.danger?"white":"#d6a1a1",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{opt.label}</button>
+          ))}
+          <button onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -2434,7 +2465,7 @@ function ReporPasswordView({token, setView, showToast}) {
 // dias, de 136 chegadas a frio, 3 tocaram num botão e nenhuma criou conta.
 //
 // Isto é o terceiro caminho: ver antes de decidir. Não há aqui base de dados
-// nem sessão — é tudo estado local. A pessoa toca em VOU JOGAR e vê a lista
+// nem sessão — é tudo estado local. A pessoa toca em VOU e vê a lista
 // mexer-se, que é o momento em que se percebe para que serve a app. Nada do
 // que ela faça aqui sai deste ecrã.
 function DemoView({setView, showToast}) {
@@ -2545,16 +2576,16 @@ function DemoView({setView, showToast}) {
 
         {euVou==="vai"?(
           <button className="btn-big btn-red" onClick={()=>responder("nao")} style={{marginBottom:14}}>
-            <Icon name="x" size={18}/> JÁ NÃO VOU
+            <Icon name="x" size={18}/> NÃO VOU
           </button>
         ):euVou==="nao"?(
           <button className="btn-big btn-green" onClick={()=>responder("vai")} style={{marginBottom:14}}>
-            <Icon name="check" size={18}/> AFINAL VOU
+            <Icon name="check" size={18}/> VOU
           </button>
         ):(
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             <button className="btn-big btn-green" onClick={()=>responder("vai")} style={{flex:1,marginBottom:0}}>
-              <Icon name="check" size={18}/> VOU JOGAR
+              <Icon name="check" size={18}/> VOU
             </button>
             <button className="btn-big btn-nao" onClick={()=>responder("nao")} style={{flex:1,marginBottom:0}}>
               <Icon name="x" size={18}/> NÃO VOU
@@ -4462,26 +4493,22 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             não vai é uma resposta como outra qualquer: tira a pessoa da lista
             de quem falta responder e liberta já o lugar para a lista de espera,
             em vez de deixar o grupo à espera de uma resposta que não vem. */}
-        {isIn||isWait?(<>
-          <button className="btn-big btn-red" onClick={()=>handleToggle("nao_vou")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
-            {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
+        {isIn||isWait?(
+          <button className="btn-big btn-red" onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais? O teu lugar fica livre — se houver fila de espera, alguém entra no teu lugar.",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+            {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> NÃO VOU</>}
           </button>
-          <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.',{danger:true,confirmLabel:"Marcar lesão"})) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
-        </>):isNao?(
+        ):isNao?(
           <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
-            {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
+            {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
           </button>
         ):(
-          <div style={{marginBottom:14}}>
-          <div style={{display:"flex",gap:8}}>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
             <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
-              {confirming?"⏳":<><Icon name="check" size={18}/> VOU JOGAR</>}
+              {confirming?"⏳":<><Icon name="check" size={18}/> VOU</>}
             </button>
-            <button className="btn-big btn-nao" onClick={()=>handleToggle("nao_vou")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+            <button className="btn-big btn-nao" onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais a este jogo?",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
               {confirming?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
-          </div>
-          <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.',{danger:true,confirmLabel:"Marcar lesão"})) handleToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 0",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
           </div>
         )}
         {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
@@ -4852,26 +4879,24 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <span className="sb-icon">{isAdminIn?"✅":isAdminWait?"⏳":isAdminNao?"❌":"⚽"}</span>
             <div><div className="sb-title">{isAdminIn?"Também vais jogar!":isAdminWait?"Estás na lista de espera":isAdminNao?"Disseste que não vais":"Também vais jogar?"}</div><div className="sb-sub">{isAdminIn?"Estás dentro":isAdminWait?"Aguarda vaga":isAdminNao?"Se mudares de ideias, ainda vais a tempo":"Confirma a tua presença"}</div></div>
           </div>
-          {isAdminIn||isAdminWait?(<>
-            <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
-              {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> JÁ NÃO VOU</>}
+          {isAdminIn||isAdminWait?(
+            <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais? O teu lugar fica livre — se houver fila de espera, alguém entra no teu lugar.",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleSelfToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }}>
+              {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
-            <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto muda já para "não vou" neste jogo e liberta o teu lugar — se houver fila de espera, podes perdê-lo.',{danger:true,confirmLabel:"Marcar lesão"})) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"0 0 12px",textAlign:"center"}}>🤕 Foi lesão? Marca aqui</button>
-          </>):isAdminNao?(
+          ):isAdminNao?(
             <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
-              {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> AFINAL VOU</>}
+              {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
             </button>
-          ):(<>
-            <div style={{display:"flex",gap:8,marginBottom:0}}>
+          ):(
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
               <button className="btn-big btn-green" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
-                {confirmingSelf?"⏳":<><Icon name="check" size={18}/> VOU JOGAR</>}
+                {confirmingSelf?"⏳":<><Icon name="check" size={18}/> VOU</>}
               </button>
-              <button className="btn-big btn-nao" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
+              <button className="btn-big btn-nao" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais a este jogo?",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleSelfToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }}>
                 {confirmingSelf?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
               </button>
             </div>
-            <button onClick={async()=>{ if(await askConfirm('Marcar como lesionado? Isto regista "não vou" neste jogo com esse motivo.',{danger:true,confirmLabel:"Marcar lesão"})) handleSelfToggle("nao_vou","lesionado"); }} style={{width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:11,cursor:"pointer",padding:"6px 0 12px",textAlign:"center"}}>🤕 Lesionado? Marca "não vou" com motivo</button>
-          </>)}
+          )}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{

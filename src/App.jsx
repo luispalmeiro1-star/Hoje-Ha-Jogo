@@ -1259,7 +1259,7 @@ export default function App() {
     const votes=mvpVotes.filter(v=>v.game_date===gameInfo.date);
     let mvpName=null;
     if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null; }
-    if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:freshConfirmed.length,collected,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid,treasurer_name:treasurerName||null});
+    if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:freshConfirmed.length,collected,cost_per_player:gameCost,winner_team:isAuto?null:winnerTeam||null,mvp_name:mvpName,group_id:gid,treasurer_name:treasurerName||null});
     // Remover TODOS os convidados do grupo, não só os que jogaram. Os que
     // ficaram na lista de espera não eram apagados e ficavam lá para sempre —
     // e como o link de vaga aberta só aceita 10 convidados de cada vez, ao fim
@@ -5339,7 +5339,11 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
           </div>
           {h.collected>0&&<div>
             <div style={{fontSize:10,color:"#565c4d",marginBottom:2}}>POR JOGO</div>
-            <div style={{fontSize:18,fontWeight:800,color:"#d4af37"}}>{h.players_count>0?Math.round(h.collected/h.players_count):0}€</div>
+            {/* O custo real do jogo, gravado no fecho — não "recolhido ÷
+                jogadores", que ficava errado sempre que alguém não tinha
+                pago ainda (ex: 21€/11 jogadores dava "2€" para um jogo que
+                custou sempre 3€ a cada um). */}
+            <div style={{fontSize:18,fontWeight:800,color:"#d4af37"}}>{h.cost_per_player??(h.players_count>0?Math.round(h.collected/h.players_count):0)}€</div>
           </div>}
         </div>
         {/* Definir vencedor se não está definido */}

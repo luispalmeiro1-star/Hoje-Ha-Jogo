@@ -1685,10 +1685,12 @@ function fitFontSize(ctx,text,maxWidth,startSize,family,minSize=28){
   }
   return size;
 }
-// O cartão visual que se partilha no WhatsApp em vez de texto corrido —
-// resultado, MVP e data, com a cor e o nome reais da equipa vencedora.
-async function buildGameCardImage({historyGame, effectiveDate, teamConfig}){
-  const W=1080,H=1080;
+// O cartão visual que se partilha no WhatsApp em vez de texto corrido — a
+// mesma informação que o resumo em texto sempre teve (resultado, MVP,
+// mealheiro, próximo jogo), só que com a cor e o nome reais da equipa
+// vencedora em vez de "Equipa A".
+async function buildGameCardImage({historyGame, gameInfo, effectiveDate, piggybank=0, teamConfig}){
+  const W=1080,H=1350;
   const canvas=document.createElement("canvas");
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext("2d");
@@ -1700,23 +1702,34 @@ async function buildGameCardImage({historyGame, effectiveDate, teamConfig}){
   ctx.textAlign="center";
 
   ctx.fillStyle=gold;
-  ctx.font='400 54px "Bebas Neue", Impact, sans-serif';
-  ctx.fillText("HOJE HÁ JOGO",W/2,110);
+  const titleSize=fitFontSize(ctx,gameInfo?.app_name||"Hoje Há Jogo",maxTextWidth,54,"Bebas Neue",36);
+  ctx.font=`400 ${titleSize}px "Bebas Neue", Impact, sans-serif`;
+  ctx.fillText(gameInfo?.app_name||"Hoje Há Jogo",W/2,110);
   ctx.fillStyle=gray;
   ctx.font='600 28px system-ui, -apple-system, sans-serif';
   ctx.fillText(formatDisplayDate(effectiveDate),W/2,156);
   ctx.strokeStyle="#23271b"; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(100,200); ctx.lineTo(W-100,200); ctx.stroke();
 
+  // Próximo jogo (se houver um agendado depois deste) fica reservado em
+  // baixo, acima do rodapé — o resto do conteúdo centra-se no espaço que
+  // sobra, tal como o resumo em texto só mostrava esta secção quando fazia
+  // sentido.
+  const hasNextGame=!!(gameInfo?.date&&gameInfo.date>effectiveDate);
+  const footerReserveTop=H-100;
+  const nextGameH=170;
+  const nextGameTop=hasNextGame?footerReserveTop-nextGameH:null;
+
   // O conteúdo nem sempre tem vencedor e MVP (um jogo pode fechar sem
   // nenhum dos dois) — em vez de deixar o resto do cartão vazio, cada bloco
-  // tem uma altura fixa e o conjunto fica centrado no espaço entre o
-  // cabeçalho e o rodapé.
+  // tem uma altura fixa e o conjunto fica centrado no espaço disponível.
   const blocks=[];
   if(historyGame.winner_team) blocks.push({type:"winner",h:170});
   if(historyGame.mvp_name) blocks.push({type:"mvp",h:150});
-  blocks.push({type:"players",h:50});
-  const middleTop=220, middleBottom=960;
+  blocks.push({type:"players",h:55});
+  blocks.push({type:"piggybank",h:55});
+  const middleTop=220;
+  const middleBottom=(hasNextGame?nextGameTop:footerReserveTop)-20;
   const totalH=blocks.reduce((s,b)=>s+b.h,0);
   let y=middleTop+(middleBottom-middleTop-totalH)/2;
 
@@ -1741,17 +1754,40 @@ async function buildGameCardImage({historyGame, effectiveDate, teamConfig}){
       const size=fitFontSize(ctx,label,maxTextWidth,76,"Bebas Neue");
       ctx.font=`400 ${size}px "Bebas Neue", Impact, sans-serif`;
       ctx.fillText(label,W/2,y+108);
-    } else {
+    } else if(block.type==="players"){
       ctx.fillStyle=gray;
-      ctx.font='600 30px system-ui, -apple-system, sans-serif';
-      ctx.fillText(`${historyGame.players_count} ${historyGame.players_count===1?"jogador":"jogadores"}`,W/2,y+30);
+      ctx.font='600 32px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`👥 ${historyGame.players_count} ${historyGame.players_count===1?"jogou":"jogaram"}`,W/2,y+36);
+    } else {
+      ctx.fillStyle=piggybank>=0?"#4ade80":"#f87171";
+      ctx.font='700 32px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`💰 Mealheiro: ${piggybank>=0?"+":""}${piggybank}€`,W/2,y+36);
     }
     y+=block.h;
   }
 
+  if(hasNextGame){
+    ctx.strokeStyle="#23271b"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(100,nextGameTop-20); ctx.lineTo(W-100,nextGameTop-20); ctx.stroke();
+    ctx.fillStyle=gray;
+    ctx.font='700 24px system-ui, sans-serif';
+    ctx.fillText("PRÓXIMO JOGO",W/2,nextGameTop+32);
+    ctx.fillStyle=white;
+    const quando=`${formatDisplayDate(gameInfo.date)}${gameInfo.time?` às ${gameInfo.time}`:""}`;
+    const quandoSize=fitFontSize(ctx,quando,maxTextWidth,32,"Bebas Neue",22);
+    ctx.font=`400 ${quandoSize}px "Bebas Neue", Impact, sans-serif`;
+    ctx.fillText(quando,W/2,nextGameTop+74);
+    if(gameInfo.location){
+      ctx.fillStyle=gray;
+      const locSize=fitFontSize(ctx,gameInfo.location,maxTextWidth,24,"Bebas Neue",18);
+      ctx.font=`400 ${locSize}px "Bebas Neue", Impact, sans-serif`;
+      ctx.fillText(gameInfo.location,W/2,nextGameTop+110);
+    }
+  }
+
   ctx.fillStyle=gray;
   ctx.font='600 28px system-ui, -apple-system, sans-serif';
-  ctx.fillText("⚽ hojehajogo.pt",W/2,H-60);
+  ctx.fillText("⚽ hojehajogo.pt",W/2,H-50);
 
   return new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
 }
@@ -1762,7 +1798,7 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
   const partilhar=async()=>{
     setEstado("a-gerar");
     try{
-      const blob=await buildGameCardImage({historyGame,effectiveDate,teamConfig});
+      const blob=await buildGameCardImage({historyGame,gameInfo,effectiveDate,piggybank,teamConfig});
       const file=new File([blob],`hoje-ha-jogo-${effectiveDate}.png`,{type:"image/png"});
       if(navigator.canShare&&navigator.canShare({files:[file]})){
         await navigator.share({files:[file],title:"Hoje Há Jogo"});

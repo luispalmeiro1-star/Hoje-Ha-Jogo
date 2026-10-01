@@ -1286,7 +1286,18 @@ export default function App() {
     const debt=debts.find(d=>d.id===debtId); if(!debt) return;
     const full=amountPaid===null||amountPaid>=Number(debt.amount);
     const paidNow=full?Number(debt.amount):Number(amountPaid);
-    await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null});
+    // A descrição da dívida traz a data do jogo que a originou ("Jogo de
+    // AAAA-MM-DD" ou "... — convidado X"). Ao pagar, soma-se ao "recolhido"
+    // desse jogo específico em vez de criar uma entrada solta datada do
+    // próximo jogo — isso fazia o cartão do jogo original nunca refletir
+    // pagamentos feitos depois do fecho (ex: alguém paga 3 dias depois).
+    const gameDateMatch=debt.description?.match(/Jogo de (\d{4}-\d{2}-\d{2})/);
+    let attached=false;
+    if(gameDateMatch){
+      const{data:gameRow}=await supabase.from("game_history").select("id,collected").eq("group_id",activeGroupId).eq("date",gameDateMatch[1]).gt("players_count",0).maybeSingle();
+      if(gameRow){ await supabase.from("game_history").update({collected:Number(gameRow.collected)+paidNow}).eq("id",gameRow.id); attached=true; }
+    }
+    if(!attached) await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null});
     if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
     else{ await supabase.from("debts").update({amount:Number(debt.amount)-Number(amountPaid)}).eq("id",debtId); showToast(`Pagamento parcial — restam ${Number(debt.amount)-Number(amountPaid)}€`); }
   };

@@ -1674,25 +1674,124 @@ function buildGameSummary({historyGame, gameInfo, effectiveDate, piggybank=0}) {
   linhas.push("","hojehajogo.pt");
   return linhas.join("\n");
 }
-function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=0, isAdmin=false}) {
-  const [copiado,setCopiado]=useState(false);
+// Encolhe a fonte até o texto caber na largura disponível — evita que um nome
+// de equipa ou de MVP compridos saiam do cartão.
+function fitFontSize(ctx,text,maxWidth,startSize,family,minSize=28){
+  let size=startSize;
+  while(size>minSize){
+    ctx.font=`400 ${size}px "${family}", Impact, sans-serif`;
+    if(ctx.measureText(text).width<=maxWidth) break;
+    size-=4;
+  }
+  return size;
+}
+// O cartão visual que se partilha no WhatsApp em vez de texto corrido —
+// resultado, MVP e data, com a cor e o nome reais da equipa vencedora.
+async function buildGameCardImage({historyGame, effectiveDate, teamConfig}){
+  const W=1080,H=1080;
+  const canvas=document.createElement("canvas");
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  try { await document.fonts.load('400 100px "Bebas Neue"'); await document.fonts.ready; } catch(e){}
+
+  const gray="#8a9080", white="#ffffff", gold="#d4af37";
+  const maxTextWidth=W-160;
+  ctx.fillStyle="#0a0b08"; ctx.fillRect(0,0,W,H);
+  ctx.textAlign="center";
+
+  ctx.fillStyle=gold;
+  ctx.font='400 54px "Bebas Neue", Impact, sans-serif';
+  ctx.fillText("HOJE HÁ JOGO",W/2,110);
+  ctx.fillStyle=gray;
+  ctx.font='600 28px system-ui, -apple-system, sans-serif';
+  ctx.fillText(formatDisplayDate(effectiveDate),W/2,156);
+  ctx.strokeStyle="#23271b"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(100,200); ctx.lineTo(W-100,200); ctx.stroke();
+
+  // O conteúdo nem sempre tem vencedor e MVP (um jogo pode fechar sem
+  // nenhum dos dois) — em vez de deixar o resto do cartão vazio, cada bloco
+  // tem uma altura fixa e o conjunto fica centrado no espaço entre o
+  // cabeçalho e o rodapé.
+  const blocks=[];
+  if(historyGame.winner_team) blocks.push({type:"winner",h:170});
+  if(historyGame.mvp_name) blocks.push({type:"mvp",h:150});
+  blocks.push({type:"players",h:50});
+  const middleTop=220, middleBottom=960;
+  const totalH=blocks.reduce((s,b)=>s+b.h,0);
+  let y=middleTop+(middleBottom-middleTop-totalH)/2;
+
+  for(const block of blocks){
+    if(block.type==="winner"){
+      const idx="ABC".indexOf(historyGame.winner_team);
+      const style=teamStyle(teamConfig,historyGame.winner_team,idx);
+      const label=`🏆 ${style.label.toUpperCase()}`;
+      ctx.fillStyle=gray;
+      ctx.font='700 26px system-ui, sans-serif';
+      ctx.fillText("VENCEDOR",W/2,y+30);
+      ctx.fillStyle=style.hex;
+      const size=fitFontSize(ctx,label,maxTextWidth,96,"Bebas Neue");
+      ctx.font=`400 ${size}px "Bebas Neue", Impact, sans-serif`;
+      ctx.fillText(label,W/2,y+120);
+    } else if(block.type==="mvp"){
+      ctx.fillStyle=gray;
+      ctx.font='700 26px system-ui, sans-serif';
+      ctx.fillText("MVP DO JOGO",W/2,y+30);
+      ctx.fillStyle=white;
+      const label=`⭐ ${historyGame.mvp_name}`;
+      const size=fitFontSize(ctx,label,maxTextWidth,76,"Bebas Neue");
+      ctx.font=`400 ${size}px "Bebas Neue", Impact, sans-serif`;
+      ctx.fillText(label,W/2,y+108);
+    } else {
+      ctx.fillStyle=gray;
+      ctx.font='600 30px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`${historyGame.players_count} ${historyGame.players_count===1?"jogador":"jogadores"}`,W/2,y+30);
+    }
+    y+=block.h;
+  }
+
+  ctx.fillStyle=gray;
+  ctx.font='600 28px system-ui, -apple-system, sans-serif';
+  ctx.fillText("⚽ hojehajogo.pt",W/2,H-60);
+
+  return new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
+}
+function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=0, isAdmin=false, teamConfig={}}) {
+  const [estado,setEstado]=useState("idle"); // idle | a-gerar | partilhado | descarregado
   // Só o admin partilha o resumo — é ele que fecha o jogo e responde pelas contas.
   if(!historyGame||!isAdmin) return null;
   const partilhar=async()=>{
-    const texto=buildGameSummary({historyGame,gameInfo,effectiveDate,piggybank});
-    if(navigator.share){
-      try { await navigator.share({text:texto}); return; }
-      // Cancelar a partilha não é erro — nesse caso não copiamos nada.
-      catch(e){ if(e&&e.name==="AbortError") return; }
+    setEstado("a-gerar");
+    try{
+      const blob=await buildGameCardImage({historyGame,effectiveDate,teamConfig});
+      const file=new File([blob],`hoje-ha-jogo-${effectiveDate}.png`,{type:"image/png"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"Hoje Há Jogo"});
+        setEstado("idle"); return;
+      }
+      // Sem suporte a partilhar imagens (ex: desktop): descarrega o ficheiro
+      // para a pessoa anexar à mão no WhatsApp.
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url; a.download=file.name; a.click();
+      URL.revokeObjectURL(url);
+      setEstado("descarregado"); setTimeout(()=>setEstado("idle"),2200);
+    } catch(e){
+      if(e&&e.name==="AbortError"){ setEstado("idle"); return; } // cancelou a partilha
+      console.error("Não foi possível gerar o cartão, a usar texto:",e);
+      // Rede de segurança: se o canvas falhar por algum motivo, mantém-se a
+      // partilha por texto que já existia, em vez de o botão não fazer nada.
+      const texto=buildGameSummary({historyGame,gameInfo,effectiveDate,piggybank});
+      try{
+        if(navigator.share){ await navigator.share({text:texto}); }
+        else { await navigator.clipboard.writeText(texto); setEstado("partilhado"); setTimeout(()=>setEstado("idle"),2200); return; }
+      } catch(e2){ if(!(e2&&e2.name==="AbortError")) console.error("Falha também no texto:",e2); }
+      setEstado("idle");
     }
-    try {
-      await navigator.clipboard.writeText(texto);
-      setCopiado(true); setTimeout(()=>setCopiado(false),2200);
-    } catch(e){ console.error("Não foi possível copiar o resumo:",e); }
   };
+  const textos={idle:"🖼️ PARTILHAR CARTÃO","a-gerar":"A preparar…",partilhado:"RESUMO COPIADO ✓",descarregado:"CARTÃO GUARDADO ✓"};
   return (
-    <button onClick={partilhar} style={{marginTop:12,width:"100%",background:"rgba(212,175,55,0.12)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"10px 14px",color:"#d4af37",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-      {copiado?"RESUMO COPIADO ✓":"📋 PARTILHAR RESUMO"}
+    <button onClick={partilhar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"rgba(212,175,55,0.12)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"10px 14px",color:"#d4af37",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
+      {textos[estado]}
     </button>
   );
 }
@@ -5376,7 +5475,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
         {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#565c4d",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           {loadingJogadores?"A carregar...":open?"▲ Ocultar jogadores":`▼ Ver ${h.players_count} jogadores`}
         </button>}
-        {h.players_count>0&&<PartilharResumoButton historyGame={h} gameInfo={gameInfo} effectiveDate={h.date} piggybank={piggybank} isAdmin={isAdmin}/>}
+        {h.players_count>0&&<PartilharResumoButton historyGame={h} gameInfo={gameInfo} effectiveDate={h.date} piggybank={piggybank} isAdmin={isAdmin} teamConfig={teamConfig}/>}
       </div>
       {/* Lista de jogadores */}
       {open&&jogadores.length>0&&(

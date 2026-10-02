@@ -4397,6 +4397,10 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
 // Lista fixa no código, mais recente primeiro — sem tabela nova. Adiciona-se
 // uma entrada aqui sempre que sai uma funcionalidade que valha a pena contar.
 const NOVIDADES = [
+  {id:"cartao-partilha",date:"01/10/2026", title:"Cartão para partilhar o resultado",   desc:"Em \"Histórico\", partilhar um jogo já não manda só texto — gera um cartão com o resultado, o MVP e as cores da tua equipa, pronto para o WhatsApp."},
+  {id:"botoes-presenca",date:"30/09/2026", title:"Botões de presença mais simples",     desc:"\"Vou\" e \"Não vou\" ficam sempre com o mesmo texto, em vez de mudar consoante já tinhas respondido. Ao dizer que não vais, passa a perguntar se foi lesão."},
+  {id:"equipas-cor",    date:"27/09/2026", title:"Nome e cor por equipa",               desc:"O admin já pode dar nome e cor própria a cada equipa em \"Gerir\" — fica assim em todo o lado, incluindo no histórico e no cartão de partilha."},
+  {id:"lesionado",      date:"27/09/2026", title:"Marcar-te como lesionado",            desc:"Ao dizer que não vais a um jogo, já dá para indicar que foi lesão — fica registado junto do teu nome para o admin."},
   {id:"chat-moderar",   date:"27/09/2026", title:"Chat: apagar mensagens",              desc:"Já dá para apagar as tuas próprias mensagens. Quem é admin também pode apagar mensagens de qualquer pessoa no grupo."},
   {id:"menos-scroll",   date:"27/09/2026", title:"Menos scroll até à lista de presenças", desc:"A posição e as equipas automáticas escondem-se agora num cartão que abres quando precisares."},
   {id:"chat-nao-lida",  date:"26/09/2026", title:"Aviso de mensagem nova no chat",       desc:"Um ponto vermelho no botão do Chat mostra quando alguém escreveu algo que ainda não viste."},

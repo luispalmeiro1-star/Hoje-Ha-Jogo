@@ -3628,7 +3628,8 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
             <div className="list-info">
               <span className="list-name">{p.name}</span>
               {p.is_guest&&<span className="guest-sub">convidado de {p.invited_by}</span>}
-              {debt>0&&<span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>⚠️ deve {debt}€</span>}
+              {/* Dívida de jogos anteriores: só interessa ao admin (que já a vê em "Dívidas"), não ao grupo inteiro junto ao "Deve {cost}€" deste jogo. */}
+              {isAdmin&&debt>0&&<span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>⚠️ deve {debt}€</span>}
             </div>
             {isAdmin?<button className={`paid-btn ${p.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(p.id)}>{p.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${cost}€`}</button>:<span className={`paid-chip ${p.paid?"paid-yes":"paid-no"}`}>{p.paid?"Pago ✓":`Deve ${cost}€`}</span>}
           </div>

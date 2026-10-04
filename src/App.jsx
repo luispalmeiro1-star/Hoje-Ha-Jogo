@@ -1471,7 +1471,7 @@ function DebtRow({debt, onPayDebt}) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:12,color:"#8a9080"}}>{debt.description} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
         <div style={{display:"flex",gap:6}}>
-          <div style={{background:"rgba(239,68,68,0.15)",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"#f87171"}}>💸 Em dívida</div>
+          <span style={{fontSize:11,fontWeight:700,color:"#f87171",display:"flex",alignItems:"center",gap:4}}>💸 Em dívida</span>
           <button style={{background:"#1ea851",border:"none",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
         </div>
       </div>
@@ -4103,8 +4103,10 @@ function SeasonStatsCard({player, groupId}) {
     </div>
   );
   if(seasons.length===0) return (
-    <div style={{textAlign:"center",padding:"24px 0",color:"#565c4d",fontSize:13}}>
-      Nenhuma época anterior registada
+    <div style={{textAlign:"center",padding:"32px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+      <span style={{fontSize:28}}>🏁</span>
+      <span style={{color:"#8a9080",fontSize:13,fontWeight:600}}>Ainda não fechaste nenhuma época</span>
+      <span style={{color:"#565c4d",fontSize:11}}>Quando uma época terminar, fica aqui o resumo</span>
     </div>
   );
 

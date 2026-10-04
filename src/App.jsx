@@ -1385,13 +1385,20 @@ export default function App() {
 
 // ── MODAL DE CONFIRMAÇÃO ────────────────────────────────────────────────────────
 function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancelar", onConfirm, onCancel}) {
+  const safeBtnRef=useRef(null);
+  useEffect(()=>{
+    safeBtnRef.current?.focus();
+    const onKey=e=>{ if(e.key==="Escape") onCancel(); };
+    window.addEventListener("keydown",onKey);
+    return ()=>window.removeEventListener("keydown",onKey);
+  },[onCancel]);
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:16}}>
         <div style={{fontSize:14,color:"white",lineHeight:1.5,fontFamily:"'DM Sans',sans-serif"}}>{message}</div>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={onCancel} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{cancelLabel}</button>
-          <button onClick={onConfirm} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"linear-gradient(180deg,#2fd66b,#1ea851)",color:danger?"white":"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{confirmLabel||"Confirmar"}</button>
+          <button ref={danger?safeBtnRef:null} onClick={onCancel} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{cancelLabel}</button>
+          <button ref={danger?null:safeBtnRef} onClick={onConfirm} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"linear-gradient(180deg,#2fd66b,#1ea851)",color:danger?"white":"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{confirmLabel||"Confirmar"}</button>
         </div>
       </div>
     </div>
@@ -1401,6 +1408,13 @@ function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancela
 // Como o ConfirmModal, mas para escolher entre várias opções em vez de um
 // simples sim/não (ex: "não vou" — com ou sem motivo de lesão).
 function ChoiceModal({message, options, onSelect, onCancel}) {
+  const cancelRef=useRef(null);
+  useEffect(()=>{
+    cancelRef.current?.focus();
+    const onKey=e=>{ if(e.key==="Escape") onCancel(); };
+    window.addEventListener("keydown",onKey);
+    return ()=>window.removeEventListener("keydown",onKey);
+  },[onCancel]);
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14}}>
@@ -1409,7 +1423,7 @@ function ChoiceModal({message, options, onSelect, onCancel}) {
           {options.map(opt=>(
             <button key={opt.value} onClick={()=>onSelect(opt.value)} style={{padding:"11px",borderRadius:10,border:opt.danger?"none":"2px solid #3a2020",background:opt.danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"#14160f",color:opt.danger?"white":"#d6a1a1",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{opt.label}</button>
           ))}
-          <button onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
+          <button ref={cancelRef} onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -1792,27 +1806,18 @@ async function buildGameCardImage({historyGame, gameInfo, effectiveDate, piggyba
   return new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
 }
 function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=0, isAdmin=false, teamConfig={}}) {
-  const [estado,setEstado]=useState("idle"); // idle | a-gerar | partilhado | descarregado
+  const [estado,setEstado]=useState("idle"); // idle | a-gerar | pre-visualizar | partilhado | descarregado
+  const [preview,setPreview]=useState(null); // {blob,url} — para rever o cartão antes de enviar
   // Só o admin partilha o resumo — é ele que fecha o jogo e responde pelas contas.
   if(!historyGame||!isAdmin) return null;
-  const partilhar=async()=>{
+  const fecharPreview=()=>{ if(preview?.url) URL.revokeObjectURL(preview.url); setPreview(null); };
+  const gerar=async()=>{
     setEstado("a-gerar");
     try{
       const blob=await buildGameCardImage({historyGame,gameInfo,effectiveDate,piggybank,teamConfig});
-      const file=new File([blob],`hoje-ha-jogo-${effectiveDate}.png`,{type:"image/png"});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:"Hoje Há Jogo"});
-        setEstado("idle"); return;
-      }
-      // Sem suporte a partilhar imagens (ex: desktop): descarrega o ficheiro
-      // para a pessoa anexar à mão no WhatsApp.
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=url; a.download=file.name; a.click();
-      URL.revokeObjectURL(url);
-      setEstado("descarregado"); setTimeout(()=>setEstado("idle"),2200);
+      setPreview({blob,url:URL.createObjectURL(blob)});
+      setEstado("pre-visualizar");
     } catch(e){
-      if(e&&e.name==="AbortError"){ setEstado("idle"); return; } // cancelou a partilha
       console.error("Não foi possível gerar o cartão, a usar texto:",e);
       // Rede de segurança: se o canvas falhar por algum motivo, mantém-se a
       // partilha por texto que já existia, em vez de o botão não fazer nada.
@@ -1824,11 +1829,41 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
       setEstado("idle");
     }
   };
+  const confirmarPartilha=async()=>{
+    const {blob}=preview;
+    const file=new File([blob],`hoje-ha-jogo-${effectiveDate}.png`,{type:"image/png"});
+    try{
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"Hoje Há Jogo"});
+      } else {
+        // Sem suporte a partilhar imagens (ex: desktop): descarrega o ficheiro
+        // para a pessoa anexar à mão no WhatsApp.
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=url; a.download=file.name; a.click();
+        URL.revokeObjectURL(url);
+        fecharPreview(); setEstado("descarregado"); setTimeout(()=>setEstado("idle"),2200);
+        return;
+      }
+    } catch(e){ if(!(e&&e.name==="AbortError")) console.error("Falha ao partilhar:",e); } // cancelou a partilha
+    fecharPreview(); setEstado("idle");
+  };
   const textos={idle:"🖼️ PARTILHAR CARTÃO","a-gerar":"A preparar…",partilhado:"RESUMO COPIADO ✓",descarregado:"CARTÃO GUARDADO ✓"};
   return (
-    <button onClick={partilhar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"rgba(212,175,55,0.12)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"10px 14px",color:"#d4af37",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
-      {textos[estado]}
-    </button>
+    <>
+      <button onClick={gerar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"rgba(212,175,55,0.12)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"10px 14px",color:"#d4af37",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
+        {textos[estado]||"🖼️ PARTILHAR CARTÃO"}
+      </button>
+      {estado==="pre-visualizar"&&preview&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:2000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,gap:16}} onClick={()=>{fecharPreview();setEstado("idle");}}>
+          <img src={preview.url} alt="Pré-visualização do cartão" onClick={e=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"65vh",borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}/>
+          <div onClick={e=>e.stopPropagation()} style={{display:"flex",gap:10,width:"100%",maxWidth:340}}>
+            <button onClick={()=>{fecharPreview();setEstado("idle");}} style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
+            <button onClick={confirmarPartilha} style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Partilhar</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -2146,7 +2181,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               <span style={{fontSize:11,color:pct>=100?"#f87171":"#565c4d",fontWeight:700}}>{confirmadosAnimado} / {maxPlayers}</span>
             </div>
             <div style={{height:6,background:"#23271b",borderRadius:99,overflow:"hidden"}}>
-              <div style={{width:`${Math.min(pct,100)}%`,height:"100%",background:pct>=100?"#dc2626":"#1ea851",borderRadius:99,transition:"width 0.6s"}}/>
+              <div style={{width:"100%",height:"100%",background:pct>=100?"#dc2626":"#1ea851",borderRadius:99,transform:`scaleX(${Math.min(pct,100)/100})`,transformOrigin:"left",transition:"transform 0.6s"}}/>
             </div>
             {pct>=100&&<div style={{marginTop:8,background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.4)",borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:16}}>🔒</span>
@@ -2697,7 +2732,7 @@ function DemoView({setView, showToast}) {
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,lineHeight:1,color:"#4ade80"}}>{confirmados}<span style={{color:"#565c4d"}}>/{MAX}</span></div>
           </div>
           <div style={{height:5,borderRadius:99,background:"#23271b",marginTop:8,overflow:"hidden"}}>
-            <div style={{width:`${Math.min(100,(confirmados/MAX)*100)}%`,height:"100%",background:"#1ea851",borderRadius:99,transition:"width 0.35s ease"}}/>
+            <div style={{width:"100%",height:"100%",background:"#1ea851",borderRadius:99,transform:`scaleX(${Math.min(100,(confirmados/MAX)*100)/100})`,transformOrigin:"left",transition:"transform 0.35s ease"}}/>
           </div>
           <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
             <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(74,222,128,0.10)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:99,padding:"4px 10px",fontSize:11,fontWeight:700,color:"#4ade80"}}>

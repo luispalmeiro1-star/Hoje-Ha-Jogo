@@ -1386,8 +1386,12 @@ export default function App() {
 // ── MODAL DE CONFIRMAÇÃO ────────────────────────────────────────────────────────
 function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancelar", onConfirm, onCancel}) {
   const safeBtnRef=useRef(null);
+  // Só na primeira vez que o modal aparece — onCancel é uma função nova a
+  // cada render do componente pai (que acontece muito, por causa do
+  // realtime), e se o foco dependesse disso roubava o foco de volta ao
+  // botão seguro sempre que algo mudasse em segundo plano.
+  useEffect(()=>{ safeBtnRef.current?.focus(); },[]);
   useEffect(()=>{
-    safeBtnRef.current?.focus();
     const onKey=e=>{ if(e.key==="Escape") onCancel(); };
     window.addEventListener("keydown",onKey);
     return ()=>window.removeEventListener("keydown",onKey);
@@ -1409,8 +1413,9 @@ function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancela
 // simples sim/não (ex: "não vou" — com ou sem motivo de lesão).
 function ChoiceModal({message, options, onSelect, onCancel}) {
   const cancelRef=useRef(null);
+  // Só na primeira vez — ver nota equivalente no ConfirmModal.
+  useEffect(()=>{ cancelRef.current?.focus(); },[]);
   useEffect(()=>{
-    cancelRef.current?.focus();
     const onKey=e=>{ if(e.key==="Escape") onCancel(); };
     window.addEventListener("keydown",onKey);
     return ()=>window.removeEventListener("keydown",onKey);
@@ -1835,18 +1840,28 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
     try{
       if(navigator.canShare&&navigator.canShare({files:[file]})){
         await navigator.share({files:[file],title:"Hoje Há Jogo"});
-      } else {
-        // Sem suporte a partilhar imagens (ex: desktop): descarrega o ficheiro
-        // para a pessoa anexar à mão no WhatsApp.
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement("a");
-        a.href=url; a.download=file.name; a.click();
-        URL.revokeObjectURL(url);
-        fecharPreview(); setEstado("descarregado"); setTimeout(()=>setEstado("idle"),2200);
-        return;
+        fecharPreview(); setEstado("idle"); return;
       }
-    } catch(e){ if(!(e&&e.name==="AbortError")) console.error("Falha ao partilhar:",e); } // cancelou a partilha
-    fecharPreview(); setEstado("idle");
+      // Sem suporte a partilhar imagens (ex: desktop): descarrega o ficheiro
+      // para a pessoa anexar à mão no WhatsApp.
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url; a.download=file.name; a.click();
+      URL.revokeObjectURL(url);
+      fecharPreview(); setEstado("descarregado"); setTimeout(()=>setEstado("idle"),2200);
+    } catch(e){
+      fecharPreview();
+      if(e&&e.name==="AbortError"){ setEstado("idle"); return; } // cancelou a partilha
+      console.error("Falha ao partilhar a imagem, a tentar texto:",e);
+      // Rede de segurança: se a partilha da imagem falhar por outro motivo
+      // (ex: política de permissões do browser), mantém-se a partilha por
+      // texto que já existia, em vez de ficar sem feedback nenhum.
+      const texto=buildGameSummary({historyGame,gameInfo,effectiveDate,piggybank});
+      try{
+        if(navigator.share){ await navigator.share({text:texto}); setEstado("idle"); }
+        else { await navigator.clipboard.writeText(texto); setEstado("partilhado"); setTimeout(()=>setEstado("idle"),2200); }
+      } catch(e2){ if(!(e2&&e2.name==="AbortError")) console.error("Falha também no texto:",e2); setEstado("idle"); }
+    }
   };
   const textos={idle:"🖼️ PARTILHAR CARTÃO","a-gerar":"A preparar…",partilhado:"RESUMO COPIADO ✓",descarregado:"CARTÃO GUARDADO ✓"};
   return (

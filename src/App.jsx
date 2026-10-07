@@ -1117,6 +1117,29 @@ export default function App() {
     if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
     if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
   };
+  // Troca manual entre um jogador em espera e um que está dentro — escolhida
+  // pelo admin, não pela ordem de chegada. Pedido depois de um caso real: um
+  // convidado tinha ficado com o lugar antes de um membro do grupo responder,
+  // e a fila de espera só promove por ordem, não dá para escolher quem entra.
+  const swapPresence = async(waitId,inId) => {
+    const waitP=players.find(p=>p.id===waitId), inP=players.find(p=>p.id===inId);
+    if(!waitP||!inP||waitP.status!=="wait"||inP.status!=="in") return;
+    const agora=Date.now();
+    const antes=players;
+    const depois=players.map(pl=>{
+      if(pl.id===waitId) return {...pl,status:"in",confirmed_at:agora,paid:false};
+      if(pl.id===inId) return {...pl,status:"wait",confirmed_at:agora,paid:false};
+      return pl;
+    });
+    setPlayers(depois);
+    const[r1,r2]=await Promise.all([
+      supabase.from("player_groups").update({status:"in",confirmed_at:agora,paid:false}).eq("player_id",waitId).eq("group_id",activeGroupId),
+      supabase.from("player_groups").update({status:"wait",confirmed_at:agora,paid:false}).eq("player_id",inId).eq("group_id",activeGroupId),
+    ]);
+    if(r1.error||r2.error){ setPlayers(antes); showToast("Não foi possível trocar os lugares","err"); return; }
+    if(podeAjustarEquipas()) await reassignAllTeams(depois);
+    showToast(`${waitP.name} entrou, ${inP.name} ficou em espera 🔁`);
+  };
   const addGuest = async(guestName,invitedById,position="polivalente")=>{
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
@@ -1370,7 +1393,7 @@ export default function App() {
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={(destino,motivo)=>togglePresence(liveUser.id,destino,motivo)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -1424,9 +1447,9 @@ function ChoiceModal({message, options, onSelect, onCancel}) {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{fontSize:14,color:"white",lineHeight:1.5,fontFamily:"'DM Sans',sans-serif"}}>{message}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
           {options.map(opt=>(
-            <button key={opt.value} onClick={()=>onSelect(opt.value)} style={{padding:"11px",borderRadius:10,border:opt.danger?"none":"2px solid #3a2020",background:opt.danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"#14160f",color:opt.danger?"white":"#d6a1a1",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{opt.label}</button>
+            <button key={opt.value} onClick={()=>onSelect(opt.value)} style={{padding:"11px",borderRadius:10,border:opt.danger?"none":opt.neutral?"1px solid #23271b":"2px solid #3a2020",background:opt.danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"#14160f",color:opt.danger?"white":opt.neutral?"white":"#d6a1a1",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{opt.label}</button>
           ))}
           <button ref={cancelRef} onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
         </div>
@@ -4868,7 +4891,7 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onSwapPresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait",isAdminNao=myself.status==="nao_vou";
@@ -5239,6 +5262,12 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
                 </div>
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:11}} onClick={async()=>{ const saindo=p.status==="in"||p.status==="wait"; if(await askConfirm(saindo?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`,{danger:saindo,confirmLabel:saindo?"Marcar":"Confirmar"})) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
+                {p.status==="wait"&&<button className="icon-ghost" onClick={async()=>{
+                  const dentro=members.filter(m=>m.status==="in"&&!m.is_admin);
+                  if(!dentro.length){ showToast("Não há ninguém dentro para trocar","warn"); return; }
+                  const escolhidoId=await askChoice(`Trocar ${p.name} por quem? A pessoa escolhida passa para a lista de espera.`,dentro.map(m=>({label:m.name,value:m.id,neutral:true})));
+                  if(escolhidoId) onSwapPresence(p.id,escolhidoId);
+                }} aria-label={`Trocar ${p.name} com alguém que está dentro`} title="Trocar com alguém dentro">🔁</button>}
                 {!p.is_admin&&<button className="icon-danger" onClick={async()=>{ if(await askConfirm(`Remover ${p.name} do grupo?`,{danger:true,confirmLabel:"Remover"})) onRemovePlayer(p.id); }} aria-label={`Remover ${p.name}`}><Icon name="trash" size={13}/></button>}
                 {editPassId===p.id
                   ?<div style={{width:"100%",marginTop:6}}>

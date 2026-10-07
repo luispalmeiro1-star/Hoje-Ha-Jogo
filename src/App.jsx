@@ -1125,18 +1125,28 @@ export default function App() {
     const waitP=players.find(p=>p.id===waitId), inP=players.find(p=>p.id===inId);
     if(!waitP||!inP||waitP.status!=="wait"||inP.status!=="in") return;
     const agora=Date.now();
-    const antes=players;
+    // Tem de ser sequencial, não Promise.all: há um gatilho na base de dados
+    // que impede o grupo de passar do limite e devolve "wait" em silêncio
+    // (sem erro nenhum) a quem tentar entrar acima da capacidade. Se as duas
+    // trocas corressem em paralelo, a promoção podia ser avaliada antes de a
+    // saída ter sido gravada — o gatilho ainda via o lugar ocupado e recusava
+    // a entrada, deixando a pessoa escolhida presa na espera.
+    const{error:errSaida}=await supabase.from("player_groups").update({status:"wait",confirmed_at:agora,paid:false}).eq("player_id",inId).eq("group_id",activeGroupId);
+    if(errSaida){ showToast("Não foi possível trocar os lugares","err"); return; }
+    const{data:entrou,error:errEntrada}=await supabase.from("player_groups").update({status:"in",confirmed_at:agora,paid:false}).eq("player_id",waitId).eq("group_id",activeGroupId).select("status").single();
+    if(errEntrada||entrou?.status!=="in"){
+      // A entrada não pegou (ex: entretanto já não havia vaga por outro
+      // motivo) — desfaz a saída para não ficar um lugar vazio à toa.
+      await supabase.from("player_groups").update({status:"in",confirmed_at:inP.confirmed_at,paid:inP.paid}).eq("player_id",inId).eq("group_id",activeGroupId);
+      showToast(`Não foi possível trocar — ${waitP.name} não conseguiu entrar. Nada mudou.`,"err");
+      return;
+    }
     const depois=players.map(pl=>{
       if(pl.id===waitId) return {...pl,status:"in",confirmed_at:agora,paid:false};
       if(pl.id===inId) return {...pl,status:"wait",confirmed_at:agora,paid:false};
       return pl;
     });
     setPlayers(depois);
-    const[r1,r2]=await Promise.all([
-      supabase.from("player_groups").update({status:"in",confirmed_at:agora,paid:false}).eq("player_id",waitId).eq("group_id",activeGroupId),
-      supabase.from("player_groups").update({status:"wait",confirmed_at:agora,paid:false}).eq("player_id",inId).eq("group_id",activeGroupId),
-    ]);
-    if(r1.error||r2.error){ setPlayers(antes); showToast("Não foi possível trocar os lugares","err"); return; }
     if(podeAjustarEquipas()) await reassignAllTeams(depois);
     showToast(`${waitP.name} entrou, ${inP.name} ficou em espera 🔁`);
   };

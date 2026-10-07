@@ -5263,7 +5263,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 </div>
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:11}} onClick={async()=>{ const saindo=p.status==="in"||p.status==="wait"; if(await askConfirm(saindo?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`,{danger:saindo,confirmLabel:saindo?"Marcar":"Confirmar"})) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
                 {p.status==="wait"&&<button className="icon-ghost" onClick={async()=>{
-                  const dentro=members.filter(m=>m.status==="in"&&!m.is_admin);
+                  const dentro=players.filter(m=>m.status==="in"&&!m.is_admin);
                   if(!dentro.length){ showToast("Não há ninguém dentro para trocar","warn"); return; }
                   const escolhidoId=await askChoice(`Trocar ${p.name} por quem? A pessoa escolhida passa para a lista de espera.`,dentro.map(m=>({label:m.name,value:m.id,neutral:true})));
                   if(escolhidoId) onSwapPresence(p.id,escolhidoId);

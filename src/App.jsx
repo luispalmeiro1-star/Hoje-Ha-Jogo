@@ -5262,14 +5262,18 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {adminTab==="jogadores"&&(
           <>
           <PasswordResetRequestsPanel adminId={currentUser.id} showToast={showToast}/>
-          {members.length===0&&<p className="empty-msg">Ainda não há jogadores neste grupo.</p>}
+          {members.length===0&&guests.length===0&&<p className="empty-msg">Ainda não há jogadores neste grupo.</p>}
           <div className="player-list">
-            {members.map(p=>(
-              <div key={p.id} className="list-row" style={{flexWrap:"wrap",paddingBottom:12,alignItems:"flex-start",gap:8}}>
+            {/* Membros com conta e convidados na mesma lista — o admin tem de
+                conseguir confirmar, trocar e remover qualquer um dos dois,
+                não só quem tem conta. Só a password fica de fora, porque
+                convidados não têm login. */}
+            {[...members,...guests].map(p=>(
+              <div key={p.id} className={`list-row ${p.is_guest?"row-guest":""}`} style={{flexWrap:"wrap",paddingBottom:12,alignItems:"flex-start",gap:8}}>
                 <Avatar player={players.find(pl=>pl.id===p.id)||p} size={30} style={{marginTop:2}}/>
                 <div className="list-info" style={{flex:1}}>
                   <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
-                  <span className="guest-sub">@{p.username||"sem-username"} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
+                  <span className="guest-sub">{p.is_guest?`convidado de ${p.invited_by}`:`@${p.username||"sem-username"}`} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
                 </div>
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:11}} onClick={async()=>{ const saindo=p.status==="in"||p.status==="wait"; if(await askConfirm(saindo?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`,{danger:saindo,confirmLabel:saindo?"Marcar":"Confirmar"})) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
                 {p.status==="wait"&&<button className="icon-ghost" onClick={async()=>{
@@ -5278,8 +5282,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   const escolhidoId=await askChoice(`Trocar ${p.name} por quem? A pessoa escolhida passa para a lista de espera.`,dentro.map(m=>({label:m.name,value:m.id,neutral:true})));
                   if(escolhidoId) onSwapPresence(p.id,escolhidoId);
                 }} aria-label={`Trocar ${p.name} com alguém que está dentro`} title="Trocar com alguém dentro">🔁</button>}
-                {!p.is_admin&&<button className="icon-danger" onClick={async()=>{ if(await askConfirm(`Remover ${p.name} do grupo?`,{danger:true,confirmLabel:"Remover"})) onRemovePlayer(p.id); }} aria-label={`Remover ${p.name}`}><Icon name="trash" size={13}/></button>}
-                {editPassId===p.id
+                {!p.is_admin&&<button className="icon-danger" onClick={async()=>{ if(await askConfirm(`Remover ${p.name} do grupo?`,{danger:true,confirmLabel:"Remover"})) (p.is_guest?onRemoveGuest:onRemovePlayer)(p.id); }} aria-label={`Remover ${p.name}`}><Icon name="trash" size={13}/></button>}
+                {!p.is_guest&&(editPassId===p.id
                   ?<div style={{width:"100%",marginTop:6}}>
                       {/* A via recomendada: a pessoa escolhe a sua própria
                           password e o admin nunca lhe toca. */}
@@ -5294,7 +5298,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                         <button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}} aria-label="Guardar password"><Icon name="check" size={13}/></button>
                       </div>
                     </div>
-                  :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}} aria-label={`Mudar password de ${p.name}`}><Icon name="key" size={14}/></button>}
+                  :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}} aria-label={`Mudar password de ${p.name}`}><Icon name="key" size={14}/></button>)}
                 {passDefinida?.nome===p.name&&<PasswordDefinida nome={passDefinida.nome} valor={passDefinida.valor} onFechar={()=>setPassDefinida(null)} showToast={showToast}/>}
               </div>
             ))}

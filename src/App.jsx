@@ -1540,7 +1540,7 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
           <p style={{fontSize:14,color:"#8a9080",lineHeight:1.5,margin:0,maxWidth:360}}>{s.text}</p>
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:6}}>
-          {slides.map((_,i)=><div key={i} style={{width:i===step?18:6,height:6,borderRadius:3,background:i===step?"#d4af37":"#23271b",transition:"width 0.2s"}}/>)}
+          {slides.map((_,i)=><div key={i} style={{width:6,height:6,borderRadius:3,background:i===step?"#d4af37":"#23271b",transform:i===step?"scaleX(3)":"scaleX(1)",transformOrigin:"center",transition:"transform 0.2s, background 0.2s"}}/>)}
         </div>
         <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>isLast?onDone():setStep(s=>s+1)}>
           {isLast?"COMEÇAR":"SEGUINTE"} {!isLast&&<Icon name="right" size={14}/>}
@@ -1721,8 +1721,11 @@ function ExpandableList({confirmed, waiting=[]}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginTop:4}}>
+      {/* O número já está no pill "confirmados" ao lado — repetir aqui era
+          a mesma contagem duas vezes seguidas; o botão só precisa de dizer
+          o que faz. */}
       <button onClick={()=>setOpen(v=>!v)} style={{background:"rgba(0,0,0,0.2)",border:"none",borderRadius:20,padding:"3px 10px",color:"rgba(255,255,255,0.9)",fontSize:10,fontWeight:700,cursor:"pointer"}}>
-        ✓ {confirmed.length} confirmados {open?"▲":"▼"}
+        Ver lista {open?"▲":"▼"}
       </button>
       {open&&<div style={{marginTop:6}}>
         <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:waiting.length>0?6:0}}>
@@ -4570,6 +4573,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
   const [editOpen,setEditOpen]=useState(false);
   const [bugOpen,setBugOpen]=useState(false);
   const [bugMsg,setBugMsg]=useState("");
+  const [bugTipo,setBugTipo]=useState("problema"); // "problema" | "sugestao" — sem coluna nova na BD, vai como prefixo na mensagem
   const [bugSent,setBugSent]=useState(false);
   const [bugSending,setBugSending]=useState(false);
   const [avatarSaving,setAvatarSaving]=useState(false);
@@ -4577,11 +4581,12 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
   const submitBug=async()=>{
     if(!bugMsg.trim()||bugSending) return;
     setBugSending(true);
+    const prefixo=bugTipo==="sugestao"?"[SUGESTÃO] ":"[PROBLEMA] ";
     const {error}=await supabase.from("bug_reports").insert({
       group_id:activeGroupId||player.group_id,
       player_id:player.id,
       player_name:player.name,
-      message:bugMsg.trim(),
+      message:prefixo+bugMsg.trim(),
     });
     setBugSending(false);
     if(error){ showToast("Não foi possível enviar. Tenta outra vez.","err"); return; }
@@ -4701,15 +4706,19 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <div style={{fontSize:10.5,fontWeight:700,color:"#565c4d",letterSpacing:2,marginTop:16,marginBottom:8}}>SUPORTE</div>
         <div style={{marginTop:14}}>
           <button onClick={()=>setBugOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <span style={{fontSize:13,fontWeight:700,color:"white"}}>🐛 Reportar problema</span>
+            <span style={{fontSize:13,fontWeight:700,color:"white"}}>🐛 Reportar problema ou sugestão</span>
             <span style={{fontSize:12,color:"#565c4d"}}>{bugOpen?"▲":"▼"}</span>
           </button>
           {bugOpen&&<div style={{background:"#14160f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
             {bugSent?(
               <p style={{fontSize:13,color:"#4ade80",textAlign:"center",fontWeight:700}}>✓ Enviado, obrigado!</p>
             ):(<>
-              <label className="field-label">O que aconteceu?</label>
-              <textarea className="text-input" rows={4} value={bugMsg} onChange={e=>setBugMsg(e.target.value)} placeholder="Descreve o que viste, o mais detalhado possível..." style={{resize:"vertical",fontFamily:"inherit"}}/>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setBugTipo("problema")} style={{flex:1,padding:"9px",borderRadius:8,border:bugTipo==="problema"?"2px solid #ef4444":"1px solid #23271b",background:bugTipo==="problema"?"rgba(239,68,68,0.12)":"transparent",color:bugTipo==="problema"?"#f87171":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>🐛 Problema</button>
+                <button onClick={()=>setBugTipo("sugestao")} style={{flex:1,padding:"9px",borderRadius:8,border:bugTipo==="sugestao"?"2px solid #d4af37":"1px solid #23271b",background:bugTipo==="sugestao"?"rgba(212,175,55,0.12)":"transparent",color:bugTipo==="sugestao"?"#d4af37":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>💡 Sugestão</button>
+              </div>
+              <label className="field-label">{bugTipo==="sugestao"?"O que gostavas que mudasse?":"O que aconteceu?"}</label>
+              <textarea className="text-input" rows={4} value={bugMsg} onChange={e=>setBugMsg(e.target.value)} placeholder={bugTipo==="sugestao"?"Descreve a tua ideia...":"Descreve o que viste, o mais detalhado possível..."} style={{resize:"vertical",fontFamily:"inherit"}}/>
               <button className="btn-primary" style={{justifyContent:"center"}} onClick={submitBug} disabled={!bugMsg.trim()||bugSending}>
                 <Icon name="check" size={15}/> {bugSending?"A ENVIAR...":"ENVIAR"}
               </button>
@@ -4761,24 +4770,28 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           <span className="sb-icon">{isIn?"✅":isWait?"⏳":isNao?"❌":"⚽"}</span>
           <div><div className="sb-title">{isIn?"Confirmado!":isWait?`Lista de espera #${waitPos}`:isNao?"Disseste que não vais":"Ainda não respondeste"}</div><div className="sb-sub">{isIn?"Estás dentro":isWait?"Aguarda vaga":isNao?"Se mudares de ideias, ainda vais a tempo":`${spotsLeft} vagas`}</div></div>
         </div>
-        {/* Quem ainda não respondeu vê as duas hipóteses lado a lado. Dizer que
-            não vai é uma resposta como outra qualquer: tira a pessoa da lista
-            de quem falta responder e liberta já o lugar para a lista de espera,
-            em vez de deixar o grupo à espera de uma resposta que não vem. */}
+        {/* Dizer que não vai é reversível (basta carregar em VOU outra vez),
+            por isso passou a ser 1 toque direto em vez de forçar sempre a
+            pergunta sobre lesão — quem foi lesão marca isso a seguir, já
+            com o estado "não vou" guardado, em vez de ser travado por essa
+            pergunta nos 95% das vezes que não há lesão nenhuma. */}
         {isIn||isWait?(
-          <button className="btn-big btn-red" onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais? O teu lugar fica livre — se houver fila de espera, alguém entra no teu lugar.",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+          <button className="btn-big btn-red" onClick={()=>handleToggle("nao_vou")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
             {confirming?"⏳ A processar...":<><Icon name="x" size={18}/> NÃO VOU</>}
           </button>
         ):isNao?(
-          <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
-            {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
-          </button>
+          <>
+            <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+              {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
+            </button>
+            {!player.absence_reason&&<button onClick={()=>handleToggle("nao_vou","lesionado")} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,textDecoration:"underline",padding:"4px 0 14px",cursor:"pointer",width:"100%",textAlign:"center"}}>🤕 Foi lesão? Marcar</button>}
+          </>
         ):(
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
               {confirming?"⏳":<><Icon name="check" size={18}/> VOU</>}
             </button>
-            <button className="btn-big btn-nao" onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais a este jogo?",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
+            <button className="btn-big btn-nao" onClick={()=>handleToggle("nao_vou")} style={{flex:1,marginBottom:0,opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
               {confirming?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
           </div>
@@ -5152,19 +5165,22 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <div><div className="sb-title">{isAdminIn?"Também vais jogar!":isAdminWait?"Estás na lista de espera":isAdminNao?"Disseste que não vais":"Também vais jogar?"}</div><div className="sb-sub">{isAdminIn?"Estás dentro":isAdminWait?"Aguarda vaga":isAdminNao?"Se mudares de ideias, ainda vais a tempo":"Confirma a tua presença"}</div></div>
           </div>
           {isAdminIn||isAdminWait?(
-            <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais? O teu lugar fica livre — se houver fila de espera, alguém entra no teu lugar.",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleSelfToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }}>
+            <button className="btn-big btn-red" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
               {confirmingSelf?"⏳ A processar...":<><Icon name="x" size={18}/> NÃO VOU</>}
             </button>
           ):isAdminNao?(
-            <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
-              {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
-            </button>
+            <>
+              <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
+                {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
+              </button>
+              {!myself.absence_reason&&<button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,textDecoration:"underline",padding:"4px 0 14px",cursor:"pointer",width:"100%",textAlign:"center"}}>🤕 Foi lesão? Marcar</button>}
+            </>
           ):(
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               <button className="btn-big btn-green" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
                 {confirmingSelf?"⏳":<><Icon name="check" size={18}/> VOU</>}
               </button>
-              <button className="btn-big btn-nao" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={async()=>{ const motivo=await askChoice("Confirmar que não vais a este jogo?",[{label:"❌ Não vou",value:"none"},{label:"🤕 Foi lesão",value:"lesionado"}]); if(motivo) handleSelfToggle("nao_vou",motivo==="lesionado"?"lesionado":undefined); }}>
+              <button className="btn-big btn-nao" style={{flex:1,marginBottom:0,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("nao_vou")}>
                 {confirmingSelf?"⏳":<><Icon name="x" size={18}/> NÃO VOU</>}
               </button>
             </div>
@@ -5274,6 +5290,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
               </div>
               {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
+              {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) m.debts.forEach(d=>onPayDebt(d.id)); }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}
             </div>
           ))}
           <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>

@@ -603,6 +603,22 @@ export default function App() {
   const isViewingHistory = !!viewingDate;
   const effectiveDate = viewingDate || gameInfo.date;
 
+  // O ícone novo (04/10/2026) só chega a quem já tem a app instalada se a
+  // pessoa remover e voltar a adicionar — Android e iOS não atualizam o
+  // ícone do ecrã principal sozinhos. Isto avisa uma vez, só a quem já tem
+  // a app em modo standalone (instalada), nunca a quem a abre só no browser.
+  const [showIconNotice, setShowIconNotice] = useState(false);
+  useEffect(()=>{
+    try{
+      const instalada = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone===true;
+      if(instalada && !localStorage.getItem("aviso-icone-2026-10")) setShowIconNotice(true);
+    }catch(e){}
+  },[]);
+  const dismissIconNotice = () => {
+    try{ localStorage.setItem("aviso-icone-2026-10","1"); }catch(e){}
+    setShowIconNotice(false);
+  };
+
   const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
   useEffect(()=>{
     _confirmImpl = (message,opts={})=>new Promise(resolve=>{
@@ -1380,6 +1396,7 @@ export default function App() {
   return (
     <div style={{background:"#0a0b08",minHeight:"100vh"}}>
       <style>{getCss()}</style>
+      {showIconNotice&&<IconUpdateNotice onDismiss={dismissIconNotice}/>}
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {confirmState&&<ConfirmModal message={confirmState.message} danger={confirmState.danger} confirmLabel={confirmState.confirmLabel} cancelLabel={confirmState.cancelLabel} onConfirm={()=>{confirmState.resolve(true);setConfirmState(null);}} onCancel={()=>{confirmState.resolve(false);setConfirmState(null);}}/>}
       {choiceState&&<ChoiceModal message={choiceState.message} options={choiceState.options} onSelect={(v)=>{choiceState.resolve(v);setChoiceState(null);}} onCancel={()=>{choiceState.resolve(null);setChoiceState(null);}}/>}
@@ -1412,6 +1429,25 @@ export default function App() {
       {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
       {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
+    </div>
+  );
+}
+
+// ── AVISO DE ÍCONE NOVO ──────────────────────────────────────────────────────
+function IconUpdateNotice({onDismiss}) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onDismiss}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"26px 22px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14,alignItems:"center",textAlign:"center"}}>
+        <div style={{fontSize:40}}>🔄</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white",letterSpacing:1}}>ÍCONE NOVO DISPONÍVEL</div>
+        <p style={{fontSize:13,color:"#8a9080",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
+          Atualizámos o ícone da app, mas o teu telemóvel não troca sozinho o que já tens no ecrã principal.
+        </p>
+        <p style={{fontSize:13,color:"#8a9080",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
+          Para o veres: <strong style={{color:"white"}}>remove a app do ecrã principal e adiciona-a outra vez</strong>. O link é o mesmo, não perdes nada.
+        </p>
+        <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginTop:6}} onClick={onDismiss}>Entendi</button>
+      </div>
     </div>
   );
 }

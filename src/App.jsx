@@ -611,11 +611,11 @@ export default function App() {
   useEffect(()=>{
     try{
       const instalada = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone===true;
-      if(instalada && !localStorage.getItem("aviso-icone-2026-10")) setShowIconNotice(true);
+      if(instalada && !localStorage.getItem("aviso-atualizacao-2026-10b")) setShowIconNotice(true);
     }catch(e){}
   },[]);
   const dismissIconNotice = () => {
-    try{ localStorage.setItem("aviso-icone-2026-10","1"); }catch(e){}
+    try{ localStorage.setItem("aviso-atualizacao-2026-10b","1"); }catch(e){}
     setShowIconNotice(false);
   };
 

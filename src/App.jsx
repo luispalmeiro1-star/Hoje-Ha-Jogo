@@ -1729,7 +1729,11 @@ function ExpandableList({confirmed, waiting=[]}) {
       </button>
       {open&&<div style={{marginTop:6}}>
         <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:waiting.length>0?6:0}}>
-          {confirmed.map(p=><span key={p.id} style={{background:p.is_guest?"rgba(124,58,237,0.3)":"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 7px",fontSize:10,color:p.is_guest?"#c4b5fd":"rgba(255,255,255,0.85)",fontWeight:600}}>{p.name}{p.is_guest?" 👤":""}</span>)}
+          {/* Por nome, não por ordem de confirmação — é assim que se
+              procura alguém a olho num grupo grande. A lista de espera
+              abaixo fica pela ordem da fila, porque aí a ordem é a
+              informação (quem entra primeiro). */}
+          {[...confirmed].sort((a,b)=>a.name.localeCompare(b.name,"pt")).map(p=><span key={p.id} style={{background:p.is_guest?"rgba(124,58,237,0.3)":"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 7px",fontSize:10,color:p.is_guest?"#c4b5fd":"rgba(255,255,255,0.85)",fontWeight:600}}>{p.name}{p.is_guest?" 👤":""}</span>)}
         </div>
         {waiting.length>0&&<>
           <div style={{fontSize:9,color:"#f87171",fontWeight:700,letterSpacing:1,marginBottom:4}}>⏳ LISTA DE ESPERA</div>
@@ -4965,6 +4969,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   const [passDefinida,setPassDefinida]=useState(null);
   const [guestName,setGuestName]=useState("");
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
+  const [buscaJogador,setBuscaJogador]=useState("");
   const [editLoc,setEditLoc]=useState(gameInfo.location);
   const [editDate,setEditDate]=useState(gameInfo.date);
   const [editTime,setEditTime]=useState(gameInfo.time);
@@ -5316,12 +5321,19 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           <>
           <PasswordResetRequestsPanel adminId={currentUser.id} showToast={showToast}/>
           {members.length===0&&guests.length===0&&<p className="empty-msg">Ainda não há jogadores neste grupo.</p>}
+          {/* Lista ordenada por nome e com busca — com o grupo a crescer,
+              encontrar alguém a olho numa lista por ordem de entrada
+              deixou de dar, o Luís pediu as duas coisas. */}
+          {(members.length+guests.length)>5&&<input className="text-input" style={{marginBottom:10}} placeholder="🔍 Procurar jogador..." value={buscaJogador} onChange={e=>setBuscaJogador(e.target.value)}/>}
           <div className="player-list">
             {/* Membros com conta e convidados na mesma lista — o admin tem de
                 conseguir confirmar, trocar e remover qualquer um dos dois,
                 não só quem tem conta. Só a password fica de fora, porque
                 convidados não têm login. */}
-            {[...members,...guests].map(p=>(
+            {[...members,...guests]
+              .filter(p=>p.name.toLowerCase().includes(buscaJogador.trim().toLowerCase()))
+              .sort((a,b)=>a.name.localeCompare(b.name,"pt"))
+              .map(p=>(
               <div key={p.id} className={`list-row ${p.is_guest?"row-guest":""}`} style={{flexWrap:"wrap",paddingBottom:12,alignItems:"flex-start",gap:8}}>
                 <Avatar player={players.find(pl=>pl.id===p.id)||p} size={30} style={{marginTop:2}}/>
                 <div className="list-info" style={{flex:1}}>

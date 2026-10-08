@@ -1439,12 +1439,12 @@ function IconUpdateNotice({onDismiss}) {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onDismiss}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"26px 22px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14,alignItems:"center",textAlign:"center"}}>
         <div style={{fontSize:40}}>🔄</div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white",letterSpacing:1}}>ÍCONE NOVO DISPONÍVEL</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white",letterSpacing:1}}>NOVA ATUALIZAÇÃO</div>
         <p style={{fontSize:13,color:"#8a9080",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
-          Atualizámos o ícone da app, mas o teu telemóvel não troca sozinho o que já tens no ecrã principal.
+          Há melhorias novas na app, mas o teu telemóvel não as aplica sozinho ao que já tens instalado.
         </p>
         <p style={{fontSize:13,color:"#8a9080",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
-          Para o veres: <strong style={{color:"white"}}>remove a app do ecrã principal e adiciona-a outra vez</strong>. O link é o mesmo, não perdes nada.
+          Para as teres: <strong style={{color:"white"}}>desinstala a app e instala-a outra vez</strong>. O link é o mesmo, não perdes nada.
         </p>
         <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginTop:6}} onClick={onDismiss}>Entendi</button>
       </div>

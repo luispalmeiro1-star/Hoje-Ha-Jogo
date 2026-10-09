@@ -2997,7 +2997,12 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // o que aconteceu aos dois grupos mais recentes.
       const{error:pgErr}=await supabase.from("player_groups").upsert({player_id:player.id,group_id:group.id,is_admin:true},{onConflict:"player_id,group_id"});
       if(pgErr) throw pgErr;
-      const{error:pgIdErr}=await supabase.from("players").update({group_id:group.id}).eq("id",player.id);
+      // players.is_admin também tem de ficar true — é esta coluna (e não a
+      // de player_groups) que decide, no próximo login, se a pessoa vai
+      // parar à vista de Admin ou à de Jogador. Faltava aqui, e por isso
+      // quem criava um grupo via "Criar grupo" recarregava a página e
+      // caía na vista de Jogador, sem perceber porquê.
+      const{error:pgIdErr}=await supabase.from("players").update({group_id:group.id,is_admin:true}).eq("id",player.id);
       if(pgIdErr) throw pgIdErr;
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return toDateStr(d);};
       await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});

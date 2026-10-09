@@ -5309,8 +5309,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/><span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span></div>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
                   <BotaoLembrarDivida nome={m.name} total={m.total} phone={m.phone}/>
+                  {/* Convidados não têm conta nem notificações — só faz
+                      sentido para quem pode mesmo receber. */}
+                  {!m.is_guest&&<button onClick={async()=>{ const ok=await onSendPush("💸 Tens dívida em aberto",`Tens ${m.total}€ em aberto na Hoje Há Jogo.`,[m.id]); showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err"); }} aria-label={`Notificar ${m.name} da dívida`} title="Enviar notificação na app" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 9px",background:"rgba(8,145,178,0.15)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:8,color:"#0891b2",fontWeight:800,fontSize:11,cursor:"pointer"}}>🔔</button>}
                   <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
                 </div>
               </div>

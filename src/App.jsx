@@ -5166,14 +5166,17 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {/* Uma única fila com as 6 secções do admin, em vez de duas barras de
             separadores partidas por vários cartões no meio (convite,
             destaques, aviso de vencedor, estado do grupo) — era fácil não
-            perceber que "Dívidas"/"Histórico" eram navegação como o resto. */}
+            perceber que "Dívidas"/"Histórico" eram navegação como o resto.
+            Ordem por uso: primeiro o jogo em si (Jogo/Equipas/Jogadores, o
+            que se consulta toda a semana), depois gestão (Dívidas/
+            Histórico/Gerir, o que se mexe mais raramente). */}
         <div className="tabs" style={{flexWrap:"wrap"}}>
           {[
-            ["dividas",`💸 Dívidas${debts.length>0?` (${debts.length})`:""}`],
-            ["historico","📋 Histórico"],
             ["jogo","⚽ Jogo"],
             ["equipas","🎲 Equipas"],
             ["jogadores","👥 Jogadores"],
+            ["dividas",`💸 Dívidas${debts.length>0?` (${debts.length})`:""}`],
+            ["historico","📋 Histórico"],
             ["gerir","⚙️ Gerir"],
           ].map(([k,l])=>(
             <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)} style={{position:"relative"}}>

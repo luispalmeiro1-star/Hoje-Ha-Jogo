@@ -578,6 +578,19 @@ function Avatar({player={}, size=32, style={}}) {
 // ── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [players, setPlayers]         = useState([]);
+  // A reatribuição de equipas (reassignAllTeams) partia sempre da variável
+  // "players" capturada no início de cada função — e como o React só aplica
+  // setPlayers no próximo render, essa variável já estava desatualizada
+  // mesmo em relação à PRÓPRIA atualização otimista feita linhas acima, e
+  // ainda mais se chegasse entretanto uma atualização de outra pessoa por
+  // tempo real. playersRef é atualizado de forma síncrona, ao mesmo tempo
+  // que o estado, e usa-se este (não "players") sempre que se calcula a
+  // lista a passar a reassignAllTeams.
+  const playersRef = useRef([]);
+  const applyPlayers = (next) => {
+    playersRef.current = typeof next==="function" ? next(playersRef.current) : next;
+    setPlayers(playersRef.current);
+  };
   const [gameInfo, setGameInfo]       = useState({location:"",date:nextWednesday(),time:"22:30",app_name:"Hoje Há Jogo",cost_per_player:3});
   const [history, setHistory]         = useState([]);
   const [debts, setDebts]             = useState([]);
@@ -661,7 +674,7 @@ export default function App() {
     const seq=++loadPlayersSeqRef.current;
     // Buscar players via player_groups — status é por grupo
     const{data:pg}=await supabase.from("player_groups").select("player_id,status,paid,confirmed_at,team,is_admin,absence_reason").eq("group_id",gid).eq("membership_status","active");
-    if(!pg||pg.length===0){ if(seq===loadPlayersSeqRef.current) setPlayers([]); return; }
+    if(!pg||pg.length===0){ if(seq===loadPlayersSeqRef.current) applyPlayers([]); return; }
     const pids=pg.map(x=>x.player_id);
     const{data:playersData}=await supabase.from("players").select(PLAYER_COLS).in("id",pids).order("id");
     if(!playersData) return;
@@ -670,7 +683,7 @@ export default function App() {
       const pgRow=pg.find(x=>x.player_id===p.id);
       return {...p, status:pgRow?.status||"out", paid:pgRow?.paid||false, confirmed_at:pgRow?.confirmed_at||null, team:pgRow?.team||null, is_admin:pgRow?.is_admin||false, absence_reason:pgRow?.absence_reason||null};
     });
-    if(seq===loadPlayersSeqRef.current) setPlayers(merged);
+    if(seq===loadPlayersSeqRef.current) applyPlayers(merged);
   },[]);
   const loadGameInfo   = useCallback(async(gid)=>{ const{data}=await supabase.from("game_info").select("*").eq("group_id",gid).limit(1).maybeSingle(); if(data)setGameInfo(data); },[]);
   const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data)setHistory(data); },[]);
@@ -1087,7 +1100,7 @@ export default function App() {
     }
 
     const finalPlayers=updatedPlayers.map(pl=>({...pl,team:teamMap[pl.id]||null}));
-    setPlayers(finalPlayers);
+    applyPlayers(finalPlayers);
     // Um único pedido em vez de um por jogador: antes, confirmar presença num
     // grupo de 12 gerava 12 escritas em sequência e 12 eventos em tempo real,
     // e cada evento fazia todos os telemóveis ligados recarregarem tudo.
@@ -1100,12 +1113,12 @@ export default function App() {
 
   const movePlayerToTeam = async(playerId, newTeam) => {
     const antes=players;
-    setPlayers(prev=>prev.map(p=>p.id===playerId?{...p,team:newTeam}:p));
+    applyPlayers(prev=>prev.map(p=>p.id===playerId?{...p,team:newTeam}:p));
     const{error}=await supabase.from("player_groups").update({team:newTeam}).eq("player_id",playerId).eq("group_id",activeGroupId);
     // Sem isto a troca aparecia no ecrã mesmo quando a base de dados a
     // recusava, e só desaparecia no recarregamento seguinte — foi assim que
     // pareceu que "as equipas não gravam".
-    if(error){ setPlayers(antes); showToast("Não foi possível mover o jogador","err"); }
+    if(error){ applyPlayers(antes); showToast("Não foi possível mover o jogador","err"); }
   };
 
   // Quando alguém sai e liberta um lugar, ninguém ia automaticamente buscar
@@ -1150,14 +1163,14 @@ export default function App() {
     // mostrar uma coisa que não chegou a ser gravada.
     if(ns==="in") marcarPasso("confirmou_presenca");
     const antes=players;
-    setPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
+    applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
     const{error}=await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false,absence_reason:reason}).eq("player_id",playerId).eq("group_id",activeGroupId);
     if(error){
-      setPlayers(antes);
+      applyPlayers(antes);
       showToast("Não foi possível atualizar a presença","err");
       return;
     }
-    if(podeAjustarEquipas()) await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
+    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
     if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
   };
   // Troca manual entre um jogador em espera e um que está dentro — escolhida
@@ -1184,12 +1197,12 @@ export default function App() {
       showToast(`Não foi possível trocar — ${waitP.name} não conseguiu entrar. Nada mudou.`,"err");
       return;
     }
-    const depois=players.map(pl=>{
+    const depois=playersRef.current.map(pl=>{
       if(pl.id===waitId) return {...pl,status:"in",confirmed_at:agora,paid:false};
       if(pl.id===inId) return {...pl,status:"wait",confirmed_at:agora,paid:false};
       return pl;
     });
-    setPlayers(depois);
+    applyPlayers(depois);
     if(podeAjustarEquipas()) await reassignAllTeams(depois);
     showToast(`${waitP.name} entrou, ${inP.name} ficou em espera 🔁`);
   };
@@ -1203,13 +1216,13 @@ export default function App() {
     const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
     if(inserted){
       await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
-      if(!isFull&&podeAjustarEquipas()) await reassignAllTeams([...players,inserted]);
+      if(!isFull&&podeAjustarEquipas()) await reassignAllTeams([...playersRef.current,inserted]);
     }
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
-  const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
-  const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(players.filter(p=>p.id!==id)); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
+  const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
+  const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
+  const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
   // Devolve a password que ficou guardada (para o admin a poder copiar), ou
   // null se falhou. Antes não devolvia nada e não olhava sequer para o erro.
   const changePassword = async(id,pw)=>{
@@ -1258,18 +1271,18 @@ export default function App() {
     if(Object.keys(updates).length===0) return;
     const localUpdates={...updates}; delete localUpdates.password;
     const antes=players;
-    if(Object.keys(localUpdates).length>0) setPlayers(prev=>prev.map(p=>p.id===id?{...p,...localUpdates}:p));
+    if(Object.keys(localUpdates).length>0) applyPlayers(prev=>prev.map(p=>p.id===id?{...p,...localUpdates}:p));
     const{error}=await supabase.from("players").update(updates).eq("id",id);
-    if(error){ setPlayers(antes); showToast("Não foi possível atualizar o perfil","err"); return; }
+    if(error){ applyPlayers(antes); showToast("Não foi possível atualizar o perfil","err"); return; }
     showToast("Perfil atualizado ✓");
   };
   const markOnboardingSeen = async(id)=>{
-    setPlayers(prev=>prev.map(p=>p.id===id?{...p,onboarding_seen:true}:p));
+    applyPlayers(prev=>prev.map(p=>p.id===id?{...p,onboarding_seen:true}:p));
     await supabase.from("players").update({onboarding_seen:true}).eq("id",id);
   };
   const updatePosition = async(id,pos)=>{
     await supabase.from("players").update({position:pos}).eq("id",id);
-    if(podeAjustarEquipas()) await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
+    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(p=>p.id===id?{...p,position:pos}:p));
     showToast("Posição atualizada ✓");
   };
   // playerIds (opcional): só estas pessoas recebem, em vez do grupo todo. É o

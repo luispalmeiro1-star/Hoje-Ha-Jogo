@@ -149,6 +149,23 @@ function BotaoEnviarLink({playerId, nome, showToast}) {
   );
 }
 
+// Tirar ao admin o trabalho de ir ao WhatsApp escrever "ainda não pagaste" a
+// cada pessoa — um toque abre a conversa já com a mensagem pronta. Sem
+// número guardado, abre o WhatsApp na mesma (a pessoa escolhe o contacto).
+function BotaoLembrarDivida({nome, total, phone}) {
+  const lembrar=()=>{
+    const texto=encodeURIComponent(`Olá ${nome}! Só a lembrar que tens ${total}€ em aberto na Hoje Há Jogo 🙂`);
+    const numero=(phone||"").replace(/\D/g,"");
+    const destino=numero?(numero.length===9?`351${numero}`:numero):"";
+    window.open(destino?`https://wa.me/${destino}?text=${texto}`:`https://wa.me/?text=${texto}`,"_blank","noopener");
+  };
+  return (
+    <button onClick={lembrar} aria-label={`Lembrar ${nome} da dívida`} title="Lembrar por WhatsApp" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"6px 9px",background:"#25D366",border:"none",borderRadius:8,color:"#052e16",fontWeight:800,fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>
+      <WhatsAppIcon size={13}/> Lembrar
+    </button>
+  );
+}
+
 // Troca o token emitido pelo auth-login/smooth-processor por uma sessão real e
 // verificada do Supabase — é isto que permite às regras de acesso da base de
 // dados saber quem está de facto a pedir os dados, em vez de confiarem apenas
@@ -5292,7 +5309,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/><span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span></div>
-                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <BotaoLembrarDivida nome={m.name} total={m.total} phone={m.phone}/>
+                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
+                </div>
               </div>
               {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
               {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) m.debts.forEach(d=>onPayDebt(d.id)); }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}

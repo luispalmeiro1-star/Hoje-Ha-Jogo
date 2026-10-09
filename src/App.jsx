@@ -746,7 +746,11 @@ export default function App() {
               if(localStorage.getItem("hhb_url_code")){
                 setView("entrar-convite");
               } else {
-                setView(playerData.is_admin?"admin":"player");
+                // Admin é por grupo (player_groups.is_admin) — players.is_admin
+                // é um campo global que não reflete sempre o grupo certo para
+                // quem pertence a mais do que um.
+                const{data:pgSelf}=await supabase.from("player_groups").select("is_admin").eq("player_id",saved.playerId).eq("group_id",gid).maybeSingle();
+                setView(pgSelf?.is_admin?"admin":"player");
               }
               handled = true;
               return;
@@ -812,7 +816,8 @@ export default function App() {
                 await reloadAll(p.group_id);
                 setActiveGroupId(p.group_id);
                 linkOneSignal(p.id, p.group_id);
-                setView(p.is_admin?"admin":"player");
+                const{data:pgSelf}=await supabase.from("player_groups").select("is_admin").eq("player_id",p.id).eq("group_id",p.group_id).maybeSingle();
+                setView(pgSelf?.is_admin?"admin":"player");
               } else {
                 const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin,membership_status").eq("player_id",p.id);
                 const activeRows=(pgRaw||[]).filter(x=>x.membership_status==="active");
@@ -892,7 +897,9 @@ export default function App() {
   const members   = players.filter(p=>!p.is_guest);
   const guests    = players.filter(p=>p.is_guest);
   const confirmed = sortedConfirmed(players);
-  const waiting   = players.filter(p=>p.status==="wait");
+  // Por ordem de chegada (confirmed_at) — a posição na fila é informação
+  // real ("és o 2º da espera"), não podia ficar por ordem de id da BD.
+  const waiting   = players.filter(p=>p.status==="wait").sort((a,b)=>a.confirmed_at-b.confirmed_at);
   // "out" e "nao_vou" são coisas diferentes: o primeiro é quem ainda não
   // respondeu, o segundo é quem respondeu que não vai. Até aqui eram o mesmo
   // valor, e por isso a lista de "sem resposta" incluía gente que já tinha
@@ -950,7 +957,10 @@ export default function App() {
       linkOneSignal(p.id, gid);
       setActiveGroupId(gid);
       await reloadAll(gid);
-      setView(p.is_admin?"admin":"player");
+      // Admin é por grupo (player_groups.is_admin), não um estado global da
+      // conta (players.is_admin) — alguém pode ser admin num grupo e simples
+      // jogador noutro. groups[0].is_admin já vem certo de loadMyGroups.
+      setView(groups[0].is_admin?"admin":"player");
     } else {
       // Sem grupos ativos — pode ter um pedido pendente/recusado a mostrar
       const{data:pgAll}=await supabase.from("player_groups").select("group_id,membership_status").eq("player_id",p.id);
@@ -1365,7 +1375,14 @@ export default function App() {
     }
     if(!attached) await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null});
     if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
-    else{ await supabase.from("debts").update({amount:Number(debt.amount)-Number(amountPaid)}).eq("id",debtId); showToast(`Pagamento parcial — restam ${Number(debt.amount)-Number(amountPaid)}€`); }
+    else{
+      // Arredondado a cêntimos — sem isto, subtrações sucessivas de valores
+      // com casas decimais acumulam resíduo de vírgula flutuante (ex:
+      // 10.1-3.3 dá 6.799999999999999 em JS) e esse valor ficava gravado.
+      const restante=Math.round((Number(debt.amount)-Number(amountPaid))*100)/100;
+      await supabase.from("debts").update({amount:restante}).eq("id",debtId);
+      showToast(`Pagamento parcial — restam ${restante}€`);
+    }
   };
   const clearAllHistory = async()=>{ await supabase.from("game_history").delete().eq("group_id",activeGroupId); await supabase.from("debts").delete().eq("group_id",activeGroupId); showToast("Histórico e dívidas limpos ✓"); };
   const sendMessage = async(text,playerId,playerName)=>{
@@ -4822,7 +4839,11 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             </button>
           </div>
         )}
-        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id).length)} treasurerName={treasurerName}/>}
+        {/* Só convidados confirmados ("in") entram na conta — um convidado
+            que ficou em espera não vai jogar, não gera dívida nenhuma, e
+            cobrá-lo já no valor do MBWay estava a inflar o que a pessoa via
+            para pagar. */}
+        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id&&g.status==="in").length)} treasurerName={treasurerName}/>}
         {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
         {/* Abaixo do botão de confirmar presença de propósito: o aviso é
             importante, mas não ao ponto de empurrar para fora do ecrã aquilo a

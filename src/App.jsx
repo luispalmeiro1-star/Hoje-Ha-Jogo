@@ -5140,14 +5140,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             {temNovidadeNaoLida(currentUser.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
         </div>
-        {/* Mesma linguagem visual das abas de baixo (Jogo/Equipas/Jogadores/
-            Gerir) — antes eram botões soltos com outro estilo para o mesmo
-            tipo de ação (mudar de secção). */}
-        <div className="tabs" style={{marginBottom:14}}>
-          {[["dividas",`💸 Dívidas${debts.length>0?` (${debts.length})`:""}`],["historico","📋 Histórico"]].map(([k,l])=>(
-            <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)}>{l}</button>
-          ))}
-        </div>
         {/* O último jogo a sério, não a última linha do histórico: pagar uma
             dívida grava lá uma linha com zero jogadores e a data do próximo
             jogo, que ficava à frente de tudo e fazia esta pergunta desaparecer
@@ -5171,8 +5163,19 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players} maxPlayers={maxPlayers}/>
 
-        <div className="tabs">
-          {[["jogo","⚽ Jogo"],["equipas","🎲 Equipas"],["jogadores","👥 Jogadores"],["gerir","⚙️ Gerir"]].map(([k,l])=>(
+        {/* Uma única fila com as 6 secções do admin, em vez de duas barras de
+            separadores partidas por vários cartões no meio (convite,
+            destaques, aviso de vencedor, estado do grupo) — era fácil não
+            perceber que "Dívidas"/"Histórico" eram navegação como o resto. */}
+        <div className="tabs" style={{flexWrap:"wrap"}}>
+          {[
+            ["dividas",`💸 Dívidas${debts.length>0?` (${debts.length})`:""}`],
+            ["historico","📋 Histórico"],
+            ["jogo","⚽ Jogo"],
+            ["equipas","🎲 Equipas"],
+            ["jogadores","👥 Jogadores"],
+            ["gerir","⚙️ Gerir"],
+          ].map(([k,l])=>(
             <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)} style={{position:"relative"}}>
               {l}
               {k==="gerir"&&pendingCount>0&&(

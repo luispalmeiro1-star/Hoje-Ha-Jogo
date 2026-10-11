@@ -2331,9 +2331,9 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               <span style={{fontSize:11,color:"#4ade80",fontWeight:800,letterSpacing:1}}>A JOGAR</span>
             </div>
             <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
-            <div style={{display:"flex",gap:8,marginTop:4}}>
-              <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
-              {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span onClick={()=>openLocationInMaps(gameInfo.location)} style={{fontSize:12,color:"#4ade80",textDecoration:"underline",cursor:"pointer"}}>📍 {gameInfo.location}</span></>}
+            <div style={{display:"flex",gap:12,marginTop:4,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",gap:5,color:"#8a9080"}}><Icon name="clock" size={12}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span></div>
+              {gameInfo.location&&<div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:5,color:"#4ade80",cursor:"pointer"}}><Icon name="pin" size={12}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span></div>}
             </div>
           </div>
           <div style={{textAlign:"right"}}>
@@ -2351,23 +2351,35 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
         </div>
       ):(
         <>
-          <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #23271b"}}>
-            <div>
-              <div style={{fontSize:10,color:"#565c4d",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>PRÓXIMO JOGO</div>
-              <div style={{fontSize:13,color:"#8a9080",fontWeight:600,marginBottom:4,textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
-              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
-                {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span onClick={()=>openLocationInMaps(gameInfo.location)} style={{fontSize:12,color:"#4ade80",textDecoration:"underline",cursor:"pointer"}}>📍 {gameInfo.location}</span></>}
+          <div style={{background:"#0a0b08",borderRadius:12,padding:"16px",marginBottom:12,border:"1px solid #23271b",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:-60,left:-60,width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,rgba(30,168,81,0.16) 0%,rgba(30,168,81,0) 70%)",pointerEvents:"none"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,position:"relative"}}>
+              <div style={{minWidth:0}}>
+                <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:20,padding:"3px 10px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+                  <div style={{width:5,height:5,borderRadius:"50%",background:"#565c4d"}}/>
+                  <span style={{fontSize:10,color:"#8a9080",fontWeight:800,letterSpacing:1}}>PRÓXIMO JOGO</span>
+                </div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"white",letterSpacing:1,textTransform:"capitalize",lineHeight:1.1}}>{formatDisplayDate(gameInfo.date)}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,color:"#8a9080"}}>
+                    <Icon name="clock" size={13}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span>
+                  </div>
+                  {gameInfo.location&&(
+                    <div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:6,color:"#4ade80",cursor:"pointer"}}>
+                      <Icon name="pin" size={13}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Gera um .ics local, sem pedir nada ao servidor — funciona
+                    com o calendário que já estiver por omissão no telemóvel. */}
+                <button onClick={()=>downloadGameICS(gameInfo)} style={{marginTop:10,display:"flex",alignItems:"center",gap:6,background:"transparent",border:"none",padding:0,color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                  <Icon name="cal" size={13}/> <span style={{textDecoration:"underline"}}>Adicionar ao calendário</span>
+                </button>
               </div>
-              {/* Gera um .ics local, sem pedir nada ao servidor — funciona
-                  com o calendário que já estiver por omissão no telemóvel. */}
-              <button onClick={()=>downloadGameICS(gameInfo)} style={{marginTop:8,display:"flex",alignItems:"center",gap:5,background:"#0a1a0a",border:"1px solid #1ea851",borderRadius:8,padding:"4px 9px",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                <Icon name="cal" size={12}/> Adicionar ao calendário
-              </button>
-            </div>
-            <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:10,color:"#565c4d",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>FALTAM</div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,color:"#d4af37",lineHeight:1,letterSpacing:2}}>{cdStr}</div>
+              <div style={{flexShrink:0,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",textAlign:"center",boxShadow:"inset 0 2px 6px rgba(0,0,0,0.5)"}}>
+                <div style={{fontSize:9,color:"#565c4d",fontWeight:800,letterSpacing:1.5,marginBottom:2}}>FALTAM</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:38,color:"#d4af37",lineHeight:1,letterSpacing:1,fontVariantNumeric:"tabular-nums"}}>{cdStr}</div>
+              </div>
             </div>
           </div>
           <div style={{marginBottom:10}}>

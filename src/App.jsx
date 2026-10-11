@@ -419,6 +419,47 @@ function formatDisplayDate(dateStr) {
   const [y,m,d] = dateStr.split("-").map(Number);
   return new Date(y,m-1,d).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"});
 }
+// Escapar vírgulas, ponto-e-vírgula, barras invertidas e quebras de linha —
+// o formato .ics exige isto em qualquer campo de texto livre (RFC 5545).
+function escapeICS(str="") {
+  return String(str).replace(/\\/g,"\\\\").replace(/,/g,"\\,").replace(/;/g,"\\;").replace(/\n/g,"\\n");
+}
+// Gera um ficheiro .ics para adicionar o jogo ao calendário do telemóvel —
+// hora local "flutuante" (sem Z nem TZID), que é como a generalidade dos
+// calendários interpreta um evento sem fuso horário explícito: a hora que
+// aparece é exatamente a hora que foi escrita, não precisa de conversão.
+function buildGameICS({date, time, location, appName, durationHours=3.5}) {
+  const [y,m,d]=(date||"").split("-").map(Number);
+  const [h,min]=(time||"00:00").split(":").map(Number);
+  if(!y||!m||!d) return null;
+  const start=new Date(y,m-1,d,h||0,min||0);
+  const end=new Date(start.getTime()+durationHours*60*60*1000);
+  const fmt=(dt)=>`${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,"0")}${String(dt.getDate()).padStart(2,"0")}T${String(dt.getHours()).padStart(2,"0")}${String(dt.getMinutes()).padStart(2,"0")}00`;
+  const nome=appName||"Hoje Há Jogo";
+  const lines=[
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Hoje Ha Jogo//PT","CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${date}-${time}@hojehajogo.pt`,
+    `DTSTAMP:${fmt(new Date())}Z`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${escapeICS(`⚽ ${nome}`)}`,
+    location?`LOCATION:${escapeICS(location)}`:null,
+    `DESCRIPTION:${escapeICS("Confirma presença na app Hoje Há Jogo: https://hojehajogo.pt")}`,
+    "END:VEVENT","END:VCALENDAR",
+  ].filter(Boolean);
+  return lines.join("\r\n");
+}
+function downloadGameICS(gameInfo) {
+  const ics=buildGameICS({date:gameInfo.date,time:gameInfo.time,location:gameInfo.location,appName:gameInfo.app_name});
+  if(!ics) return false;
+  const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=`jogo-${gameInfo.date}.ics`; a.click();
+  URL.revokeObjectURL(url);
+  return true;
+}
 function formatTime(ts) {
   if(!ts) return "";
   return new Date(ts).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
@@ -2307,6 +2348,11 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
                 <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
                 {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#8a9080",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gameInfo.location}</span></>}
               </div>
+              {/* Gera um .ics local, sem pedir nada ao servidor — funciona
+                  com o calendário que já estiver por omissão no telemóvel. */}
+              <button onClick={()=>downloadGameICS(gameInfo)} style={{marginTop:8,display:"flex",alignItems:"center",gap:5,background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"4px 9px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                <Icon name="cal" size={12}/> Adicionar ao calendário
+              </button>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
               <div style={{fontSize:10,color:"#565c4d",fontWeight:700,letterSpacing:1.5,marginBottom:6}}>FALTAM</div>

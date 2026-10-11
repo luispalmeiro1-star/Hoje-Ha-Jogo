@@ -460,6 +460,17 @@ function downloadGameICS(gameInfo) {
   URL.revokeObjectURL(url);
   return true;
 }
+async function openLocationInMaps(location) {
+  if(!location) return;
+  const escolha=await askChoice(`Abrir "${location}" em:`,[
+    {label:"🗺️ Google Maps",value:"maps"},
+    {label:"🚗 Waze",value:"waze"},
+  ]);
+  if(!escolha) return;
+  const q=encodeURIComponent(location);
+  const url=escolha==="waze"?`https://waze.com/ul?q=${q}&navigate=yes`:`https://www.google.com/maps/search/?api=1&query=${q}`;
+  window.open(url,"_blank","noopener");
+}
 function formatTime(ts) {
   if(!ts) return "";
   return new Date(ts).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
@@ -2322,7 +2333,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
             <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
             <div style={{display:"flex",gap:8,marginTop:4}}>
               <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
-              {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.location}</span></>}
+              {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span onClick={()=>openLocationInMaps(gameInfo.location)} style={{fontSize:12,color:"#4ade80",textDecoration:"underline",cursor:"pointer"}}>📍 {gameInfo.location}</span></>}
             </div>
           </div>
           <div style={{textAlign:"right"}}>
@@ -2346,7 +2357,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               <div style={{fontSize:13,color:"#8a9080",fontWeight:600,marginBottom:4,textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:"#8a9080"}}>{gameInfo.time}</span>
-                {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span style={{fontSize:12,color:"#8a9080",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gameInfo.location}</span></>}
+                {gameInfo.location&&<><span style={{color:"#23271b"}}>·</span><span onClick={()=>openLocationInMaps(gameInfo.location)} style={{fontSize:12,color:"#4ade80",textDecoration:"underline",cursor:"pointer"}}>📍 {gameInfo.location}</span></>}
               </div>
               {/* Gera um .ics local, sem pedir nada ao servidor — funciona
                   com o calendário que já estiver por omissão no telemóvel. */}

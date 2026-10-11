@@ -2350,7 +2350,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               </div>
               {/* Gera um .ics local, sem pedir nada ao servidor — funciona
                   com o calendário que já estiver por omissão no telemóvel. */}
-              <button onClick={()=>downloadGameICS(gameInfo)} style={{marginTop:8,display:"flex",alignItems:"center",gap:5,background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"4px 9px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              <button onClick={()=>downloadGameICS(gameInfo)} style={{marginTop:8,display:"flex",alignItems:"center",gap:5,background:"#0a1a0a",border:"1px solid #1ea851",borderRadius:8,padding:"4px 9px",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>
                 <Icon name="cal" size={12}/> Adicionar ao calendário
               </button>
             </div>

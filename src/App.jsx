@@ -646,6 +646,7 @@ export default function App() {
   const [gameInfo, setGameInfo]       = useState({location:"",date:nextWednesday(),time:"22:30",app_name:"Hoje Há Jogo",cost_per_player:3});
   const [history, setHistory]         = useState([]);
   const [debts, setDebts]             = useState([]);
+  const [payments, setPayments]       = useState([]);
   const [messages, setMessages]       = useState([]);
   const [mvpVotes, setMvpVotes]       = useState([]);
   const [rentPerGame, setRentPerGame] = useState(DEFAULT_RENT);
@@ -740,6 +741,7 @@ export default function App() {
   const loadGameInfo   = useCallback(async(gid)=>{ const{data}=await supabase.from("game_info").select("*").eq("group_id",gid).limit(1).maybeSingle(); if(data)setGameInfo(data); },[]);
   const loadHistory    = useCallback(async(gid)=>{ const{data}=await supabase.from("game_history").select("*").eq("group_id",gid).order("date",{ascending:false}); if(data)setHistory(data); },[]);
   const loadDebts      = useCallback(async(gid)=>{ const{data}=await supabase.from("debts").select("*").eq("group_id",gid).order("created_at"); if(data)setDebts(data); },[]);
+  const loadPayments   = useCallback(async(gid)=>{ const{data}=await supabase.from("payments").select("*").eq("group_id",gid).order("created_at",{ascending:false}).limit(200); if(data)setPayments(data); },[]);
   const loadMessages   = useCallback(async(gid)=>{ const{data}=await supabase.from("chat_messages").select("*").eq("group_id",gid).order("created_at").limit(100); if(data)setMessages(data); },[]);
   // O voto é secreto: a tabela já não deixa ler a coluna de quem votou. O que
   // volta da leitura normal serve para as contagens (toda a gente vê quantos
@@ -761,11 +763,11 @@ export default function App() {
   const reloadAll = useCallback(async(gid)=>{
     if(!gid) return;
     groupIdRef.current = gid;
-    await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
+    await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadPayments(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
     supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game,team_config").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); setTeamConfig(data.team_config||{}); } });
     supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
-  },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
+  },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadPayments,loadMessages,loadMvp,loadAttendance]);
 
   // Carregar players inicialmente (sem groupId) para session restore
   useEffect(()=>{
@@ -936,6 +938,7 @@ export default function App() {
       supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) loadGameInfo(groupIdRef.current); }).subscribe(),
       supabase.channel("history_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},()=>{ if(groupIdRef.current) loadHistory(groupIdRef.current); }).subscribe(),
       supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},()=>{ if(groupIdRef.current) loadDebts(groupIdRef.current); }).subscribe(),
+      supabase.channel("payments_ch").on("postgres_changes",{event:"*",schema:"public",table:"payments"},()=>{ if(groupIdRef.current) loadPayments(groupIdRef.current); }).subscribe(),
       supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>{ if(groupIdRef.current) loadMessages(groupIdRef.current); }).subscribe(),
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
@@ -1273,7 +1276,16 @@ export default function App() {
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
   const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
-  const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",id).eq("group_id",activeGroupId); showToast("Pagamento atualizado ✓"); };
+  const togglePaid     = async(id)=>{
+    const p=players.find(pl=>pl.id===id);
+    const novoPago=!p.paid;
+    applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:novoPago}:pl));
+    await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",id).eq("group_id",activeGroupId);
+    // Só regista o recebimento quando passa a pago — desfazer por engano não
+    // deve deixar um "pagamento" fantasma no mealheiro detalhado.
+    if(novoPago) await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:id,debtor_name:p.name,payer_id:id,payer_name:p.name,amount:gameInfo.cost_per_player||COST,status:"pago",game_date:gameInfo.date,note:`Jogo de ${gameInfo.date}`});
+    showToast("Pagamento atualizado ✓");
+  };
   const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
   // Devolve a password que ficou guardada (para o admin a poder copiar), ou
   // null se falhou. Antes não devolvia nada e não olhava sequer para o erro.
@@ -1439,6 +1451,10 @@ export default function App() {
       if(gameRow){ await supabase.from("game_history").update({collected:Number(gameRow.collected)+paidNow}).eq("id",gameRow.id); attached=true; }
     }
     if(!attached) await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null});
+    // Regista o recebimento em si — sem isto, pagar uma dívida apaga a linha
+    // de "debts" e o único rasto que fica é um número a mais no total
+    // arrecadado do jogo, sem se saber quem pagou nem quando.
+    await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:debt.player_id,debtor_name:debt.player_name,payer_id:debt.player_id,payer_name:debt.player_name,amount:paidNow,status:"pago",game_date:gameDateMatch?gameDateMatch[1]:null,note:debt.description});
     if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
     else{
       // Arredondado a cêntimos — sem isto, subtrações sucessivas de valores
@@ -1449,7 +1465,7 @@ export default function App() {
       showToast(`Pagamento parcial — restam ${restante}€`);
     }
   };
-  const clearAllHistory = async()=>{ await supabase.from("game_history").delete().eq("group_id",activeGroupId); await supabase.from("debts").delete().eq("group_id",activeGroupId); showToast("Histórico e dívidas limpos ✓"); };
+  const clearAllHistory = async()=>{ await supabase.from("game_history").delete().eq("group_id",activeGroupId); await supabase.from("debts").delete().eq("group_id",activeGroupId); await supabase.from("payments").delete().eq("group_id",activeGroupId); showToast("Histórico e dívidas limpos ✓"); };
   const sendMessage = async(text,playerId,playerName)=>{
     if(!text.trim()) return;
     const msg={id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()};
@@ -1481,7 +1497,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame,teamConfig};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,payments,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame,teamConfig};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -3852,7 +3868,34 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
 }
 
 // ── FINANCAS VIEW ─────────────────────────────────────────────────────────────
-function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],groupId=null,rentPerGame=DEFAULT_RENT}) {
+// Lista, um a um, cada recebimento registado (pagamento de dívida antiga ou
+// do próprio jogo da semana) — a "payments" guarda o que "debts" perde ao
+// apagar a linha quando a dívida é paga, e o que "player_groups.paid" nunca
+// guardou (só um booleano, sem data nem valor).
+function PaymentsLedger({payments=[]}) {
+  if(!payments.length) return null;
+  return (
+    <div style={{marginTop:14}}>
+      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>✓ RECEBIMENTOS</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {payments.map(p=>(
+          <div key={p.id} style={{background:"rgba(30,168,81,0.08)",border:"1px solid rgba(30,168,81,0.2)",borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:700,color:"white"}}>{p.payer_name||"Jogador"}</div>
+              <div style={{fontSize:10,color:"#565c4d",marginTop:2}}>
+                {new Date(p.created_at).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}
+                {p.game_date?` · jogo de ${new Date(p.game_date+"T00:00").toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}`:""}
+              </div>
+            </div>
+            <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#4ade80",flexShrink:0}}>+{p.amount}€</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],payments=[],groupId=null,rentPerGame=DEFAULT_RENT}) {
   const myDebts=debts.filter(d=>d.player_id===player.id);
   const myTotal=myDebts.reduce((s,d)=>s+Number(d.amount),0);
   const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
@@ -3906,6 +3949,7 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
         </>}
         <ExpandableSection icon="💰" title="Mealheiro detalhado" subtitle="Histórico financeiro completo">
           <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} showHero={false} rent={rentPerGame}/>
+          <PaymentsLedger payments={payments}/>
         </ExpandableSection>
         {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>

@@ -3873,23 +3873,44 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
 // apagar a linha quando a dívida é paga, e o que "player_groups.paid" nunca
 // guardou (só um booleano, sem data nem valor).
 function PaymentsLedger({payments=[]}) {
-  if(!payments.length) return null;
+  // Zero/estorno: um registo anulado depois de se confirmar que estava
+  // errado — fica na base de dados (não dá para apagar nesta sessão), mas
+  // não deve aparecer à malta.
+  const validos=payments.filter(p=>Number(p.amount)>0);
+  if(!validos.length) return null;
+  // Agrupar por jogo em vez de uma lista corrida — "jogo de 7/10" é mais
+  // fácil de conferir do que 45 linhas soltas por ordem de quando foram pagas.
+  const semJogo="__sem_jogo__";
+  const grupos={};
+  validos.forEach(p=>{ const k=p.game_date||semJogo; (grupos[k]=grupos[k]||[]).push(p); });
+  const chaves=Object.keys(grupos).sort((a,b)=>a===semJogo?1:b===semJogo?-1:b.localeCompare(a));
   return (
     <div style={{marginTop:14}}>
       <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>✓ RECEBIMENTOS</div>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {payments.map(p=>(
-          <div key={p.id} style={{background:"rgba(30,168,81,0.08)",border:"1px solid rgba(30,168,81,0.2)",borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-            <div style={{minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:700,color:"white"}}>{p.payer_name||"Jogador"}</div>
-              <div style={{fontSize:10,color:"#565c4d",marginTop:2}}>
-                {new Date(p.created_at).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}
-                {p.game_date?` · jogo de ${new Date(p.game_date+"T00:00").toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}`:""}
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {chaves.map(k=>{
+          const linhas=grupos[k].slice().sort((a,b)=>(a.payer_name||"").localeCompare(b.payer_name||""));
+          const subtotal=linhas.reduce((s,p)=>s+Number(p.amount),0);
+          return (
+            <div key={k}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4,padding:"0 2px"}}>
+                <span style={{fontSize:11,fontWeight:800,color:"#8a9080",letterSpacing:0.5}}>{k===semJogo?"AVULSO":`JOGO DE ${new Date(k+"T00:00").toLocaleDateString("pt-PT",{day:"numeric",month:"short"}).toUpperCase()}`}</span>
+                <span style={{fontSize:11,fontWeight:700,color:"#4ade80"}}>+{subtotal}€</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                {linhas.map(p=>(
+                  <div key={p.id} style={{background:"rgba(30,168,81,0.08)",border:"1px solid rgba(30,168,81,0.2)",borderRadius:10,padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"white"}}>{p.payer_name||"Jogador"}</div>
+                      <div style={{fontSize:10,color:"#565c4d",marginTop:1}}>pago a {new Date(p.created_at).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
+                    </div>
+                    <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:"#4ade80",flexShrink:0}}>+{p.amount}€</span>
+                  </div>
+                ))}
               </div>
             </div>
-            <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#4ade80",flexShrink:0}}>+{p.amount}€</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

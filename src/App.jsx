@@ -1281,9 +1281,11 @@ export default function App() {
     const novoPago=!p.paid;
     applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:novoPago}:pl));
     await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",id).eq("group_id",activeGroupId);
-    // Só regista o recebimento quando passa a pago — desfazer por engano não
-    // deve deixar um "pagamento" fantasma no mealheiro detalhado.
+    // O mealheiro detalhado tem de refletir sempre o estado atual: marcar
+    // como pago cria o recebimento, desmarcar remove-o — nos dois sentidos,
+    // para nunca ficar dessincronizado do que a lista de confirmados mostra.
     if(novoPago) await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:id,debtor_name:p.name,payer_id:id,payer_name:p.name,amount:gameInfo.cost_per_player||COST,status:"pago",game_date:gameInfo.date});
+    else await supabase.from("payments").delete().eq("group_id",activeGroupId).eq("payer_id",id).eq("game_date",gameInfo.date);
     showToast("Pagamento atualizado ✓");
   };
   const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };

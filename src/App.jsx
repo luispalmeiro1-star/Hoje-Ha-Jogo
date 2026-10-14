@@ -1283,7 +1283,7 @@ export default function App() {
     await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",id).eq("group_id",activeGroupId);
     // Só regista o recebimento quando passa a pago — desfazer por engano não
     // deve deixar um "pagamento" fantasma no mealheiro detalhado.
-    if(novoPago) await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:id,debtor_name:p.name,payer_id:id,payer_name:p.name,amount:gameInfo.cost_per_player||COST,status:"pago",game_date:gameInfo.date,note:`Jogo de ${gameInfo.date}`});
+    if(novoPago) await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:id,debtor_name:p.name,payer_id:id,payer_name:p.name,amount:gameInfo.cost_per_player||COST,status:"pago",game_date:gameInfo.date});
     showToast("Pagamento atualizado ✓");
   };
   const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
@@ -1454,7 +1454,7 @@ export default function App() {
     // Regista o recebimento em si — sem isto, pagar uma dívida apaga a linha
     // de "debts" e o único rasto que fica é um número a mais no total
     // arrecadado do jogo, sem se saber quem pagou nem quando.
-    await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:debt.player_id,debtor_name:debt.player_name,payer_id:debt.player_id,payer_name:debt.player_name,amount:paidNow,status:"pago",game_date:gameDateMatch?gameDateMatch[1]:null,note:debt.description});
+    await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:debt.player_id,debtor_name:debt.player_name,payer_id:debt.player_id,payer_name:debt.player_name,amount:paidNow,status:"pago",game_date:gameDateMatch?gameDateMatch[1]:null});
     if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
     else{
       // Arredondado a cêntimos — sem isto, subtrações sucessivas de valores

@@ -6351,8 +6351,10 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
     // estrangeira entre player_groups e players, por isso a leitura embutida
     // (players(id,name)) falhava sempre e a lista aparecia vazia. Só entram
     // membros ativos e nunca convidados — um convidado é apagado no fecho do
-    // jogo e o grupo ficava sem admin.
-    const{data:ligacoes}=await supabase.from("player_groups").select("player_id").eq("group_id",pg.group_id).eq("is_admin",false).eq("membership_status","active").neq("player_id",pg.player_id);
+    // jogo e o grupo ficava sem admin. (O filtro is_admin=false já deixa de
+    // fora quem está a sair; havia também um .neq com pg.player_id, que não
+    // existe nesta linha — mandava "undefined" e o pedido falhava sempre.)
+    const{data:ligacoes}=await supabase.from("player_groups").select("player_id").eq("group_id",pg.group_id).eq("is_admin",false).eq("membership_status","active");
     const ids=(ligacoes||[]).map(l=>l.player_id);
     const{data:pessoas}=ids.length?await supabase.from("players").select("id,name,is_guest").in("id",ids):{data:[]};
     setMembers((pessoas||[]).filter(p=>!p.is_guest).sort((a,b)=>a.name.localeCompare(b.name,"pt")));

@@ -15,6 +15,10 @@ function askConfirm(message, opts={}) { return _confirmImpl(message, opts); }
 let _choiceImpl = (message,options)=>Promise.resolve(window.confirm(message)?options[0].value:null);
 function askChoice(message, options) { return _choiceImpl(message, options); }
 
+// Somas de euros em vírgula flutuante dão coisas como 3.3000000000000003 —
+// que iam parar ao botão e ao link do MBWay. Arredonda sempre a cêntimos.
+const eur = (n) => Math.round(Number(n||0)*100)/100;
+
 // ── EDGE FUNCTION HELPERS ─────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://juoheqnocyluxsqzcdcr.supabase.co";
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_63hRr7RNMV55-hY1VyaRAA_gt86VwS2";
@@ -440,7 +444,7 @@ function buildGameICS({date, time, location, appName, durationHours=3.5}) {
     "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Hoje Ha Jogo//PT","CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     `UID:${date}-${time}@hojehajogo.pt`,
-    `DTSTAMP:${fmt(new Date())}Z`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"")}`,
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
     `SUMMARY:${escapeICS(`⚽ ${nome}`)}`,
@@ -456,8 +460,11 @@ function downloadGameICS(gameInfo) {
   const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download=`jogo-${gameInfo.date}.ics`; a.click();
-  URL.revokeObjectURL(url);
+  a.href=url; a.download=`jogo-${gameInfo.date}.ics`;
+  // Safari/iOS cancela o download se o link não estiver na página ou se o
+  // endereço for revogado antes de o browser o ir buscar.
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
   return true;
 }
 async function openLocationInMaps(location) {
@@ -1196,6 +1203,13 @@ export default function App() {
   // O "destino" é opcional. O jogador diz explicitamente o que quer ("in" ou
   // "nao_vou") pelos dois botões; o admin continua a carregar num botão só,
   // que alterna entre dentro e fora como sempre fez.
+  // Um único sítio que mantém "payments" igual ao booleano "paid" do jogo
+  // desta semana — qualquer caminho que mude esse booleano tem de passar por
+  // aqui, senão o mealheiro detalhado diz uma coisa e o saldo diz outra.
+  const syncPagamentoJogo = async(playerId,playerName,pago)=>{
+    if(pago) await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:playerId,debtor_name:playerName,payer_id:playerId,payer_name:playerName,amount:gameInfo.cost_per_player||COST,status:"pago",game_date:gameInfo.date});
+    else await supabase.from("payments").delete().eq("group_id",activeGroupId).eq("payer_id",playerId).eq("game_date",gameInfo.date);
+  };
   const togglePresence = async(playerId,destino=null,motivo=null)=>{
     const p=players.find(pl=>pl.id===playerId); if(!p) return;
     let ns,na;
@@ -1225,6 +1239,7 @@ export default function App() {
       showToast("Não foi possível atualizar a presença","err");
       return;
     }
+    if(p.paid) await syncPagamentoJogo(playerId,p.name,false);
     if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
     if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
   };
@@ -1252,6 +1267,8 @@ export default function App() {
       showToast(`Não foi possível trocar — ${waitP.name} não conseguiu entrar. Nada mudou.`,"err");
       return;
     }
+    if(inP.paid) await syncPagamentoJogo(inId,inP.name,false);
+    if(waitP.paid) await syncPagamentoJogo(waitId,waitP.name,false);
     const depois=playersRef.current.map(pl=>{
       if(pl.id===waitId) return {...pl,status:"in",confirmed_at:agora,paid:false};
       if(pl.id===inId) return {...pl,status:"wait",confirmed_at:agora,paid:false};
@@ -1280,12 +1297,13 @@ export default function App() {
     const p=players.find(pl=>pl.id===id);
     const novoPago=!p.paid;
     applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:novoPago}:pl));
-    await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",id).eq("group_id",activeGroupId);
-    // O mealheiro detalhado tem de refletir sempre o estado atual: marcar
-    // como pago cria o recebimento, desmarcar remove-o — nos dois sentidos,
-    // para nunca ficar dessincronizado do que a lista de confirmados mostra.
-    if(novoPago) await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:id,debtor_name:p.name,payer_id:id,payer_name:p.name,amount:gameInfo.cost_per_player||COST,status:"pago",game_date:gameInfo.date});
-    else await supabase.from("payments").delete().eq("group_id",activeGroupId).eq("payer_id",id).eq("game_date",gameInfo.date);
+    const{error}=await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",id).eq("group_id",activeGroupId);
+    if(error){
+      applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:p.paid}:pl));
+      showToast("Não foi possível atualizar o pagamento","err");
+      return;
+    }
+    await syncPagamentoJogo(id,p.name,novoPago);
     showToast("Pagamento atualizado ✓");
   };
   const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
@@ -1437,9 +1455,25 @@ export default function App() {
     await reloadAll(gid);
   };
   const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast("Dívida registada ✓"); };
+  // Um duplo toque em "✓ Recebido" numa ligação lenta corria o pagamento
+  // duas vezes (somava duas vezes ao jogo e criava dois recebimentos).
+  const dividasAPagarRef = useRef(new Set());
   const payDebt  = async(debtId,amountPaid=null)=>{
+    if(dividasAPagarRef.current.has(debtId)) return;
     const debt=debts.find(d=>d.id===debtId); if(!debt) return;
-    const full=amountPaid===null||amountPaid>=Number(debt.amount);
+    dividasAPagarRef.current.add(debtId);
+    try{ await pagarDivida(debt,amountPaid); }
+    finally{ dividasAPagarRef.current.delete(debtId); }
+  };
+  const pagarDivida = async(debt,amountPaid)=>{
+    const debtId=debt.id;
+    // Arredondado a cêntimos — sem isto, subtrações sucessivas de valores
+    // com casas decimais acumulam resíduo de vírgula flutuante (ex:
+    // 10.1-3.3 dá 6.799999999999999 em JS) e esse valor ficava gravado.
+    const restante=amountPaid===null?0:Math.round((Number(debt.amount)-Number(amountPaid))*100)/100;
+    // 2.999 numa dívida de 3€ arredonda para 0 — trata-se como paga, senão
+    // ficava uma dívida de 0€ para sempre na lista.
+    const full=restante<=0;
     const paidNow=full?Number(debt.amount):Number(amountPaid);
     // A descrição da dívida traz a data do jogo que a originou ("Jogo de
     // AAAA-MM-DD" ou "... — convidado X"). Ao pagar, soma-se ao "recolhido"
@@ -1457,12 +1491,9 @@ export default function App() {
     // de "debts" e o único rasto que fica é um número a mais no total
     // arrecadado do jogo, sem se saber quem pagou nem quando.
     await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:debt.player_id,debtor_name:debt.player_name,payer_id:debt.player_id,payer_name:debt.player_name,amount:paidNow,status:"pago",game_date:gameDateMatch?gameDateMatch[1]:null});
-    if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
+    if(full){ setDebts(prev=>prev.filter(d=>d.id!==debtId)); await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
     else{
-      // Arredondado a cêntimos — sem isto, subtrações sucessivas de valores
-      // com casas decimais acumulam resíduo de vírgula flutuante (ex:
-      // 10.1-3.3 dá 6.799999999999999 em JS) e esse valor ficava gravado.
-      const restante=Math.round((Number(debt.amount)-Number(amountPaid))*100)/100;
+      setDebts(prev=>prev.map(d=>d.id===debtId?{...d,amount:restante}:d));
       await supabase.from("debts").update({amount:restante}).eq("id",debtId);
       showToast(`Pagamento parcial — restam ${restante}€`);
     }
@@ -3892,7 +3923,7 @@ function PaymentsLedger({payments=[]}) {
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {chaves.map(k=>{
           const linhas=grupos[k].slice().sort((a,b)=>(a.payer_name||"").localeCompare(b.payer_name||""));
-          const subtotal=linhas.reduce((s,p)=>s+Number(p.amount),0);
+          const subtotal=eur(linhas.reduce((s,p)=>s+Number(p.amount),0));
           return (
             <div key={k}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4,padding:"0 2px"}}>
@@ -3920,8 +3951,8 @@ function PaymentsLedger({payments=[]}) {
 
 function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],payments=[],groupId=null,rentPerGame=DEFAULT_RENT}) {
   const myDebts=debts.filter(d=>d.player_id===player.id);
-  const myTotal=myDebts.reduce((s,d)=>s+Number(d.amount),0);
-  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
+  const myTotal=eur(myDebts.reduce((s,d)=>s+Number(d.amount),0));
+  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:eur(debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
   return (
     <div className="screen">
       <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
@@ -3983,8 +4014,8 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
 // ── DEBTS VIEW ───────────────────────────────────────────────────────────────
 function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effectiveCost=3}) {
   const myDebts=debts.filter(d=>d.player_id===player.id);
-  const myTotal=myDebts.reduce((s,d)=>s+Number(d.amount),0);
-  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
+  const myTotal=eur(myDebts.reduce((s,d)=>s+Number(d.amount),0));
+  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:eur(debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
   return (
     <div className="screen">
       <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
@@ -4174,7 +4205,13 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
   const handleTogglePaid = async(playerId) => {
     const p = players.find(pl=>pl.id===playerId);
     if(!p) return;
-    await supabase.from("player_groups").update({paid:!p.paid}).eq("player_id",playerId).eq("group_id",groupId||gameInfo.group_id);
+    const gid=groupId||gameInfo.group_id;
+    const novoPago=!p.paid;
+    const{error}=await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",playerId).eq("group_id",gid);
+    if(error){ showToast("Não foi possível atualizar o pagamento","err"); return; }
+    // Igual ao togglePaid do admin: o mealheiro detalhado acompanha o "pago".
+    if(novoPago) await supabase.from("payments").insert({group_id:gid,debtor_id:playerId,debtor_name:p.name,payer_id:playerId,payer_name:p.name,amount:effectiveCost,status:"pago",game_date:gameInfo.date});
+    else await supabase.from("payments").delete().eq("group_id",gid).eq("payer_id",playerId).eq("game_date",gameInfo.date);
   };
 
   const handleTransfer = async() => {
@@ -4940,7 +4977,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
   const handleToggle=async(destino,motivo)=>{setConfirming(true);await onToggle(destino,motivo);setTimeout(()=>setConfirming(false),600);};
   const waitPos=waiting.findIndex(p=>p.id===player.id)+1;
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
-  const totalDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
+  const totalDebt=eur(debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0));
   const [guestName,setGuestName]=useState("");
   const [guestPosition,setGuestPosition]=useState(cfg.positions[0]);
   return (
@@ -4992,7 +5029,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             que ficou em espera não vai jogar, não gera dívida nenhuma, e
             cobrá-lo já no valor do MBWay estava a inflar o que a pessoa via
             para pagar. */}
-        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id&&g.status==="in").length)} treasurerName={treasurerName}/>}
+        {isIn&&!player.paid&&mbwayNumber&&<MBWayButton number={mbwayNumber} amount={eur(effectiveCost*(1+guests.filter(g=>g.invited_by_id===player.id&&g.status==="in"&&!g.paid).length))} treasurerName={treasurerName}/>}
         {isTreasurer&&<TreasurerPanel confirmed={confirmed} players={players} gameInfo={gameInfo} debts={debts} piggybank={piggybank} effectiveCost={effectiveCost} groupId={gameInfo.group_id} showToast={showToast} setView={setView} player={player}/>}
         {/* Abaixo do botão de confirmar presença de propósito: o aviso é
             importante, mas não ao ponto de empurrar para fora do ecrã aquilo a
@@ -5249,7 +5286,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
   const totalPaid=confirmed.filter(p=>p.paid).length;
   const totalUnpaid=confirmed.filter(p=>!p.paid).length;
-  const debtsByPlayer=(members||[]).map(m=>({...m,debts:(debts||[]).filter(d=>d.player_id===m.id),total:(debts||[]).filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
+  const debtsByPlayer=(members||[]).map(m=>({...m,debts:(debts||[]).filter(d=>d.player_id===m.id),total:eur((debts||[]).filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
 
   return (
     <div className="screen">
@@ -5499,7 +5536,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 </div>
               </div>
               {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
-              {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) m.debts.forEach(d=>onPayDebt(d.id)); }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}
+              {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) { for(const d of m.debts) await onPayDebt(d.id); } }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}
             </div>
           ))}
           <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
@@ -6123,6 +6160,7 @@ function ReiniciarMealheiroButton({groupId, showToast, reloadAll}) {
     try {
       await supabase.from("game_history").delete().eq("group_id", groupId);
       await supabase.from("debts").delete().eq("group_id", groupId);
+      await supabase.from("payments").delete().eq("group_id", groupId);
       showToast("Mealheiro reiniciado! 💰");
       setConfirm(false);
       setTimeout(()=>reloadAll(), 500);
@@ -6194,6 +6232,7 @@ function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupI
       // Limpar histórico, dívidas e presenças
       await supabase.from("game_history").delete().eq("group_id", groupId);
       await supabase.from("debts").delete().eq("group_id", groupId);
+      await supabase.from("payments").delete().eq("group_id", groupId);
       await supabase.from("mvp_votes").delete().eq("group_id", groupId);
       await supabase.from("game_attendance").delete().eq("group_id", groupId);
 

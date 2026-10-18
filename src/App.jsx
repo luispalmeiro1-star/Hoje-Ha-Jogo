@@ -1079,24 +1079,23 @@ export default function App() {
   };
 
   const deleteGroup = async(groupId)=>{
+    // A ordem importa: as regras da base de dados só deixam ver (e por isso
+    // apagar) os dados de um grupo a quem ainda é membro. Antes tirava-se
+    // primeiro o admin do grupo e todos os deletes seguintes apanhavam 0
+    // linhas em silêncio — ficavam jogo, dívidas, chat e o próprio grupo
+    // órfãos. Agora apaga-se tudo enquanto ainda é admin, e só no fim se
+    // desfazem as ligações dos jogadores e o grupo.
+    for(const t of ["game_info","game_history","debts","chat_messages","mvp_votes","game_attendance","payments","season_stats","treasurer_balances","bug_reports"])
+      await supabase.from(t).delete().eq("group_id",groupId);
+    await supabase.from("players").delete().eq("group_id",groupId).eq("is_guest",true);
     // Limpar a referência ao grupo nos jogadores antes de apagar o grupo,
     // para não violar a chave estrangeira players.group_id -> groups.id
     await supabase.from("players").update({group_id:null}).eq("group_id",groupId);
     await supabase.from("player_groups").delete().eq("group_id",groupId);
-    await supabase.from("game_info").delete().eq("group_id",groupId);
-    await supabase.from("game_history").delete().eq("group_id",groupId);
-    await supabase.from("debts").delete().eq("group_id",groupId);
-    await supabase.from("chat_messages").delete().eq("group_id",groupId);
-    await supabase.from("mvp_votes").delete().eq("group_id",groupId);
-    await supabase.from("game_attendance").delete().eq("group_id",groupId);
-    await supabase.from("payments").delete().eq("group_id",groupId);
-    await supabase.from("season_stats").delete().eq("group_id",groupId);
-    await supabase.from("treasurer_balances").delete().eq("group_id",groupId);
-    await supabase.from("bug_reports").delete().eq("group_id",groupId);
-    await supabase.from("groups").delete().eq("id",groupId);
+    const{error}=await supabase.from("groups").delete().eq("id",groupId);
     const groups = await loadMyGroups(currentUser.id);
     setMyGroups(groups);
-    showToast("Grupo apagado ✓");
+    showToast(error?"O grupo saiu da tua lista, mas não foi possível apagá-lo por completo":"Grupo apagado ✓",error?"err":undefined);
     if(groups.length===0) handleLogout();
   };
 

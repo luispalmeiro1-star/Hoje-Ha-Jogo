@@ -1071,7 +1071,10 @@ export default function App() {
 
   const leaveGroup = async(groupId)=>{
     if(!currentUser) return;
-    await supabase.from("player_groups").delete().eq("player_id",currentUser.id).eq("group_id",groupId);
+    const{error}=await supabase.from("player_groups").delete().eq("player_id",currentUser.id).eq("group_id",groupId);
+    if(error){ showToast("Não foi possível sair do grupo","err"); return; }
+    // Se estava confirmado, o lugar fica livre para quem está em espera.
+    await supabase.rpc("promote_waitlist",{p_group_id:groupId});
     const groups = await loadMyGroups(currentUser.id);
     setMyGroups(groups);
     showToast("Saíste do grupo ✓");
@@ -1232,16 +1235,24 @@ export default function App() {
     // recusar, volta-se atrás e diz-se porquê, em vez de ficar um ecrã a
     // mostrar uma coisa que não chegou a ser gravada.
     if(ns==="in") marcarPasso("confirmou_presenca");
+    // Quem muda a própria presença não mexe no "pago". A base de dados só
+    // deixa o admin ou o tesoureiro mudar pagamentos, e mandar paid:false aqui
+    // fazia o NÃO VOU de quem já tinha pago falhar sempre. O dinheiro que a
+    // pessoa deu continua registado e conta no mealheiro ao fechar o jogo.
+    // Só quando o admin muda a presença de outra pessoa é que o pagamento é
+    // limpo — e ele confirma isso antes.
+    const limpaPago=Number(playerId)!==Number(currentUser?.id);
+    const mudanca={status:ns,confirmed_at:na,absence_reason:reason,...(limpaPago?{paid:false}:{})};
     const antes=players;
-    applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
-    const{error}=await supabase.from("player_groups").update({status:ns,confirmed_at:na,paid:false,absence_reason:reason}).eq("player_id",playerId).eq("group_id",activeGroupId);
+    applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
+    const{error}=await supabase.from("player_groups").update(mudanca).eq("player_id",playerId).eq("group_id",activeGroupId);
     if(error){
       applyPlayers(antes);
       showToast("Não foi possível atualizar a presença","err");
       return;
     }
-    if(p.paid) await syncPagamentoJogo(playerId,p.name,false);
-    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false,absence_reason:reason}:pl));
+    if(limpaPago&&p.paid) await syncPagamentoJogo(playerId,p.name,false);
+    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
     if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
   };
   // Troca manual entre um jogador em espera e um que está dentro — escolhida
@@ -1286,11 +1297,16 @@ export default function App() {
     const gid=activeGroupId||null;
     const isFull = confirmed.length>=maxPlayers;
     const guestStatus = isFull ? "wait" : "in";
-    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
-    if(inserted){
-      await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
-      if(!isFull&&podeAjustarEquipas()) await reassignAllTeams([...playersRef.current,inserted]);
+    const{data:inserted,error}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
+    if(error||!inserted){ showToast("Não foi possível adicionar o convidado","err"); return; }
+    const{error:errLigacao}=await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
+    if(errLigacao){
+      // Sem a ligação ao grupo o convidado ficava invisível para sempre.
+      await supabase.from("players").delete().eq("id",inserted.id);
+      showToast("Não foi possível adicionar o convidado","err");
+      return;
     }
+    if(!isFull&&podeAjustarEquipas()) await reassignAllTeams([...playersRef.current,inserted]);
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
   const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
@@ -1338,8 +1354,10 @@ export default function App() {
     showToast(`${name} adicionado! 🎉`);
   };
   const updateGameInfo = async(patch)=>{
+    const antes=gameInfo;
     setGameInfo(prev=>({...prev,...patch}));
-    await supabase.from("game_info").update(patch).eq("id",gameInfo.id);
+    const{error}=await supabase.from("game_info").update(patch).eq("id",gameInfo.id);
+    if(error){ setGameInfo(antes); showToast("Não foi possível guardar o jogo","err"); return; }
     // Notificação automática se a data mudou
     if(patch.date&&patch.date!==gameInfo.date){
       const dateStr=new Date(patch.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"});
@@ -1366,7 +1384,8 @@ export default function App() {
     await supabase.from("players").update({onboarding_seen:true}).eq("id",id);
   };
   const updatePosition = async(id,pos)=>{
-    await supabase.from("players").update({position:pos}).eq("id",id);
+    const{error}=await supabase.from("players").update({position:pos}).eq("id",id);
+    if(error){ showToast("Não foi possível mudar a posição","err"); return; }
     if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(p=>p.id===id?{...p,position:pos}:p));
     showToast("Posição atualizada ✓");
   };
@@ -1399,8 +1418,11 @@ export default function App() {
     // automático do servidor a coincidirem) — duplicaria presenças, dívidas e histórico.
     const{data:alreadyClosed}=await supabase.from("game_history").select("id").eq("group_id",gid).eq("date",gameInfo.date).gt("players_count",0).limit(1);
     if(alreadyClosed&&alreadyClosed.length>0){ if(!isAuto) showToast("Este jogo já foi fechado.","warn"); return; }
-    // Buscar confirmados diretamente da BD para garantir dados frescos
-    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid).eq("status","in");
+    // Todos os do grupo, não só os confirmados — como faz o fecho automático.
+    // Só com os confirmados, a dívida de um convidado perdia-se quando quem o
+    // convidou não jogava, os convidados em espera nunca eram apagados e as
+    // sequências de quem faltou nunca voltavam a zero.
+    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid);
     const pids=(pgRows||[]).map(x=>x.player_id);
     const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select(PLAYER_COLS).in("id",pids):{data:[]};
     const freshPlayers=(freshAllPlayers||[]).map(p=>{
@@ -1409,7 +1431,9 @@ export default function App() {
     });
     const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
     const confirmedMembers=freshConfirmed; // incluir convidados também
-    const collected=freshConfirmed.filter(p=>p.paid).length*gameCost;
+    // Conta todo o dinheiro recebido, incluindo de quem pagou e depois não
+    // jogou: o tesoureiro tem esse dinheiro e o mealheiro detalhado mostra-o.
+    const collected=freshPlayers.filter(p=>p.paid).length*gameCost;
     for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
       await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:gid});
     for(const p of freshConfirmed.filter(p=>!p.paid&&p.is_guest)){
@@ -1455,7 +1479,7 @@ export default function App() {
     sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.",confirmedMembers.filter(p=>!p.is_guest).map(p=>p.id));
     await reloadAll(gid);
   };
-  const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast("Dívida registada ✓"); };
+  const addDebt  = async(playerId,playerName,amount,desc)=>{ const{error}=await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast(error?"Não foi possível registar a dívida":"Dívida registada ✓",error?"err":"ok"); };
   // Um duplo toque em "✓ Recebido" numa ligação lenta corria o pagamento
   // duas vezes (somava duas vezes ao jogo e criava dois recebimentos).
   const dividasAPagarRef = useRef(new Set());
@@ -5468,7 +5492,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           </ExpandableSection>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
-          {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span></div>)}</div></ExpandableListSection>}
+          {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span>{p.paid&&<span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:"#fbbf24"}}>já pagou {gameInfo.cost_per_player||COST}€</span>}</div>)}</div></ExpandableListSection>}
           {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
           {/* Convidar */}
           <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>
@@ -6323,15 +6347,23 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
   },[pg.group_id]);
 
   const handleLeaveAdmin = async() => {
-    // Buscar membros para nomear novo admin
-    const{data}=await supabase.from("player_groups").select("player_id,players(id,name)").eq("group_id",pg.group_id).eq("is_admin",false).neq("player_id",pg.player_id);
-    setMembers((data||[]).map(d=>d.players).filter(Boolean));
+    // Buscar membros para nomear novo admin. Em duas leituras: não há chave
+    // estrangeira entre player_groups e players, por isso a leitura embutida
+    // (players(id,name)) falhava sempre e a lista aparecia vazia. Só entram
+    // membros ativos e nunca convidados — um convidado é apagado no fecho do
+    // jogo e o grupo ficava sem admin.
+    const{data:ligacoes}=await supabase.from("player_groups").select("player_id").eq("group_id",pg.group_id).eq("is_admin",false).eq("membership_status","active").neq("player_id",pg.player_id);
+    const ids=(ligacoes||[]).map(l=>l.player_id);
+    const{data:pessoas}=ids.length?await supabase.from("players").select("id,name,is_guest").in("id",ids):{data:[]};
+    setMembers((pessoas||[]).filter(p=>!p.is_guest).sort((a,b)=>a.name.localeCompare(b.name,"pt")));
     setShowNewAdmin(true);
   };
 
   const handleNewAdmin = async(newAdminId) => {
-    // Promover novo admin
-    await supabase.from("player_groups").update({is_admin:true}).eq("player_id",newAdminId).eq("group_id",pg.group_id);
+    // Promover novo admin. Se isto falhar não se sai do grupo — saía na mesma
+    // e o grupo ficava sem ninguém a mandar.
+    const{error}=await supabase.from("player_groups").update({is_admin:true}).eq("player_id",newAdminId).eq("group_id",pg.group_id);
+    if(error){ await askChoice("Não foi possível passar o grupo a essa pessoa. Tenta outra vez.",[{label:"OK",value:true,neutral:true}]); return; }
     await supabase.from("players").update({is_admin:true}).eq("id",newAdminId);
     // Remover admin atual
     if(onLeave) await onLeave(pg.group_id);

@@ -2377,7 +2377,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
           <div style={{fontSize:20,fontWeight:800,color:"white",letterSpacing:0.5}}>{gameInfo.app_name||"Hoje Há Jogo"}</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,padding:"0 10px 0 7px",minHeight:36,cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700}} aria-label="Ver jogo anterior" title="Ver jogo anterior" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/> Jogo anterior</button>
+          <button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,padding:"0 10px 0 7px",minHeight:36,cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700}} aria-label="Ver jogo anterior" title="Ver jogo anterior" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/> <span style={{whiteSpace:"nowrap"}}>Jogo anterior</span></button>
           {isViewingHistory&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"0 10px",minHeight:36,cursor:"pointer",color:"#d4af37",fontSize:11,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
           {canFwd&&<button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,minWidth:36,minHeight:36,justifyContent:"center",cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center"}} aria-label="Ver jogo seguinte" title="Ver jogo seguinte" onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
           {extraRight}
@@ -5547,10 +5547,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/><span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span></div>
                 <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <BotaoLembrarDivida nome={m.name} total={m.total} phone={m.phone}/>
+                  {/* Lembrar a dívida a si próprio não faz sentido. */}
+                  {m.id!==currentUser.id&&<BotaoLembrarDivida nome={m.name} total={m.total} phone={m.phone}/>}
                   {/* Convidados não têm conta nem notificações — só faz
                       sentido para quem pode mesmo receber. */}
-                  {!m.is_guest&&<button onClick={async()=>{ const ok=await onSendPush("💸 Tens dívida em aberto",`Tens ${m.total}€ em aberto na Hoje Há Jogo.`,[m.id]); showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err"); }} aria-label={`Notificar ${m.name} da dívida`} title="Enviar notificação na app" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 9px",background:"rgba(8,145,178,0.15)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:8,color:"#0891b2",fontWeight:800,fontSize:11,cursor:"pointer"}}>🔔</button>}
+                  {!m.is_guest&&m.id!==currentUser.id&&<button onClick={async()=>{ const ok=await onSendPush("💸 Tens dívida em aberto",`Tens ${m.total}€ em aberto na Hoje Há Jogo.`,[m.id]); showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err"); }} aria-label={`Notificar ${m.name} da dívida`} title="Enviar notificação na app" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 9px",background:"rgba(8,145,178,0.15)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:8,color:"#0891b2",fontWeight:800,fontSize:11,cursor:"pointer"}}>🔔</button>}
                   <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
                 </div>
               </div>

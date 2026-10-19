@@ -4011,7 +4011,7 @@ function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,o
             </div>
           ))}
           <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
-          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
             <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)}>
               <option value="">Seleciona jogador...</option>
               {members.filter(m=>!m.is_admin).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}

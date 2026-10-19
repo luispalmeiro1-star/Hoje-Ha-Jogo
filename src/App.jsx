@@ -1597,9 +1597,8 @@ export default function App() {
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={(destino,motivo)=>togglePresence(liveUser.id,destino,motivo)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
-      {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
+      {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} isAdmin={!!liveUser.is_admin} onPayDebt={payDebt} onAddDebt={addDebt} onSendPush={sendPushNotification} showToast={showToast} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -2390,7 +2389,6 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
             <div>
               <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:10}}>
                 <div><div style={{fontSize:28,fontWeight:800,color:"#4ade80",lineHeight:1}}>{historyGame.players_count}</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>JOGADORES</div></div>
-                <div><div style={{fontSize:28,fontWeight:800,color:"#fbbf24",lineHeight:1}}>{historyGame.collected}€</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>RECEBIDO</div></div>
                 {historyGame.winner_team&&<div><div style={{fontSize:28,fontWeight:800,color:"#60a5fa",lineHeight:1}}>Equipa {historyGame.winner_team}</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>VENCEDOR</div></div>}
                 {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>MVP</div></div>}
               </div>
@@ -3982,7 +3980,51 @@ function PaymentsLedger({payments=[]}) {
   );
 }
 
-function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],payments=[],groupId=null,rentPerGame=DEFAULT_RENT}) {
+// Gestão das dívidas do grupo, só para o admin: marcar como recebido,
+// lembrar, registar uma dívida à mão. Vive em Finanças, junto do resto do
+// dinheiro — antes era um separador à parte no ecrã do admin, e o dinheiro
+// estava espalhado por cinco sítios.
+function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,onAddDebt,onSendPush,showToast=()=>{}}) {
+  const [debtPlayer,setDebtPlayer]=useState("");
+  const [debtAmount,setDebtAmount]=useState("");
+  const [debtDesc,setDebtDesc]=useState("");
+  const debtsByPlayer=(members||[]).map(m=>({...m,debts:(debts||[]).filter(d=>d.player_id===m.id),total:eur((debts||[]).filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
+  return (
+    <>
+          <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
+          {debtsByPlayer.length===0&&<p className="empty-msg">🎉 Sem dívidas em aberto!</p>}
+          {debtsByPlayer.map(m=>(
+            <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/><span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span></div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  {/* Lembrar a dívida a si próprio não faz sentido. */}
+                  {m.id!==currentUserId&&<BotaoLembrarDivida nome={m.name} total={m.total} phone={m.phone}/>}
+                  {/* Convidados não têm conta nem notificações — só faz
+                      sentido para quem pode mesmo receber. */}
+                  {!m.is_guest&&m.id!==currentUserId&&<button onClick={async()=>{ const ok=await onSendPush("💸 Tens dívida em aberto",`Tens ${m.total}€ em aberto na Hoje Há Jogo.`,[m.id]); showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err"); }} aria-label={`Notificar ${m.name} da dívida`} title="Enviar notificação na app" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 9px",background:"rgba(8,145,178,0.15)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:8,color:"#0891b2",fontWeight:800,fontSize:11,cursor:"pointer"}}>🔔</button>}
+                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
+                </div>
+              </div>
+              {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
+              {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) { for(const d of m.debts) await onPayDebt(d.id); } }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}
+            </div>
+          ))}
+          <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
+          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+            <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)}>
+              <option value="">Seleciona jogador...</option>
+              {members.filter(m=>!m.is_admin).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <input className="text-input" type="number" placeholder="Valor (€)..." value={debtAmount} onChange={e=>setDebtAmount(e.target.value)}/>
+            <input className="text-input" placeholder="Descrição..." value={debtDesc} onChange={e=>setDebtDesc(e.target.value)}/>
+            <button className="btn-primary" onClick={()=>{const p=members.find(m=>m.id===Number(debtPlayer));if(!p||!debtAmount)return;onAddDebt(p.id,p.name,Number(debtAmount),debtDesc||"Dívida manual");setDebtPlayer("");setDebtAmount("");setDebtDesc("");}}><Icon name="plus" size={14}/> Registar</button>
+          </div>
+            </>
+  );
+}
+
+function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber="",effectiveCost=3,piggybank=0,history=[],payments=[],groupId=null,rentPerGame=DEFAULT_RENT,isAdmin=false,onPayDebt,onAddDebt,onSendPush,showToast=()=>{}}) {
   const myDebts=debts.filter(d=>d.player_id===player.id);
   const myTotal=eur(myDebts.reduce((s,d)=>s+Number(d.amount),0));
   const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:eur(debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
@@ -4002,7 +4044,8 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
           </div>
           <span style={{fontSize:36}}>💰</span>
         </div>
-        <p className="section-label"><Icon name="warn" size={12}/> AS MINHAS DÍVIDAS</p>
+        {/* O admin vê as dele na lista do grupo, onde as pode gerir. */}
+        {!isAdmin&&<><p className="section-label"><Icon name="warn" size={12}/> AS MINHAS DÍVIDAS</p>
         {myTotal===0
           ?<div style={{background:"rgba(30,168,81,0.1)",border:"1px solid rgba(30,168,81,0.3)",borderRadius:12,padding:"16px",textAlign:"center",marginBottom:14}}>
             <div style={{fontSize:24,marginBottom:6}}>🎉</div>
@@ -4023,8 +4066,10 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
             {!mbwayNumber&&myTotal>0&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:12,color:"#fbbf24"}}>
               💡 Para pagar via MBWay, pede ao teu admin para configurar o número.
             </div>}
-          </div>}
-        {othersDebts.length>0&&<>
+          </div>}</>}
+        {isAdmin
+          ?<GestaoDividas debts={debts} members={members} players={players} currentUserId={player.id} onPayDebt={onPayDebt} onAddDebt={onAddDebt} onSendPush={onSendPush} showToast={showToast}/>
+          :othersDebts.length>0&&<>
           <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
           <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
             {othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px"}}>
@@ -4038,53 +4083,17 @@ function FinancasView({debts=[],members=[],player,onBack,mbwayNumber="",effectiv
           <PiggyBankCard piggybank={piggybank} history={history} cost={effectiveCost} groupId={groupId} isAdmin={player?.is_admin||false} showHero={false} rent={rentPerGame}/>
           <PaymentsLedger payments={payments}/>
         </ExpandableSection>
-        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
+        {isAdmin&&<ExpandableSection icon="🧾" title="Despesas e mealheiro" subtitle="Registar uma despesa ou reiniciar o mealheiro">
+          <RegistarDespesaButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
+          <ReiniciarMealheiroButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
+        </ExpandableSection>}
+        {!isAdmin&&othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>
     </div>
   );
 }
 
 // ── DEBTS VIEW ───────────────────────────────────────────────────────────────
-function DebtsView({debts=[], members=[], player, onBack, mbwayNumber="", effectiveCost=3}) {
-  const myDebts=debts.filter(d=>d.player_id===player.id);
-  const myTotal=eur(myDebts.reduce((s,d)=>s+Number(d.amount),0));
-  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:eur(debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
-  return (
-    <div className="screen">
-      <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
-          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>DÍVIDAS</span>
-        </div>
-      </div>
-      <div className="body">
-        <p className="section-label"><Icon name="warn" size={12}/> AS MINHAS DÍVIDAS</p>
-        {myTotal===0
-          ?<div style={{background:"rgba(30,168,81,0.1)",border:"1px solid rgba(30,168,81,0.3)",borderRadius:12,padding:"16px",textAlign:"center",marginBottom:14}}><div style={{fontSize:24,marginBottom:6}}>🎉</div><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>Não deves nada!</div></div>
-          :<div style={{marginBottom:14}}>
-            <div style={{background:"rgba(239,68,68,0.1)",border:"2px solid #dc2626",borderRadius:14,padding:"14px",marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <span style={{fontSize:13,fontWeight:700,color:"white"}}>Total em dívida</span>
-                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span>
-              </div>
-              {myDebts.map(d=><div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:12,color:"#8a9080"}}>{descDivida(d.description)}</span>
-                <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
-              </div>)}
-            </div>
-            {mbwayNumber&&<MBWayButton number={mbwayNumber} amount={myTotal}/>}
-            {!mbwayNumber&&myTotal>0&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:12,color:"#fbbf24"}}>
-              💡 Para pagar via MBWay, pede ao teu admin para configurar o número nas definições do grupo.
-            </div>}
-          </div>}
-        {othersDebts.length>0&&<><p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p><div style={{display:"flex",flexDirection:"column",gap:6}}>{othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px"}}><Avatar player={m} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span></div>)}</div></>}
-        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:20,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
-      </div>
-    </div>
-  );
-}
-
-// ── STATS VIEW ───────────────────────────────────────────────────────────────
 function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,piggybank=0,effectiveCost=3,groupId=null,attendance=[],rentPerGame=DEFAULT_RENT}) {
   const [tab,setTab]=useState("pessoal");
   const mvpCounts={};
@@ -5000,7 +5009,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           <button className="icon-ghost" aria-label="Sair da conta" title="Sair da conta" onClick={async()=>{ if(await askConfirm("Sair da tua conta neste telemóvel?",{confirmLabel:"Sair"})) onLogout(); }}><Icon name="logout" size={16}/></button>
         </div>
         {totalDebt>0&&(
-          <button onClick={()=>setView("debts")} style={{width:"100%",background:"rgba(217,119,6,0.15)",border:"2px solid #d97706",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10,cursor:"pointer",textAlign:"left"}}>
+          <button onClick={()=>setView("financas")} style={{width:"100%",background:"rgba(217,119,6,0.15)",border:"2px solid #d97706",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10,cursor:"pointer",textAlign:"left"}}>
             <Icon name="warn" size={18}/><div style={{flex:1}}><div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div><div style={{fontSize:11,color:"#fcd34d"}}>{(()=>{ const minhas=debts.filter(d=>d.player_id===player.id); return minhas.length===1?descDivida(minhas[0].description):`${minhas.length} jogos por pagar · toca para ver`; })()}</div></div><Icon name="right" size={14}/>
           </button>
         )}
@@ -5223,9 +5232,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   const [editedJogo,setEditedJogo]=useState(false);
   const [editedFormato,setEditedFormato]=useState(false);
   const [winnerTeam,setWinnerTeam]=useState(null);
-  const [debtPlayer,setDebtPlayer]=useState("");
-  const [debtAmount,setDebtAmount]=useState("");
-  const [debtDesc,setDebtDesc]=useState("");
   const [showReset,setShowReset]=useState(false);
   const [editGameDays,setEditGameDays]=useState(null);
   const [showClearConfirm,setShowClearConfirm]=useState(false);
@@ -5297,7 +5303,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
   const totalPaid=confirmed.filter(p=>p.paid).length;
   const totalUnpaid=confirmed.filter(p=>!p.paid).length;
-  const debtsByPlayer=(members||[]).map(m=>({...m,debts:(debts||[]).filter(d=>d.player_id===m.id),total:eur((debts||[]).filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
 
   return (
     <div className="screen">
@@ -5395,7 +5400,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             ["jogo","⚽ Jogo"],
             ["equipas","🎲 Equipas"],
             ["jogadores","👥 Jogadores"],
-            ["dividas","💸 Dívidas"],
             ["historico","📋 Histórico"],
             ["gerir","⚙️ Gerir"],
           ].map(([k,l])=>(
@@ -5403,9 +5407,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               {l}
               {k==="gerir"&&pendingCount>0&&(
                 <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
-              )}
-              {k==="dividas"&&debts.length>0&&(
-                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{debts.length}</span>
               )}
               {k==="jogadores"&&pwResetCount>0&&(
                 <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pwResetCount}</span>
@@ -5537,38 +5538,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               </div>
               {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 {teamLabel(teamConfig,winnerTeam)} venceu!</div>}
             </>}
-        </>}
-
-        {adminTab==="dividas"&&<>
-          <p className="section-label"><Icon name="euro" size={12}/> DÍVIDAS</p>
-          {debtsByPlayer.length===0&&<p className="empty-msg">🎉 Sem dívidas em aberto!</p>}
-          {debtsByPlayer.map(m=>(
-            <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/><span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span></div>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  {/* Lembrar a dívida a si próprio não faz sentido. */}
-                  {m.id!==currentUser.id&&<BotaoLembrarDivida nome={m.name} total={m.total} phone={m.phone}/>}
-                  {/* Convidados não têm conta nem notificações — só faz
-                      sentido para quem pode mesmo receber. */}
-                  {!m.is_guest&&m.id!==currentUser.id&&<button onClick={async()=>{ const ok=await onSendPush("💸 Tens dívida em aberto",`Tens ${m.total}€ em aberto na Hoje Há Jogo.`,[m.id]); showToast(ok?"Notificação enviada ✓":"Não foi possível enviar a notificação",ok?"ok":"err"); }} aria-label={`Notificar ${m.name} da dívida`} title="Enviar notificação na app" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 9px",background:"rgba(8,145,178,0.15)",border:"1px solid rgba(8,145,178,0.4)",borderRadius:8,color:"#0891b2",fontWeight:800,fontSize:11,cursor:"pointer"}}>🔔</button>}
-                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
-                </div>
-              </div>
-              {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
-              {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) { for(const d of m.debts) await onPayDebt(d.id); } }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}
-            </div>
-          ))}
-          <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
-          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
-            <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)}>
-              <option value="">Seleciona jogador...</option>
-              {members.filter(m=>!m.is_admin).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-            <input className="text-input" type="number" placeholder="Valor (€)..." value={debtAmount} onChange={e=>setDebtAmount(e.target.value)}/>
-            <input className="text-input" placeholder="Descrição..." value={debtDesc} onChange={e=>setDebtDesc(e.target.value)}/>
-            <button className="btn-primary" onClick={()=>{const p=members.find(m=>m.id===Number(debtPlayer));if(!p||!debtAmount)return;onAddDebt(p.id,p.name,Number(debtAmount),debtDesc||"Dívida manual");setDebtPlayer("");setDebtAmount("");setDebtDesc("");}}><Icon name="plus" size={14}/> Registar</button>
-          </div>
         </>}
 
         {adminTab==="historico"&&<>
@@ -5794,9 +5763,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <Icon name="check" size={13}/> {mbwaySaved?"GUARDADO ✓":"GUARDAR"}
             </button>
           </ExpandableSection>
-          <ExpandableSection icon="💰" title="Financeiro" subtitle="Mealheiro e gestão de época">
-            <RegistarDespesaButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
-            <ReiniciarMealheiroButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
+          {/* As despesas e o reiniciar do mealheiro passaram para Finanças. */}
+          <ExpandableSection icon="🏁" title="Época" subtitle="Terminar a época e guardar os prémios">
             <TerminarEpocaButton players={players} history={history} debts={debts} members={members} mvpVotes={mvpVotes} groupId={groupId} gameInfo={gameInfo} showToast={showToast} reloadAll={()=>window.location.reload()}/>
           </ExpandableSection>
         </>}
@@ -5905,18 +5873,6 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
             <div style={{fontSize:10,color:"#7d8472",marginBottom:2}}>JOGADORES</div>
             <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
           </div>
-          <div>
-            <div style={{fontSize:10,color:"#7d8472",marginBottom:2}}>RECOLHIDO</div>
-            <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.collected||0}€</div>
-          </div>
-          {h.collected>0&&<div>
-            <div style={{fontSize:10,color:"#7d8472",marginBottom:2}}>POR JOGO</div>
-            {/* O custo real do jogo, gravado no fecho — não "recolhido ÷
-                jogadores", que ficava errado sempre que alguém não tinha
-                pago ainda (ex: 21€/11 jogadores dava "2€" para um jogo que
-                custou sempre 3€ a cada um). */}
-            <div style={{fontSize:18,fontWeight:800,color:"#ffffff"}}>{h.cost_per_player??(h.players_count>0?Math.round(h.collected/h.players_count):0)}€</div>
-          </div>}
         </div>
         {/* Definir vencedor se não está definido */}
         {!h.winner_team&&h.players_count>=sportConfig(sportType).teamSize*2&&(

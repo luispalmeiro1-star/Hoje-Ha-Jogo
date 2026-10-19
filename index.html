@@ -150,12 +150,30 @@
     </div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          var s = document.getElementById('splash');
-          if(s){ s.classList.add('hide'); setTimeout(function(){ s.remove(); }, 400); }
-        }, 1200);
-      });
+      // O ecrã de arranque sai assim que o React troca o texto estático do
+      // #root pela app. Antes esperava pelo "load" (que inclui o OneSignal e
+      // outros scripts de fora) e ainda mais 1,2 s fixos: quem chegava a frio
+      // pelo Instagram via só o logótipo durante esse tempo todo. Se o pacote
+      // de JavaScript nunca chegar, sai na mesma no "load" e fica à vista o
+      // texto estático.
+      (function() {
+        var s = document.getElementById('splash');
+        var root = document.getElementById('root');
+        var estatico = root && root.firstElementChild;
+        var feito = false;
+        function esconder() {
+          if (feito || !s) return;
+          feito = true;
+          s.classList.add('hide');
+          setTimeout(function(){ s.remove(); }, 400);
+        }
+        if (root && estatico && window.MutationObserver) {
+          new MutationObserver(function(_m, o) {
+            if (!root.contains(estatico)) { o.disconnect(); esconder(); }
+          }).observe(root, { childList: true });
+        }
+        window.addEventListener('load', function() { setTimeout(esconder, 300); });
+      })();
     </script>
   </body>
 </html>

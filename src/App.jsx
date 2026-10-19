@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { supabase } from "./supabase.js";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+// O recharts só chega quando há um gráfico no ecrã (ver GraficoLinha.jsx).
+const GraficoLinha = lazy(()=>import("./GraficoLinha.jsx"));
+// Enquanto o gráfico chega, guarda-lhe o espaço para a página não saltar.
+const Grafico = (props) => <Suspense fallback={<div style={{height:props.altura}}/>}><GraficoLinha {...props}/></Suspense>;
 
 
 // ── CONFIRMAÇÃO ───────────────────────────────────────────────────────────────
@@ -4387,14 +4390,7 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
           ))}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={160}>
-          <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-            <XAxis dataKey="date" tick={{fill:"#7d8472",fontSize:10}} tickLine={false} axisLine={false}/>
-            <YAxis tick={{fill:"#7d8472",fontSize:10}} tickLine={false} axisLine={false}/>
-            <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[`${v}€`,"Saldo"]}/>
-            <Line type="monotone" dataKey="saldo" stroke="#1ea851" strokeWidth={2} dot={{fill:"#1ea851",r:3}} activeDot={{r:5}}/>
-          </LineChart>
-        </ResponsiveContainer>
+        <Grafico data={data} altura={160} eixoX="date" valor="saldo" cor="#1ea851" corEixo="#7d8472" rotulo="Saldo" sufixo="€"/>
       )}
     </div>
   );
@@ -4418,14 +4414,7 @@ function GraficoPresencas({player, attendance=[]}) {
   return (
     <div style={{marginTop:8}}>
       <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
-      <ResponsiveContainer width="100%" height={140}>
-        <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="label" tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false} allowDecimals={false}/>
-          <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
-          <Line type="monotone" dataKey="jogos" stroke="#4ade80" strokeWidth={2} dot={{fill:"#4ade80",r:3}} activeDot={{r:5}}/>
-        </LineChart>
-      </ResponsiveContainer>
+      <Grafico data={data} altura={140} eixoX="label" valor="jogos" cor="#4ade80" rotulo="Jogos" inteiros/>
     </div>
   );
 }
@@ -4442,17 +4431,7 @@ function GraficoRanking({members=[], currentPlayer}) {
   return (
     <div style={{marginTop:8}}>
       <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
-      <ResponsiveContainer width="100%" height={160}>
-        <LineChart data={data} margin={{top:5,right:10,left:-20,bottom:5}}>
-          <XAxis dataKey="name" tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false}/>
-          <YAxis tick={{fill:"#8a9080",fontSize:10}} tickLine={false} axisLine={false} allowDecimals={false}/>
-          <Tooltip contentStyle={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,color:"white",fontSize:11}} formatter={(v)=>[v,"Jogos"]} cursor={{stroke:"#23271b"}}/>
-          <Line type="monotone" dataKey="jogos" stroke="#4ade80" strokeWidth={2} dot={(props)=>{
-            const{cx,cy,payload}=props;
-            return <circle key={payload.name} cx={cx} cy={cy} r={payload.isMe?5:3} fill={payload.isMe?"#ffffff":"#4ade80"} stroke="none"/>;
-          }} activeDot={{r:5,fill:"#ffffff"}}/>
-        </LineChart>
-      </ResponsiveContainer>
+      <Grafico data={data} altura={160} eixoX="name" valor="jogos" cor="#4ade80" rotulo="Jogos" inteiros destacarMeu/>
     </div>
   );
 }

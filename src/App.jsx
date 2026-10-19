@@ -1735,12 +1735,12 @@ function DebtRow({debt, onPayDebt}) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:12,color:"#8a9080"}}>{descDivida(debt.description)} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
         <div style={{display:"flex",gap:6}}>
-          <span style={{fontSize:11,fontWeight:700,color:"#f87171",display:"flex",alignItems:"center",gap:4}}>💸 Em dívida</span>
-          <button style={{background:"#1ea851",border:"none",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
+          <span style={{fontSize:11,fontWeight:700,color:"#f87171",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>💸 Em dívida</span>
+          <button style={{background:"#1ea851",border:"none",borderRadius:8,padding:"8px 12px",fontSize:11,fontWeight:800,color:"#04240f",cursor:"pointer",whiteSpace:"nowrap"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
         </div>
       </div>
       {!showPartial
-        ? <button onClick={()=>setShowPartial(true)} style={{background:"none",border:"none",color:"#fbbf24",fontSize:10,fontWeight:600,cursor:"pointer",marginTop:4,padding:0}}>Pagamento parcial?</button>
+        ? <button onClick={()=>setShowPartial(true)} style={{background:"none",border:"none",color:"#fbbf24",fontSize:11,fontWeight:600,cursor:"pointer",marginTop:2,padding:"6px 0"}}>Pagamento parcial?</button>
         : <div style={{display:"flex",gap:6,marginTop:6}}>
             <input className="text-input" type="number" placeholder="Valor recebido..." value={amount} onChange={e=>setAmount(e.target.value)} style={{fontSize:12,padding:"6px 10px"}}/>
             <button style={{background:"#d97706",border:"none",borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer",flexShrink:0}} onClick={()=>{if(amount&&Number(amount)>0){onPayDebt(debt.id,Number(amount));setShowPartial(false);setAmount("");}}}>OK</button>
@@ -2118,7 +2118,7 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
   const textos={idle:"🖼️ PARTILHAR CARTÃO","a-gerar":"A preparar…",partilhado:"RESUMO COPIADO ✓",descarregado:"CARTÃO GUARDADO ✓"};
   return (
     <>
-      <button onClick={gerar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"rgba(212,175,55,0.12)",border:"1px solid rgba(212,175,55,0.4)",borderRadius:10,padding:"10px 14px",color:"#d4af37",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
+      <button onClick={gerar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"#14160f",border:"1px solid #2e3324",borderRadius:10,padding:"10px 14px",color:"#ffffff",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
         {textos[estado]||"🖼️ PARTILHAR CARTÃO"}
       </button>
       {estado==="pre-visualizar"&&preview&&(
@@ -2377,7 +2377,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
           <div style={{fontSize:20,fontWeight:800,color:"white",letterSpacing:0.5}}>{gameInfo.app_name||"Hoje Há Jogo"}</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,padding:"0 10px 0 7px",minHeight:36,cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700}} aria-label="Ver jogo anterior" title="Ver jogo anterior" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/> Anterior</button>
+          <button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,padding:"0 10px 0 7px",minHeight:36,cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700}} aria-label="Ver jogo anterior" title="Ver jogo anterior" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/> Jogo anterior</button>
           {isViewingHistory&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"0 10px",minHeight:36,cursor:"pointer",color:"#d4af37",fontSize:11,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
           {canFwd&&<button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,minWidth:36,minHeight:36,justifyContent:"center",cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center"}} aria-label="Ver jogo seguinte" title="Ver jogo seguinte" onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
           {extraRight}
@@ -2609,8 +2609,9 @@ function LandingView({setView}) {
             </button>
           </div>
 
-          {/* Mockup do telemóvel */}
-          <div style={{display:"flex",justifyContent:"center",marginBottom:26}}>
+          {/* Mockup do telemóvel. É uma ilustração: sem o aria-hidden, os
+              leitores de ecrã liam os nomes inventados como se fossem reais. */}
+          <div aria-hidden="true" style={{display:"flex",justifyContent:"center",marginBottom:26}}>
             <div style={{width:212,background:"#0d0f0a",border:"2px solid #24291b",borderRadius:26,padding:7,boxShadow:"0 30px 70px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.06)",transform:"rotate(-3deg)"}}>
               {/* O ecrã alinha à esquerda como a app real. Herdava o
                   textAlign:center do hero, e as linhas das contas ficavam
@@ -2686,7 +2687,7 @@ function LandingView({setView}) {
           </button>
 
           <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%",margin:"16px auto 0"}}>
-            <p style={{fontSize:11,color:"#8a9080",margin:0,lineHeight:1.55}}>
+            <p style={{fontSize:12.5,color:"#a3a897",margin:0,lineHeight:1.55}}>
               💡 Para entrar num grupo precisas de um <strong style={{color:"#8a9080"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
             </p>
           </div>
@@ -3532,12 +3533,15 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
               código nenhum para pôr — pode ser quem quer montar o seu próprio
               grupo. Sem esta saída, o ecrã era um beco: um campo que a pessoa
               não tem como preencher e mais nada. */}
-          {currentUser&&<div style={{marginTop:28,paddingTop:22,borderTop:"1px solid #23271b",textAlign:"center"}}>
-            <p style={{color:"#8a9080",fontSize:13,marginBottom:12}}>Não tens código? És tu que vais organizar?</p>
+          <div style={{marginTop:28,paddingTop:22,borderTop:"1px solid #23271b",textAlign:"center"}}>
+            <p style={{color:"#8a9080",fontSize:13,marginBottom:12}}>{currentUser?"Não tens código? És tu que vais organizar?":"Não tens código? Pede ao organizador o link do grupo — ou vê primeiro como funciona."}</p>
+            {!currentUser&&<button onClick={()=>setView("demo")} style={{width:"100%",padding:"15px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:8}}>
+              👀 Ver um grupo a funcionar
+            </button>}
             <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"15px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer"}}>
               ⚽ Criar o meu grupo
             </button>
-          </div>}
+          </div>
         </>}
 
         {/* PASSO 2 — escolha (ou adicionar grupo se já autenticado) */}
@@ -3830,6 +3834,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
             votado nela (mal) — ficava sem saber o resultado que mais lhe
             interessa. Continua a não poder votar em si própria; só passa a ver
             a contagem, como vê a dos outros. */}
+        {!confirmed.some(p=>!p.is_guest&&p.id!==currentUserId)&&<p style={{fontSize:12,color:"#8a9080",margin:"2px 0 4px"}}>Não há em quem votar — os convidados não entram na votação.</p>}
         {[...confirmed].filter(p=>!p.is_guest).sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)||a.name.localeCompare(b.name,"pt")).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
           const souEu=p.id===currentUserId;
@@ -4608,10 +4613,10 @@ function ZonaView({player, players=[], onBack, showToast}) {
           {/* Notas */}
           <div>
             <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>NOTA (opcional)</div>
-            <div style={{display:"flex",gap:6}}>
-              <input className="text-input" value={availNotes} onChange={e=>setAvailNotes(e.target.value)} placeholder="Ex: disponível após as 21h..." style={{flex:1,marginBottom:0}}/>
-              <button onClick={saveNotes} style={{padding:"8px 12px",background:"#23271b",border:"1px solid #23271b",borderRadius:8,color:"#8a9080",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>Guardar</button>
-            </div>
+            <input className="text-input" value={availNotes} onChange={e=>setAvailNotes(e.target.value)} placeholder="Ex: disponível após as 21h..." style={{marginBottom:8}}/>
+            {/* Grava o contacto E a nota. Estava colado só à nota e com ar de
+                desativado — quem escrevia o número e saía perdia-o. */}
+            <button onClick={saveNotes} style={{width:"100%",padding:"11px 12px",background:"#14160f",border:"1px solid #2e3324",borderRadius:10,color:"#ffffff",fontSize:13,cursor:"pointer",fontWeight:700}}>Guardar contacto e nota</button>
           </div>
           <div>
             <div style={{fontSize:11,color:"#8a9080",marginBottom:6}}>A MINHA ZONA</div>
@@ -4859,12 +4864,12 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
           {/* Stats rápidas */}
           <div style={{display:"flex",justifyContent:"center",gap:24}}>
             <div style={{textAlign:"center"}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#4ade80",lineHeight:1}}>{player.total_games||0}</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",lineHeight:1}}>{player.total_games||0}</div>
               <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>JOGOS</div>
             </div>
             <div style={{width:1,background:"#23271b"}}/>
             <div style={{textAlign:"center"}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d97706",lineHeight:1}}>{player.current_streak||0}</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",lineHeight:1}}>{player.current_streak||0}</div>
               <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
             </div>
             <div style={{width:1,background:"#23271b"}}/>
@@ -4879,8 +4884,8 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <div style={{fontSize:10.5,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:8}}>CONTA</div>
         <div style={{marginBottom:12}}>
           <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>Cor do avatar</div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            {AVATAR_COLORS.map((c,i)=><button key={c} aria-label={`Cor de avatar ${i+1}`} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:40,height:40,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
+          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+            {AVATAR_COLORS.map((c,i)=><button key={c} aria-label={`Cor de avatar ${i+1}`} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:38,height:38,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
         </div>
 
@@ -4924,10 +4929,10 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 
         {/* Ações */}
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
-          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#ffffff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="people" size={14}/> Os meus grupos
           </button>
-          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#ffffff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="key" size={14}/> Entrar noutro grupo
           </button>
           <button onClick={async()=>{ if(await askConfirm("Trocar de conta? Vais ter de entrar outra vez.",{danger:true,confirmLabel:"Trocar"})) onSwitchAccount(); }} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -4996,7 +5001,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         </div>
         {totalDebt>0&&(
           <button onClick={()=>setView("debts")} style={{width:"100%",background:"rgba(217,119,6,0.15)",border:"2px solid #d97706",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10,cursor:"pointer",textAlign:"left"}}>
-            <Icon name="warn" size={18}/><div style={{flex:1}}><div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div><div style={{fontSize:11,color:"#fcd34d"}}>Toca para ver detalhes</div></div><Icon name="right" size={14}/>
+            <Icon name="warn" size={18}/><div style={{flex:1}}><div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div><div style={{fontSize:11,color:"#fcd34d"}}>{(()=>{ const minhas=debts.filter(d=>d.player_id===player.id); return minhas.length===1?descDivida(minhas[0].description):`${minhas.length} jogos por pagar · toca para ver`; })()}</div></div><Icon name="right" size={14}/>
           </button>
         )}
         <div className={`status-banner sb-${isIn?"in":isWait?"wait":isNao?"nao":"out"}`}>
@@ -5357,8 +5362,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             dívida grava lá uma linha com zero jogadores e a data do próximo
             jogo, que ficava à frente de tudo e fazia esta pergunta desaparecer
             sem ninguém ter respondido a ela. */}
-        {(()=>{ const ultimoJogo=history.find(h=>h.players_count>0); return ultimoJogo&&ultimoJogo.winner_team===null&&(
-          <div style={{background:"rgba(217,119,6,0.12)",border:"2px solid #d97706",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        {/* Só se pergunta quem ganhou quando houve gente para formar equipas —
+            antes perguntava-se mesmo num jogo de 6 em que nunca houve sorteio. */}
+        {(()=>{ const ultimoJogo=history.find(h=>h.players_count>0); return ultimoJogo&&ultimoJogo.winner_team===null&&ultimoJogo.players_count>=sportConfig(sportType).teamSize*2&&(
+          <div style={{background:"rgba(217,119,6,0.12)",border:"1px solid #d97706",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
             <div style={{fontSize:13,fontWeight:800,color:"#fbbf24",marginBottom:10}}>🏆 Qual foi a equipa vencedora do último jogo?</div>
             <div style={{display:"flex",gap:8}}>
               {["A","B","C"].slice(0,numTeamsFor(ultimoJogo.players_count,sportType)).map(t=>(
@@ -5366,7 +5373,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   await supabase.from("game_history").update({winner_team:t}).eq("id",ultimoJogo.id);
                   showToast(`${teamLabel(teamConfig,t)} registada como vencedora ✓`);
                   setAdminTab("historico");
-                }} style={{flex:1,padding:"12px 10px",borderRadius:10,border:"1px solid #d97706",background:"rgba(217,119,6,0.15)",color:"#fbbf24",fontWeight:800,fontSize:14,cursor:"pointer"}}>
+                }} style={{flex:1,padding:"12px 10px",borderRadius:10,border:"1px solid #d97706",background:"rgba(217,119,6,0.15)",color:"#ffffff",fontWeight:800,fontSize:14,cursor:"pointer"}}>
                   {teamLabel(teamConfig,t)}
                 </button>
               ))}
@@ -5388,7 +5395,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             ["jogo","⚽ Jogo"],
             ["equipas","🎲 Equipas"],
             ["jogadores","👥 Jogadores"],
-            ["dividas",`💸 Dívidas${debts.length>0?` (${debts.length})`:""}`],
+            ["dividas","💸 Dívidas"],
             ["historico","📋 Histórico"],
             ["gerir","⚙️ Gerir"],
           ].map(([k,l])=>(
@@ -5396,6 +5403,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               {l}
               {k==="gerir"&&pendingCount>0&&(
                 <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
+              )}
+              {k==="dividas"&&debts.length>0&&(
+                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{debts.length}</span>
               )}
               {k==="jogadores"&&pwResetCount>0&&(
                 <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pwResetCount}</span>
@@ -5500,8 +5510,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
               <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
               <p style={{fontSize:11,color:"#8a9080",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
+              {/* Avisos só: o fecho continua possível, mas não por engano. */}
+              {confirmed.length===0&&<p style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:8}}>⚠️ Ninguém confirmou este jogo.</p>}
+              {gameInfo.date&&new Date(`${gameInfo.date}T${gameInfo.time||"00:00"}`)>new Date()&&<p style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:12}}>⚠️ Este jogo ainda não aconteceu.</p>}
               <div style={{display:"flex",gap:8}}>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
+                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"transparent",border:"1px solid #dc2626",color:"#f87171",boxShadow:"none"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#8a9080"}} onClick={()=>setShowReset(false)}>Cancelar</button>
               </div>
             </div>}
@@ -5901,11 +5914,11 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
                 jogadores", que ficava errado sempre que alguém não tinha
                 pago ainda (ex: 21€/11 jogadores dava "2€" para um jogo que
                 custou sempre 3€ a cada um). */}
-            <div style={{fontSize:18,fontWeight:800,color:"#d4af37"}}>{h.cost_per_player??(h.players_count>0?Math.round(h.collected/h.players_count):0)}€</div>
+            <div style={{fontSize:18,fontWeight:800,color:"#ffffff"}}>{h.cost_per_player??(h.players_count>0?Math.round(h.collected/h.players_count):0)}€</div>
           </div>}
         </div>
         {/* Definir vencedor se não está definido */}
-        {!h.winner_team&&h.players_count>0&&(
+        {!h.winner_team&&h.players_count>=sportConfig(sportType).teamSize*2&&(
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
             <span style={{fontSize:11,color:"#8a9080"}}>Vencedor:</span>
             {["A","B","C"].slice(0,numTeamsFor(h.players_count,sportType)).map(t=>(
@@ -5913,7 +5926,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
                 showToast(`${teamLabel(teamConfig,t)} registada ✓`);
                 reloadAll();
-              }} style={{padding:"4px 10px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              }} style={{padding:"8px 12px",minHeight:36,borderRadius:8,border:"1px solid #2e3324",background:"#14160f",color:"#ffffff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
                 {teamLabel(teamConfig,t)}
               </button>
             ))}
@@ -6573,6 +6586,9 @@ function getCss() {
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(212,175,55,0.6);}
 .text-input:focus-visible{box-shadow:0 0 0 2px rgba(212,175,55,0.6);}
 body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
+/* Os botões e campos não herdam o tipo de letra por omissão: a barra de baixo,
+   o Chat/Zona/Novidades e quase todos os botões apareciam em Arial. */
+button,input,textarea,select{font-family:inherit;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
 

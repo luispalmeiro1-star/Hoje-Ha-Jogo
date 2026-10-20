@@ -87,13 +87,26 @@ function normalizeUsername(raw) {
     .slice(0, 20);
 }
 
+// Um pedido sem limite de tempo fica pendurado para sempre quando a rede do
+// telemóvel falha a meio ou o servidor demora (já houve um login de 37 s): a
+// pessoa via o botão a "pensar" sem nunca sair dali. Agora desiste ao fim de
+// 12 s, tenta mais uma vez, e só então diz que a ligação está lenta.
 async function callLogin(username, password, group_id=null) {
-  const res = await fetch(LOGIN_URL, {
-    method: "POST",
-    headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
-    body: JSON.stringify({username, password, group_id})
-  });
-  return await res.json();
+  for(let tentativa=1; tentativa<=2; tentativa++){
+    const ctrl = new AbortController();
+    const relogio = setTimeout(()=>ctrl.abort(), 12000);
+    try{
+      const res = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`},
+        body: JSON.stringify({username, password, group_id}),
+        signal: ctrl.signal
+      });
+      return await res.json();
+    }catch(e){
+      if(tentativa===2) return {error:"A ligação está lenta. Verifica a internet e tenta outra vez."};
+    }finally{ clearTimeout(relogio); }
+  }
 }
 
 async function callRequestPasswordReset(username) {
@@ -181,7 +194,7 @@ function BotaoLembrarDivida({nome, total, phone}) {
 // na chave pública partilhada por toda a gente.
 async function establishSession(session) {
   if (!session?.token_hash) return;
-  try { await supabase.auth.verifyOtp({type:"magiclink", token_hash: session.token_hash}); }
+  try { await Promise.race([supabase.auth.verifyOtp({type:"magiclink", token_hash: session.token_hash}), new Promise((_,rej)=>setTimeout(()=>rej(new Error("tempo esgotado")),12000))]); }
   catch(e){ console.error("Erro ao estabelecer sessão:", e); }
 }
 

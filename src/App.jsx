@@ -5058,6 +5058,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             </button>
           </div>
         )}
+          <p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 14px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o organizador conta contigo para saber quantos somos.</p>
         {/* Só convidados confirmados ("in") entram na conta — um convidado
             que ficou em espera não vai jogar, não gera dívida nenhuma, e
             cobrá-lo já no valor do MBWay estava a inflar o que a pessoa via
@@ -5459,6 +5460,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               </button>
             </div>
           )}
+          <p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 10px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o organizador conta contigo para saber quantos somos.</p>
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{

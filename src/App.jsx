@@ -1905,6 +1905,20 @@ function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}
 }
 
 // ── EXPANDABLE LIST ──────────────────────────────────────────────────────────
+// Quem convida fica a dever o convidado: no fecho do jogo a dívida dele vai
+// para quem o trouxe. Com muitos convidados (um jogo em que quase só havia
+// convidados) a conta chegava de surpresa — daí este aviso, mais forte a
+// partir do terceiro.
+function AvisoConvidados({n=0,custo=3}) {
+  const forte=n>=3;
+  return (
+    <div style={{background:forte?"rgba(217,119,6,0.12)":"#14160f",border:`1px solid ${forte?"#d97706":"#23271b"}`,borderRadius:10,padding:"9px 12px",marginBottom:10,fontSize:12,lineHeight:1.5,color:forte?"#fbbf24":"#a3a897"}}>
+      {forte?"⚠️ ":"💡 "}Cada convidado são {custo}€ que ficas a pagar por ele.
+      {n>0&&<> Já tens <strong style={{color:"#ffffff"}}>{n} {n===1?"convidado":"convidados"} = {eur(n*custo)}€</strong>.</>}
+    </div>
+  );
+}
+
 function ExpandableList({confirmed, waiting=[]}) {
   const [open, setOpen] = useState(false);
   return (
@@ -5126,6 +5140,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         <ExpandableCard title="👤 CONVIDAR ALGUÉM">
           {spotsLeft===0&&<div className="guest-locked">🔒 Jogo cheio — convidado vai para lista de espera</div>}
           <>
+            <AvisoConvidados n={myGuests.length} custo={gameInfo.cost_per_player||COST}/>
             {confirmed.length<MIN_PLAYERS&&<div className="guest-hint">⚠️ Membros têm prioridade.</div>}
             <div>
               <div className="add-guest-row" style={{marginBottom:6}}>
@@ -5506,6 +5521,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           {/* Convidar */}
           <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>
             {spotsLeft===0&&<div className="guest-locked" style={{marginBottom:8}}>🔒 Jogo cheio — convidado vai para lista de espera</div>}
+            <AvisoConvidados n={guests.filter(g=>g.invited_by_id===currentUser.id).length} custo={gameInfo.cost_per_player||COST}/>
             <div>
               <div className="add-guest-row" style={{marginBottom:6}}>
                 <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName,guestPosition),setGuestName(""))}/>

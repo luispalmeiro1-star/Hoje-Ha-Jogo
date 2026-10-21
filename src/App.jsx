@@ -5117,6 +5117,10 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`}>
           <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+          {/* Quem ainda não respondeu e quem não vai: os nomes, não só a
+              contagem — a malta vê quem falta responder. O admin já via. */}
+          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
+          {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span></div>)}</div></ExpandableListSection>}
         </ExpandableCard>
         <ExpandableCard title="👤 CONVIDAR ALGUÉM">
           {spotsLeft===0&&<div className="guest-locked">🔒 Jogo cheio — convidado vai para lista de espera</div>}

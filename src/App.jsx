@@ -6581,6 +6581,10 @@ body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-heigh
 /* Os botões e campos não herdam o tipo de letra por omissão: a barra de baixo,
    o Chat/Zona/Novidades e quase todos os botões apareciam em Arial. */
 button,input,textarea,select{font-family:inherit;}
+/* Campos de escrita a 16px: abaixo disto o iPhone amplia o ecrã sozinho ao
+   tocar num campo — era essa a razão do bloqueio de zoom, que agora saiu
+   (quem vê mal pode voltar a fazer zoom com dois dedos). */
+input,textarea,select{font-size:16px !important;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
 

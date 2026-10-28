@@ -5742,6 +5742,11 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               if(groupId||currentUser?.group_id){
                 const{error}=await supabase.from("groups").update({max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
                 if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
+                // Subir o limite abre lugares: quem estava em espera passa a
+                // entrar (por ordem de chegada). Sem isto ficava preso na fila
+                // com vaga livre até alguém sair.
+                const{data:entraram}=await supabase.rpc("promote_waitlist",{p_group_id:groupId||currentUser.group_id});
+                if(entraram?.length) showToast(`${entraram.map(p=>p.player_name).join(", ")} ${entraram.length>1?"entraram":"entrou"} da lista de espera 🎉`);
               }
               setEditedFormato(false);}}>
               <Icon name="check" size={13}/> {editedFormato?"GUARDAR":"TUDO GUARDADO"}

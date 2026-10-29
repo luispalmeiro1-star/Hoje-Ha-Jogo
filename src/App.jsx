@@ -397,6 +397,22 @@ const SPORT_CONFIG = {
     gkPosition: "GR",
     positions: ["Polivalente", "GR"],
   },
+  futebol5: {
+    label: "Futebol de 5",
+    defaultMaxPlayers: 10,
+    teamSize: 5,
+    threeTeamsFrom: 15,
+    gkPosition: "Guarda-Redes",
+    positions: ["Polivalente", "Guarda-Redes"],
+  },
+  futebol7: {
+    label: "Futebol de 7",
+    defaultMaxPlayers: 14,
+    teamSize: 7,
+    threeTeamsFrom: 21,
+    gkPosition: "Guarda-Redes",
+    positions: ["Guarda-Redes", "Defesa", "Médio", "Avançado"],
+  },
   futebol11: {
     label: "Futebol de 11",
     defaultMaxPlayers: 24,
@@ -727,7 +743,9 @@ export default function App() {
     setShowIconNotice(false);
   };
 
-  const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
+  // "acao" ({label,fn}) mostra um botão no aviso — usado pelo "Anular", que
+  // dá 8 s para desfazer um toque enganado em vez dos 3 s habituais.
+  const showToast = (msg,type="ok",acao=null) => { setToast({msg,type,acao}); setTimeout(()=>setToast(null),acao?8000:3000); };
   useEffect(()=>{
     _confirmImpl = (message,opts={})=>new Promise(resolve=>{
       setConfirmState({message,...opts,resolve});
@@ -1269,7 +1287,10 @@ export default function App() {
     }
     if(limpaPago&&p.paid) await syncPagamentoJogo(playerId,p.name,false);
     if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
-    if(ns==="nao_vou") await promoverFilaEspera(activeGroupId);
+    if(ns==="nao_vou"){
+      showToast(Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`,"warn",{label:"Anular",fn:()=>togglePresence(playerId,"in")});
+      await promoverFilaEspera(activeGroupId);
+    }
   };
   // Troca manual entre um jogador em espera e um que está dentro — escolhida
   // pelo admin, não pela ordem de chegada. Pedido depois de um caso real: um
@@ -1326,9 +1347,10 @@ export default function App() {
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
   const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
-  const togglePaid     = async(id)=>{
-    const p=players.find(pl=>pl.id===id);
-    const novoPago=!p.paid;
+  const togglePaid     = async(id,forcar=null)=>{
+    const p=playersRef.current.find(pl=>pl.id===id)||players.find(pl=>pl.id===id);
+    if(!p) return;
+    const novoPago=forcar===null?!p.paid:forcar;
     applyPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:novoPago}:pl));
     const{error}=await supabase.from("player_groups").update({paid:novoPago}).eq("player_id",id).eq("group_id",activeGroupId);
     if(error){
@@ -1337,7 +1359,7 @@ export default function App() {
       return;
     }
     await syncPagamentoJogo(id,p.name,novoPago);
-    showToast("Pagamento atualizado ✓");
+    showToast(novoPago?`${p.name}: pago ✓`:`${p.name}: pagamento retirado`,"ok",{label:"Anular",fn:()=>togglePaid(id,!novoPago)});
   };
   const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
   // Devolve a password que ficou guardada (para o admin a poder copiar), ou
@@ -1522,17 +1544,28 @@ export default function App() {
     // próximo jogo — isso fazia o cartão do jogo original nunca refletir
     // pagamentos feitos depois do fecho (ex: alguém paga 3 dias depois).
     const gameDateMatch=debt.description?.match(/Jogo de (\d{4}-\d{2}-\d{2})/);
-    let attached=false;
+    let attached=false, jogoId=null, linhaSoltaId=null;
     if(gameDateMatch){
       const{data:gameRow}=await supabase.from("game_history").select("id,collected").eq("group_id",activeGroupId).eq("date",gameDateMatch[1]).gt("players_count",0).maybeSingle();
-      if(gameRow){ await supabase.from("game_history").update({collected:Number(gameRow.collected)+paidNow}).eq("id",gameRow.id); attached=true; }
+      if(gameRow){ await supabase.from("game_history").update({collected:Number(gameRow.collected)+paidNow}).eq("id",gameRow.id); attached=true; jogoId=gameRow.id; }
     }
-    if(!attached) await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null});
+    if(!attached){ const{data:solta}=await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:activeGroupId||null}).select("id").maybeSingle(); linhaSoltaId=solta?.id||null; }
     // Regista o recebimento em si — sem isto, pagar uma dívida apaga a linha
     // de "debts" e o único rasto que fica é um número a mais no total
     // arrecadado do jogo, sem se saber quem pagou nem quando.
-    await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:debt.player_id,debtor_name:debt.player_name,payer_id:debt.player_id,payer_name:debt.player_name,amount:paidNow,status:"pago",game_date:gameDateMatch?gameDateMatch[1]:null});
-    if(full){ setDebts(prev=>prev.filter(d=>d.id!==debtId)); await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
+    const{data:pagamento}=await supabase.from("payments").insert({group_id:activeGroupId||null,debtor_id:debt.player_id,debtor_name:debt.player_name,payer_id:debt.player_id,payer_name:debt.player_name,amount:paidNow,status:"pago",game_date:gameDateMatch?gameDateMatch[1]:null}).select("id").maybeSingle();
+    // Desfaz um "Recebido": repõe a dívida e tira o dinheiro de onde foi
+    // somado (o jogo original ou a linha solta criada para ele).
+    const anularRecebido=async()=>{
+      const{data:nova}=await supabase.from("debts").insert({player_id:debt.player_id,player_name:debt.player_name,amount:Number(debt.amount),description:debt.description,group_id:activeGroupId||null}).select().maybeSingle();
+      if(!nova){ showToast("Não foi possível anular","err"); return; }
+      if(jogoId){ const{data:j}=await supabase.from("game_history").select("collected").eq("id",jogoId).maybeSingle(); if(j) await supabase.from("game_history").update({collected:Math.max(0,Math.round((Number(j.collected)-paidNow)*100)/100)}).eq("id",jogoId); }
+      if(linhaSoltaId) await supabase.from("game_history").delete().eq("id",linhaSoltaId);
+      if(pagamento?.id) await supabase.from("payments").delete().eq("id",pagamento.id);
+      setDebts(prev=>[...prev,nova]);
+      showToast("Recebimento anulado — a dívida voltou");
+    };
+    if(full){ setDebts(prev=>prev.filter(d=>d.id!==debtId)); await supabase.from("debts").delete().eq("id",debtId); showToast(`${debt.player_name}: dívida paga ✓`,"ok",{label:"Anular",fn:anularRecebido}); }
     else{
       setDebts(prev=>prev.map(d=>d.id===debtId?{...d,amount:restante}:d));
       await supabase.from("debts").update({amount:restante}).eq("id",debtId);
@@ -1586,7 +1619,7 @@ export default function App() {
     <div style={{background:"#0a0b08",minHeight:"100vh"}}>
       <style>{getCss()}</style>
       {showIconNotice&&<IconUpdateNotice onDismiss={dismissIconNotice}/>}
-      {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+      {toast&&<div className={`toast toast-${toast.type}`} role="status">{toast.msg}{toast.acao&&<button onClick={()=>{ const f=toast.acao.fn; setToast(null); f(); }} className="toast-undo">{toast.acao.label}</button>}</div>}
       {confirmState&&<ConfirmModal message={confirmState.message} danger={confirmState.danger} confirmLabel={confirmState.confirmLabel} cancelLabel={confirmState.cancelLabel} onConfirm={()=>{confirmState.resolve(true);setConfirmState(null);}} onCancel={()=>{confirmState.resolve(false);setConfirmState(null);}}/>}
       {choiceState&&<ChoiceModal message={choiceState.message} options={choiceState.options} onSelect={(v)=>{choiceState.resolve(v);setChoiceState(null);}} onCancel={()=>{choiceState.resolve(null);setChoiceState(null);}}/>}
       {view==="landing"        && <LandingView setView={setView}/>}
@@ -2714,11 +2747,30 @@ function LandingView({setView}) {
             </div>
           </div>
 
-          {/* Prova social honesta: número real do grupo 37 (PRODUCT.md),
-              não um testemunho inventado. */}
-          <p style={{fontSize:12,color:"#8a9080",maxWidth:300,margin:"18px auto 0",lineHeight:1.5}}>
-            É assim que <strong style={{color:"#d8d8d8"}}>27 jogadores</strong> organizam o jogo de quarta — sem grupo de WhatsApp a mais.
-          </p>
+          {/* Prova social honesta: números reais do grupo 37 (PRODUCT.md), com
+              nomes inventados — as pessoas reais não aparecem em publicidade.
+              Atualizar à mão de vez em quando (jogos, presenças, votos). */}
+          <div style={{maxWidth:320,margin:"22px auto 0",background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 14px 12px",textAlign:"left"}}>
+            <div style={{fontSize:10,letterSpacing:1.2,color:"#7d8472",fontWeight:700,marginBottom:10}}>UM GRUPO REAL, ÀS QUARTAS</div>
+            <div style={{display:"flex",gap:6,marginBottom:12}}>
+              {[["29","jogadores"],["7","jogos"],["80","presenças"],["52","votos MVP"]].map(([n,l])=>(
+                <div key={l} style={{flex:1,textAlign:"center"}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#4ade80",lineHeight:1}}>{n}</div>
+                  <div style={{fontSize:10,color:"#8a9080",marginTop:2}}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{borderTop:"1px solid #23271b",paddingTop:10,display:"flex",flexDirection:"column",gap:6}}>
+              {[["Rui Matos","7 de 7 jogos"],["Tiago Serra","7 de 7 jogos"],["Bruno Alves","6 de 7 jogos"]].map(([nome,v],k)=>(
+                <div key={nome} style={{display:"flex",alignItems:"center",gap:8,fontSize:12}}>
+                  <span style={{width:18,color:"#7d8472",fontWeight:800}}>{k+1}.</span>
+                  <span style={{flex:1,color:"#d8d8d8"}}>{nome}</span>
+                  <span style={{color:"#8a9080"}}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:"#7d8472",marginTop:9}}>Números reais · nomes inventados</div>
+          </div>
 
           <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{marginTop:18,background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:4,textDecorationColor:"#3a4034"}}>
             📲 Tenho um código de convite
@@ -3312,9 +3364,9 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
           <label style={fieldLabel}>NOME DO GRUPO *</label>
           <input className="text-input" value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Ex: Futebolada da Quinta" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TIPO DE JOGO</label>
-          <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
             {Object.entries(SPORT_CONFIG).map(([key,cfg])=>(
-              <button key={key} type="button" onClick={()=>setSportType(key)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${sportType===key?"#1ea851":"#23271b"}`,background:sportType===key?"rgba(30,168,81,0.15)":"#14160f",color:sportType===key?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{cfg.label}</button>
+              <button key={key} type="button" onClick={()=>setSportType(key)} style={{flex:"1 1 40%",padding:"10px",borderRadius:10,border:`2px solid ${sportType===key?"#1ea851":"#23271b"}`,background:sportType===key?"rgba(30,168,81,0.15)":"#14160f",color:sportType===key?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{cfg.label}</button>
             ))}
           </div>
           <label style={fieldLabel}>LOCAL HABITUAL</label>
@@ -5501,7 +5553,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               {["A","B","C"].slice(0,numTeamsFor(ultimoJogo.players_count,sportType)).map(t=>(
                 <button key={t} onClick={async()=>{
                   await supabase.from("game_history").update({winner_team:t}).eq("id",ultimoJogo.id);
-                  showToast(`${teamLabel(teamConfig,t)} registada como vencedora ✓`);
+                  showToast(`${teamLabel(teamConfig,t)} registada como vencedora ✓`,"ok",{label:"Anular",fn:async()=>{ await supabase.from("game_history").update({winner_team:null}).eq("id",ultimoJogo.id); window.location.reload(); }});
                   setAdminTab("historico");
                 }} style={{flex:1,padding:"12px 10px",borderRadius:10,border:"1px solid #d97706",background:"rgba(217,119,6,0.15)",color:"#ffffff",fontWeight:800,fontSize:14,cursor:"pointer"}}>
                   {teamLabel(teamConfig,t)}
@@ -5781,14 +5833,14 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           </ExpandableSection>
           <ExpandableSection icon="🎽" title="Formato e equipas" subtitle="Tipo de jogo, máximo de jogadores e equipas">
             <label className="field-label">⚽ Tipo de jogo</label>
-            <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
               {Object.entries(SPORT_CONFIG).map(([key,c])=>(
-                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEditedFormato(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#23271b"}`,background:editSportType===key?"#23271b":"#14160f",color:editSportType===key?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
+                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEditedFormato(true);}} style={{flex:"1 1 40%",padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#23271b"}`,background:editSportType===key?"#23271b":"#14160f",color:editSportType===key?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
               ))}
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
-              {(editSportType==="futsal"?[10,11,12,13,14,15]:[16,18,20,22,24,26,28,30,32]).map(n=>(
+              {(({futsal:[10,11,12,13,14,15],futebol5:[8,9,10,11,12],futebol7:[12,13,14,15,16,18,20]})[editSportType]||[16,18,20,22,24,26,28,30,32]).map(n=>(
                 <button key={n} onClick={()=>{setEditMaxPlayers(n);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#ffffff":"#23271b"}`,background:(editMaxPlayers||12)===n?"#23271b":"#14160f",color:(editMaxPlayers||12)===n?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>
@@ -5994,6 +6046,9 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
             <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
           </div>
         </div>
+        {h.winner_team&&isAdmin&&(
+          <button onClick={async()=>{ if(!(await askConfirm(`Retirar ${teamLabel(teamConfig,h.winner_team)} como vencedora deste jogo?`,{confirmLabel:"Retirar"}))) return; const{error}=await supabase.from("game_history").update({winner_team:null}).eq("id",h.id); if(error){ showToast("Não foi possível corrigir","err"); return; } reloadAll(); }} style={{background:"none",border:"none",padding:"6px 0",marginBottom:6,fontSize:11,color:"#7d8472",textDecoration:"underline",cursor:"pointer"}}>↩ Corrigir vencedor</button>
+        )}
         {/* Definir vencedor se não está definido */}
         {!h.winner_team&&h.players_count>=sportConfig(sportType).teamSize*2&&(
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
@@ -6001,7 +6056,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
             {["A","B","C"].slice(0,numTeamsFor(h.players_count,sportType)).map(t=>(
               <button key={t} onClick={async()=>{
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
-                showToast(`${teamLabel(teamConfig,t)} registada ✓`);
+                showToast(`${teamLabel(teamConfig,t)} registada ✓`,"ok",{label:"Anular",fn:async()=>{ await supabase.from("game_history").update({winner_team:null}).eq("id",h.id); reloadAll(); }});
                 reloadAll();
               }} style={{padding:"8px 12px",minHeight:36,borderRadius:8,border:"1px solid #2e3324",background:"#14160f",color:"#ffffff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
                 {teamLabel(teamConfig,t)}
@@ -6735,6 +6790,7 @@ select.text-input{appearance:none;}
 .btn-save-active{background:#1ea851;color:white;border-color:#1ea851;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-save-active:hover{background:#15803d;}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;font-family:'DM Sans',sans-serif;}
+.toast-undo{margin-left:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.55);border-radius:8px;color:white;font:inherit;font-weight:800;padding:4px 12px;cursor:pointer;}
 .toast-ok{background:#1ea851;}.toast-warn{background:#d97706;}.toast-err{background:#dc2626;}
 `;
 }

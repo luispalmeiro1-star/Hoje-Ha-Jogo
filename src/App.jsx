@@ -1739,7 +1739,19 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
 }
 
 // ── DEBT ROW ─────────────────────────────────────────────────────────────────
-function DebtRow({debt, onPayDebt}) {
+// Dívida de um convidado: quem o trouxe é quem paga ao grupo, mas é o convidado
+// que deve a quem o trouxe. Este botão abre o WhatsApp com a mensagem pronta
+// (o convidado não tem conta, por isso é a pessoa que o convidou a enviá-la).
+function convidadoDaDivida(descricao){ const m=String(descricao||"").match(/convidado (.+)$/); return m?m[1].trim():null; }
+function BotaoPedirConvidado({debt,mbwayNumber=""}) {
+  const nome=convidadoDaDivida(debt.description);
+  if(!nome) return null;
+  const jogo=descDivida(debt.description).replace(/ — convidado.*$/,"").replace(/^Jogo de /,"");
+  const texto=`Olá ${nome.split(" ")[0]}! Faltam os ${debt.amount}€ do jogo de ${jogo}.${mbwayNumber?` Podes pagar por MBWay para ${mbwayNumber}.`:""} Obrigado! ⚽`;
+  return <a href={`https://wa.me/?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:6,padding:"8px 12px",minHeight:36,borderRadius:8,background:"#1ea851",color:"#04240f",fontSize:12,fontWeight:800,textDecoration:"none"}}>💬 Pedir ao {nome.split(" ")[0]}</a>;
+}
+
+function DebtRow({debt, onPayDebt, mbwayNumber=""}) {
   const [showPartial, setShowPartial] = useState(false);
   const [amount, setAmount] = useState("");
   return (
@@ -1757,6 +1769,7 @@ function DebtRow({debt, onPayDebt}) {
             <input className="text-input" type="number" placeholder="Valor recebido..." value={amount} onChange={e=>setAmount(e.target.value)} style={{fontSize:12,padding:"6px 10px"}}/>
             <button style={{background:"#d97706",border:"none",borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer",flexShrink:0}} onClick={()=>{if(amount&&Number(amount)>0){onPayDebt(debt.id,Number(amount));setShowPartial(false);setAmount("");}}}>OK</button>
           </div>}
+      <BotaoPedirConvidado debt={debt} mbwayNumber={mbwayNumber}/>
     </div>
   );
 }
@@ -4011,7 +4024,7 @@ function PaymentsLedger({payments=[]}) {
 // lembrar, registar uma dívida à mão. Vive em Finanças, junto do resto do
 // dinheiro — antes era um separador à parte no ecrã do admin, e o dinheiro
 // estava espalhado por cinco sítios.
-function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,onAddDebt,onSendPush,showToast=()=>{}}) {
+function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,onAddDebt,onSendPush,mbwayNumber="",showToast=()=>{}}) {
   const [debtPlayer,setDebtPlayer]=useState("");
   const [debtAmount,setDebtAmount]=useState("");
   const [debtDesc,setDebtDesc]=useState("");
@@ -4033,7 +4046,7 @@ function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,o
                   <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
                 </div>
               </div>
-              {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
+              {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt} mbwayNumber={mbwayNumber}/>)}
               {m.debts.length>1&&<button onClick={async()=>{ if(await askConfirm(`Marcar as ${m.debts.length} dívidas de ${m.name} como recebidas?`,{confirmLabel:"Marcar todas"})) { for(const d of m.debts) await onPayDebt(d.id); } }} style={{width:"100%",marginTop:6,padding:"7px",borderRadius:8,border:"1px solid rgba(30,168,81,0.4)",background:"rgba(30,168,81,0.1)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ Marcar todas ({m.debts.length}) recebidas</button>}
             </div>
           ))}
@@ -4088,6 +4101,9 @@ function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber=
                 <span style={{fontSize:12,color:"#8a9080"}}>{descDivida(d.description)}</span>
                 <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
               </div>)}
+              {myDebts.some(d=>convidadoDaDivida(d.description))&&<div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {myDebts.filter(d=>convidadoDaDivida(d.description)).map(d=><BotaoPedirConvidado key={d.id} debt={d} mbwayNumber={mbwayNumber}/>)}
+              </div>}
             </div>
             {mbwayNumber&&<MBWayButton number={mbwayNumber} amount={myTotal}/>}
             {!mbwayNumber&&myTotal>0&&<div style={{background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:12,color:"#fbbf24"}}>
@@ -4095,7 +4111,7 @@ function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber=
             </div>}
           </div>}</>}
         {isAdmin
-          ?<GestaoDividas debts={debts} members={members} players={players} currentUserId={player.id} onPayDebt={onPayDebt} onAddDebt={onAddDebt} onSendPush={onSendPush} showToast={showToast}/>
+          ?<GestaoDividas debts={debts} members={members} players={players} currentUserId={player.id} onPayDebt={onPayDebt} onAddDebt={onAddDebt} onSendPush={onSendPush} mbwayNumber={mbwayNumber} showToast={showToast}/>
           :othersDebts.length>0&&<>
           <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
           <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
@@ -5236,6 +5252,82 @@ function ExpandableConfirmed({confirmed, onTogglePaid, debts, players, cost}) {
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
+// "Apito final": fechar o jogo em passos, uma pergunta de cada vez, em vez de
+// um botão vermelho e uma pergunta de vencedor espalhada por três ecrãs.
+//   1. Resultado — só se houve equipas (antes perguntava-se mesmo sem sorteio)
+//   2. Contas — o que fica por cobrar e a quem, para não haver surpresas
+//   3. Confirmar
+function FecharJogoGuiado({confirmed=[],gameInfo,sportType,teamConfig={},winnerInicial=null,onFechar}) {
+  const [passo,setPasso]=useState(0);
+  const [vencedor,setVencedor]=useState(winnerInicial);
+  const custo=gameInfo.cost_per_player||COST;
+  const equipas=["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType));
+  const houveEquipas=confirmed.some(p=>p.team&&p.team!=="SUB")&&confirmed.length>=sportConfig(sportType).teamSize*2;
+  const pagos=confirmed.filter(p=>p.paid);
+  // Quem fica a dever: cada membro pelo seu lugar, e cada convidado por quem o trouxe.
+  const porPessoa={};
+  confirmed.filter(p=>!p.paid).forEach(p=>{
+    const donoId=p.is_guest?p.invited_by_id:p.id;
+    const nome=p.is_guest?p.invited_by:p.name;
+    if(!donoId) return;
+    const d=porPessoa[donoId]||(porPessoa[donoId]={nome,proprio:0,convidados:0});
+    if(p.is_guest) d.convidados++; else d.proprio++;
+  });
+  const devedores=Object.values(porPessoa).sort((a,b)=>(b.proprio+b.convidados)-(a.proprio+a.convidados));
+  const porCobrar=eur(devedores.reduce((s,d)=>s+(d.proprio+d.convidados)*custo,0));
+  const aindaNaoAconteceu=gameInfo.date&&new Date(`${gameInfo.date}T${gameInfo.time||"00:00"}`)>new Date();
+  const caixa={background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginTop:14};
+  const botao={flex:1,justifyContent:"center"};
+  const primeiroPasso=houveEquipas?1:2;
+  if(passo===0) return <button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setPasso(primeiroPasso)}>🏁 Apito final — fechar o jogo</button>;
+  const avisos=<>
+    {confirmed.length===0&&<p style={{fontSize:12,fontWeight:700,color:"#fbbf24",margin:"0 0 8px"}}>⚠️ Ninguém confirmou este jogo.</p>}
+    {aindaNaoAconteceu&&<p style={{fontSize:12,fontWeight:700,color:"#fbbf24",margin:"0 0 8px"}}>⚠️ Este jogo ainda não aconteceu.</p>}
+  </>;
+  if(passo===1) return (
+    <div style={caixa}>
+      <p style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>PASSO 1 DE 2</p>
+      <p style={{fontSize:15,fontWeight:800,color:"#fff",margin:"0 0 10px"}}>Quem ganhou?</p>
+      <div style={{display:"flex",gap:8,marginBottom:10}}>
+        {equipas.map(t=>(
+          <button key={t} onClick={()=>setVencedor(vencedor===t?null:t)} style={{flex:1,padding:"12px 10px",borderRadius:10,border:`1px solid ${vencedor===t?"#d97706":"#2e3324"}`,background:vencedor===t?"rgba(217,119,6,0.15)":"#0f0f0f",fontWeight:800,fontSize:14,cursor:"pointer",color:"#fff"}}>
+            {vencedor===t?"🏆 ":""}{teamLabel(teamConfig,t)}
+          </button>
+        ))}
+      </div>
+      <p style={{fontSize:12,color:"#8a9080",margin:"0 0 12px"}}>Podes deixar em branco e registar mais tarde no Histórico.</p>
+      <div style={{display:"flex",gap:8}}>
+        <button className="btn-primary" style={{...botao,background:"#23271b",boxShadow:"none"}} onClick={()=>setPasso(0)}>Cancelar</button>
+        <button className="btn-primary" style={botao} onClick={()=>setPasso(2)}>Seguinte →</button>
+      </div>
+    </div>
+  );
+  return (
+    <div style={caixa}>
+      <p style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>{houveEquipas?"PASSO 2 DE 2":"ÚLTIMO PASSO"}</p>
+      <p style={{fontSize:15,fontWeight:800,color:"#fff",margin:"0 0 10px"}}>Contas do jogo</p>
+      {avisos}
+      <div style={{display:"flex",gap:20,marginBottom:10}}>
+        <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#4ade80",lineHeight:1}}>{eur(pagos.length*custo)}€</div><div style={{fontSize:11,color:"#8a9080"}}>já recebido ({pagos.length})</div></div>
+        <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:porCobrar>0?"#f87171":"#fff",lineHeight:1}}>{porCobrar}€</div><div style={{fontSize:11,color:"#8a9080"}}>fica por cobrar</div></div>
+      </div>
+      {devedores.length>0&&<div style={{marginBottom:12}}>
+        {devedores.map(d=>(
+          <div key={d.nome} style={{display:"flex",justifyContent:"space-between",gap:8,fontSize:13,padding:"6px 0",borderTop:"1px solid #23271b"}}>
+            <span style={{color:"#fff",fontWeight:700}}>{d.nome}</span>
+            <span style={{color:"#a3a897",textAlign:"right"}}>{[d.proprio>0&&"ele próprio",d.convidados>0&&`${d.convidados} ${d.convidados===1?"convidado":"convidados"}`].filter(Boolean).join(" + ")} · <strong style={{color:"#f87171"}}>{eur((d.proprio+d.convidados)*custo)}€</strong></span>
+          </div>
+        ))}
+      </div>}
+      <p style={{fontSize:11,color:"#8a9080",margin:"0 0 12px"}}>Vai guardar no histórico, registar estas dívidas e limpar as presenças.{vencedor?` Vencedor: ${teamLabel(teamConfig,vencedor)}.`:""}</p>
+      <div style={{display:"flex",gap:8}}>
+        <button className="btn-primary" style={{...botao,background:"#23271b",boxShadow:"none"}} onClick={()=>houveEquipas?setPasso(1):setPasso(0)}>{houveEquipas?"← Voltar":"Cancelar"}</button>
+        <button className="btn-primary" style={{...botao,background:"transparent",border:"1px solid #dc2626",color:"#f87171",boxShadow:"none"}} onClick={()=>{onFechar(vencedor);setPasso(0);}}>🏁 Fechar jogo</button>
+      </div>
+    </div>
+  );
+}
+
 function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onSwapPresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
@@ -5541,19 +5633,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             if(!ctx) return null;
             return <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)} isPastGame={ctx.isPastGame} closedAt={ctx.closedAt}/>;
           })()}
-          {!showReset
-            ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
-            :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
-              <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
-              <p style={{fontSize:11,color:"#8a9080",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
-              {/* Avisos só: o fecho continua possível, mas não por engano. */}
-              {confirmed.length===0&&<p style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:8}}>⚠️ Ninguém confirmou este jogo.</p>}
-              {gameInfo.date&&new Date(`${gameInfo.date}T${gameInfo.time||"00:00"}`)>new Date()&&<p style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:12}}>⚠️ Este jogo ainda não aconteceu.</p>}
-              <div style={{display:"flex",gap:8}}>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"transparent",border:"1px solid #dc2626",color:"#f87171",boxShadow:"none"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
-                <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#8a9080"}} onClick={()=>setShowReset(false)}>Cancelar</button>
-              </div>
-            </div>}
+          <FecharJogoGuiado confirmed={confirmed} gameInfo={gameInfo} sportType={sportType} teamConfig={teamConfig} winnerInicial={winnerTeam} onFechar={onResetGame}/>
         </>}
 
         {adminTab==="equipas"&&<>

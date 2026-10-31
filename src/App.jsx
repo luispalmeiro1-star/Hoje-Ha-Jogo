@@ -2607,6 +2607,15 @@ function LandingView({setView}) {
     frame=requestAnimationFrame(passo);
     return ()=>cancelAnimationFrame(frame);
   },[]);
+  // A barra fixa só aparece depois de os botões do topo saírem do ecrã: antes
+  // disso seria o mesmo botão duas vezes.
+  const [mostrarBarra,setMostrarBarra]=useState(false);
+  useEffect(()=>{
+    const onScroll=()=>setMostrarBarra(window.scrollY>420);
+    onScroll();
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return ()=>window.removeEventListener("scroll",onScroll);
+  },[]);
   const jogo=proximaQuarta();
   // Mês abreviado: por extenso, "Quarta-feira, 16 de Setembro" parte-se a meio
   // da frase na largura do cartão.
@@ -2624,7 +2633,7 @@ function LandingView({setView}) {
     {nome:"Bruno A.",iniciais:"BA",cor:"#4338ca",estado:"sem",resposta:"sem resposta"},
   ];
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative"}}>
+    <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative",paddingBottom:mostrarBarra?76:0}}>
       <div style={{position:"absolute",top:-120,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"2px solid rgba(212,175,55,0.35)",borderRadius:"50%",opacity:0.25,pointerEvents:"none"}}/>
       <div style={{position:"absolute",top:340,left:"50%",transform:"translateX(-50%)",width:1400,height:1400,border:"1px solid #23271b",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
 
@@ -2650,7 +2659,7 @@ function LandingView({setView}) {
             Nunca mais perguntes<br/><span style={{color:"#d4af37"}}>quem joga na quarta.</span>
           </h1>
           <p style={{fontSize:14.5,color:"#8a9080",maxWidth:310,margin:"0 auto 18px",lineHeight:1.6}}>
-            Cada um diz se vai ou não vai, e a lista faz-se sozinha. Quem fica de fora entra em espera. E as contas ficam à vista de todos.
+            <strong style={{color:"#d8d8d8"}}>Organizas o jogo da malta?</strong> Cria o grupo em 2 minutos. Cada um diz se vai ou não vai, a lista faz-se sozinha e as contas ficam à vista de todos.
           </p>
           <p style={{fontSize:12.5,color:"#7d8472",margin:"0 0 22px",fontWeight:700}}>
             Sem instalar. Abre no browser.
@@ -2679,6 +2688,9 @@ function LandingView({setView}) {
               👀 Ver um grupo a funcionar
             </button>
           </div>
+          <p style={{fontSize:12,color:"#7d8472",maxWidth:300,margin:"14px auto 0",lineHeight:1.5}}>
+            Só jogas? Pede a quem organiza o jogo o link ou o código de convite do grupo.
+          </p>
 
           {/* Mockup do telemóvel. É uma ilustração: sem o aria-hidden, os
               leitores de ecrã liam os nomes inventados como se fossem reais. */}
@@ -2841,6 +2853,12 @@ function LandingView({setView}) {
           </div>
         </div>
       </div>
+      {mostrarBarra&&(
+        <div style={{position:"fixed",left:0,right:0,bottom:0,zIndex:50,background:"rgba(10,11,8,0.96)",borderTop:"1px solid #23271b",padding:"10px 16px calc(10px + env(safe-area-inset-bottom))",display:"flex",gap:8,justifyContent:"center"}}>
+          <button onClick={()=>{marcarPasso("clicou_barra");marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{flex:"1 1 0",maxWidth:200,padding:"13px 10px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>⚽ Criar grupo grátis</button>
+          <button onClick={()=>setView("demo")} style={{flex:"1 1 0",maxWidth:160,padding:"13px 10px",background:"#14160f",border:"1px solid #2e3324",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>👀 Ver como funciona</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -3278,6 +3296,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       localStorage.setItem("hhb_new_group_code",code);
       window.location.reload();
     } catch(e) {
+      marcarPasso("criar_erro");
       showToast("Erro ao criar grupo: "+e.message,"err");
       setLoading(false);
     }
@@ -3375,7 +3394,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
           <input className="text-input" type="time" value={time} onChange={e=>setTime(e.target.value)} style={{marginBottom:14,colorScheme:"dark"}}/>
           <label style={fieldLabel}>CUSTO POR JOGADOR (€)</label>
           <input className="text-input" type="number" step="0.5" min="0" value={cost} onChange={e=>setCost(e.target.value)} style={{marginBottom:24,colorScheme:"dark"}}/>
-          <button className="btn-big" style={greenBtn} onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}setStep(2);}}>Continuar →</button>
+          <button className="btn-big" style={greenBtn} onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}marcarPasso("criar_passo2");setStep(2);}}>Continuar →</button>
         </>}
         {step===2&&<>
           <p style={{color:"#8a9080",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>

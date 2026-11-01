@@ -1233,12 +1233,54 @@ export default function App() {
   // necessariamente admin, e mudar a presença de OUTRO jogador é uma ação só
   // de admin — sem isto, a promoção era bloqueada em silêncio sempre que um
   // jogador normal (não admin) libertava o lugar.
-  const promoverFilaEspera = async(gid) => {
-    if(!gid) return;
+  //
+  // A base de dados também promove sozinha (gatilho em player_groups), logo no
+  // pedido que libertou o lugar. Nesse caso a chamada daqui já não encontra
+  // vaga e não devolve ninguém — por isso compara-se com quem estava em espera
+  // antes, para continuar a dizer quem entrou. Devolve os nomes; "silencioso"
+  // deixa o aviso para quem chamou (o NÃO VOU junta-o ao seu próprio aviso).
+  const promoverFilaEspera = async(gid, esperaAntes=[], silencioso=false) => {
+    if(!gid) return [];
     const{data,error}=await supabase.rpc("promote_waitlist",{p_group_id:gid});
-    if(error||!data?.length) return;
-    const nomes=data.map(p=>p.player_name).filter(Boolean);
-    if(nomes.length) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
+    let nomes=(!error&&data?.length)?data.map(p=>p.player_name).filter(Boolean):[];
+    if(!nomes.length&&esperaAntes.length){
+      const ids=esperaAntes.map(p=>p.id);
+      const{data:agora}=await supabase.from("player_groups").select("player_id").eq("group_id",gid).eq("status","in").in("player_id",ids);
+      const entraram=new Set((agora||[]).map(r=>r.player_id));
+      nomes=esperaAntes.filter(p=>entraram.has(p.id)).map(p=>p.name);
+    }
+    if(nomes.length&&!silencioso) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
+    return nomes;
+  };
+
+  // Anular de um NÃO VOU tocado por engano: repõe o estado de antes do toque.
+  // Decide com o estado de AGORA (playersRef), não com o do momento do toque —
+  // entretanto alguém da lista de espera pode ter ficado com o lugar. Nesse
+  // caso a pessoa volta para a espera, mas à frente de todos, porque mantém a
+  // hora a que tinha confirmado. Se foi o admin a tocar, o "pago" que o NÃO
+  // VOU limpou também volta.
+  const desfazerPresenca = async(playerId, antes)=>{
+    const p=playersRef.current.find(pl=>pl.id===playerId); if(!p) return;
+    const dentro=playersRef.current.filter(pl=>pl.status==="in"&&pl.id!==playerId).length;
+    const semLugar=antes.status==="in"&&dentro>=maxPlayers;
+    const repoePago=!!antes.paid&&!p.paid&&Number(playerId)!==Number(currentUser?.id);
+    const mudanca={status:semLugar?"wait":antes.status,confirmed_at:antes.confirmed_at??null,absence_reason:antes.absence_reason??null,...(repoePago?{paid:true}:{})};
+    const voltar=()=>applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:p.status,confirmed_at:p.confirmed_at,absence_reason:p.absence_reason,paid:p.paid}:pl));
+    applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
+    let{error}=await supabase.from("player_groups").update(mudanca).eq("player_id",playerId).eq("group_id",activeGroupId);
+    // A base de dados recusa entrar num jogo cheio. Se o ecrã ainda não sabia
+    // que o lugar foi ocupado, tenta outra vez como lista de espera.
+    if(error&&mudanca.status==="in"){
+      mudanca.status="wait";
+      applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
+      ({error}=await supabase.from("player_groups").update(mudanca).eq("player_id",playerId).eq("group_id",activeGroupId));
+    }
+    if(error){ voltar(); showToast("Não foi possível anular","err"); return; }
+    if(repoePago) await syncPagamentoJogo(playerId,p.name,true);
+    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
+    const eu=Number(playerId)===Number(currentUser?.id);
+    if(antes.status==="in"&&mudanca.status==="wait") showToast(eu?"O lugar já foi ocupado — ficaste à frente na lista de espera":`O lugar já foi ocupado — ${p.name} ficou à frente na lista de espera`,"warn");
+    else showToast("Anulado ✓");
   };
 
   // O "destino" é opcional. O jogador diz explicitamente o que quer ("in" ou
@@ -1281,6 +1323,7 @@ export default function App() {
     const limpaPago=Number(playerId)!==Number(currentUser?.id);
     const mudanca={status:ns,confirmed_at:na,absence_reason:reason,...(limpaPago?{paid:false}:{})};
     const antes=players;
+    const esperaAntes=playersRef.current.filter(pl=>pl.status==="wait"&&pl.id!==playerId);
     applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
     const{error}=await supabase.from("player_groups").update(mudanca).eq("player_id",playerId).eq("group_id",activeGroupId);
     if(error){
@@ -1291,8 +1334,12 @@ export default function App() {
     if(limpaPago&&p.paid) await syncPagamentoJogo(playerId,p.name,false);
     if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
     if(ns==="nao_vou"){
-      showToast(Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`,"warn",{label:"Anular",fn:()=>togglePresence(playerId,"in")});
-      await promoverFilaEspera(activeGroupId);
+      // Já estava no "não vou" e só juntou o motivo (lesão): não há nada para anular.
+      if(p.status==="nao_vou"){ showToast("🤕 Lesão registada"); return; }
+      const nomes=await promoverFilaEspera(activeGroupId,esperaAntes,true);
+      const base=Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`;
+      const extra=nomes.length?` · ${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"} da espera`:"";
+      showToast(base+extra,"warn",{label:"Anular",fn:()=>desfazerPresenca(playerId,{status:p.status,confirmed_at:p.confirmed_at,absence_reason:p.absence_reason,paid:p.paid})});
     }
   };
   // Troca manual entre um jogador em espera e um que está dentro — escolhida
@@ -1349,7 +1396,20 @@ export default function App() {
     if(!isFull&&podeAjustarEquipas()) await reassignAllTeams([...playersRef.current,inserted]);
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
+  // Quem sai liberta o lugar: o aviso diz também quem entrou da espera (antes
+  // o "removido" aparecia por cima e escondia essa informação).
+  const avisoComEspera=(msg,nomes)=>showToast(msg+(nomes.length?` · ${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"} da espera`:""));
+  const removeGuest    = async(id)=>{
+    const era=players.find(p=>p.id===id);
+    const espera=playersRef.current.filter(p=>p.status==="wait"&&p.id!==id);
+    const{error}=await supabase.from("player_groups").delete().eq("player_id",id);
+    if(error){ showToast("Não foi possível remover o convidado","err"); return; }
+    await supabase.from("players").delete().eq("id",id);
+    applyPlayers(prev=>prev.filter(p=>p.id!==id));
+    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current);
+    const nomes=era?.status==="in"?await promoverFilaEspera(activeGroupId,espera,true):[];
+    avisoComEspera("Convidado removido",nomes);
+  };
   const togglePaid     = async(id,forcar=null)=>{
     const p=playersRef.current.find(pl=>pl.id===id)||players.find(pl=>pl.id===id);
     if(!p) return;
@@ -1364,7 +1424,16 @@ export default function App() {
     await syncPagamentoJogo(id,p.name,novoPago);
     showToast(novoPago?`${p.name}: pago ✓`:`${p.name}: pagamento retirado`,"ok",{label:"Anular",fn:()=>togglePaid(id,!novoPago)});
   };
-  const removePlayer   = async(id)=>{ const era=players.find(p=>p.id===id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Jogador removido"); };
+  const removePlayer   = async(id)=>{
+    const era=players.find(p=>p.id===id);
+    const espera=playersRef.current.filter(p=>p.status==="wait"&&p.id!==id);
+    applyPlayers(prev=>prev.filter(p=>p.id!==id));
+    const{error}=await supabase.from("player_groups").delete().eq("player_id",id).eq("group_id",activeGroupId);
+    if(error){ applyPlayers(prev=>era?[...prev,era]:prev); showToast("Não foi possível remover o jogador","err"); return; }
+    if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current);
+    const nomes=era?.status==="in"?await promoverFilaEspera(activeGroupId,espera,true):[];
+    avisoComEspera("Jogador removido",nomes);
+  };
   // Devolve a password que ficou guardada (para o admin a poder copiar), ou
   // null se falhou. Antes não devolvia nada e não olhava sequer para o erro.
   const changePassword = async(id,pw)=>{
@@ -5842,13 +5911,24 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             })}
             <button className={`btn-save ${editedFormato?"btn-save-active":""}`} disabled={!editedFormato} onClick={async()=>{
               if(groupId||currentUser?.group_id){
+                const esperaAntesLimite=[...waiting];
                 const{error}=await supabase.from("groups").update({max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
                 if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
                 // Subir o limite abre lugares: quem estava em espera passa a
                 // entrar (por ordem de chegada). Sem isto ficava preso na fila
                 // com vaga livre até alguém sair.
-                const{data:entraram}=await supabase.rpc("promote_waitlist",{p_group_id:groupId||currentUser.group_id});
-                if(entraram?.length) showToast(`${entraram.map(p=>p.player_name).join(", ")} ${entraram.length>1?"entraram":"entrou"} da lista de espera 🎉`);
+                // A base de dados já promove sozinha ao subir o limite; a chamada
+                // fica como rede de segurança, e o aviso vem de comparar com
+                // quem estava em espera antes de guardar.
+                const gidLimite=groupId||currentUser.group_id;
+                const{data:entraram}=await supabase.rpc("promote_waitlist",{p_group_id:gidLimite});
+                let nomesEntraram=(entraram||[]).map(p=>p.player_name).filter(Boolean);
+                if(!nomesEntraram.length&&esperaAntesLimite.length){
+                  const{data:agora}=await supabase.from("player_groups").select("player_id").eq("group_id",gidLimite).eq("status","in").in("player_id",esperaAntesLimite.map(p=>p.id));
+                  const ids=new Set((agora||[]).map(r=>r.player_id));
+                  nomesEntraram=esperaAntesLimite.filter(p=>ids.has(p.id)).map(p=>p.name);
+                }
+                if(nomesEntraram.length) showToast(`${nomesEntraram.join(", ")} ${nomesEntraram.length>1?"entraram":"entrou"} da lista de espera 🎉`);
               }
               setEditedFormato(false);}}>
               <Icon name="check" size={13}/> {editedFormato?"GUARDAR":"TUDO GUARDADO"}

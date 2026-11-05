@@ -816,8 +816,11 @@ export default function App() {
   useEffect(()=>{
     // O denominador de tudo o resto: quantas pessoas chegaram cá. Marcado uma
     // vez por visita — recarregar a página não é uma pessoa nova.
+    // Só conta quem não tem sessão guardada. Antes contava também cada jogador
+    // que abria a app para dizer VOU, e nos dias de jogo o número subia com
+    // os membros do grupo — parecia tráfego novo que não convertia.
     try {
-      if(!sessionStorage.getItem("hhj_ja_chegou")){
+      if(!sessionStorage.getItem("hhj_ja_chegou")&&!localStorage.getItem("hhb_session")){
         sessionStorage.setItem("hhj_ja_chegou","1");
         marcarPasso("chegou");
       }

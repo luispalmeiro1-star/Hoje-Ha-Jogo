@@ -1460,12 +1460,12 @@ export default function App() {
     // Só com os confirmados, a dívida de um convidado perdia-se quando quem o
     // convidou não jogava, os convidados em espera nunca eram apagados e as
     // sequências de quem faltou nunca voltavam a zero.
-    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid").eq("group_id",gid);
+    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status,paid,team").eq("group_id",gid);
     const pids=(pgRows||[]).map(x=>x.player_id);
     const{data:freshAllPlayers}=pids.length>0?await supabase.from("players").select(PLAYER_COLS).in("id",pids):{data:[]};
     const freshPlayers=(freshAllPlayers||[]).map(p=>{
       const pg=(pgRows||[]).find(x=>x.player_id===p.id);
-      return {...p,status:pg?.status||"out",paid:pg?.paid||false};
+      return {...p,status:pg?.status||"out",paid:pg?.paid||false,team:pg?.team||null};
     });
     const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
     const confirmedMembers=freshConfirmed; // incluir convidados também
@@ -1484,7 +1484,7 @@ export default function App() {
     // fechar à mão gravava-os, e as contas ficavam diferentes consoante quem
     // tinha fechado o jogo.
     for(const p of confirmedMembers.filter(p=>!p.is_guest)){
-      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid});
+      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:gid,team:p.team||null});
     }
     for(const p of confirmedMembers.filter(p=>!p.is_guest)){
       const pl=freshPlayers.find(m=>m.id===p.id);
@@ -4221,7 +4221,10 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
   const myDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const myPct=totalGames>0?Math.round(((player.total_games||0)/totalGames)*100):0;
   const myMvps=mvpCounts[player.name]||0;
-  const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#4ade80"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#ffffff"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"}];
+  const winRows=computeWins(attendance,history);
+  const myWin=winRows.find(r=>r.player_id===player.id)||{played:0,wins:0};
+  const myWinPct=myWin.played>0?Math.round(myWin.wins/myWin.played*100):0;
+  const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#4ade80"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#ffffff"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"},{icon:"✅",label:"Vitórias",value:myWin.wins,color:"#16a34a"},{icon:"🎯",label:"% Vitórias",value:myWin.played>0?`${myWinPct}%`:"—",color:"#d4af37"}];
   return (
     <div className="screen">
       <div style={{background:"#14160f",padding:"16px 16px 14px",borderBottom:"1px solid #23271b"}}>
@@ -4253,6 +4256,9 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
           <ExpandableSection icon="🏆" title="Ranking" subtitle="Classificação de presenças">
             <ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/>
           </ExpandableSection>
+          <ExpandableSection icon="✅" title="Vitórias" subtitle="Quem ganha mais">
+            <RankingVitorias rows={winRows} currentPlayer={player}/>
+          </ExpandableSection>
           <ExpandableSection icon="⭐" title="Hall of Fame" subtitle="MVPs da época">
             <HallOfFameMVP history={history} members={members}/>
           </ExpandableSection>
@@ -4263,6 +4269,34 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         </>}
         {tab==="epocas"&&<SeasonStatsCard player={player} groupId={groupId}/>}
       </div>
+    </div>
+  );
+}
+
+// ── VITÓRIAS ─────────────────────────────────────────────────────────────────
+function computeWins(attendance=[],history=[]){
+  const winner={};
+  history.forEach(h=>{ if(h.winner_team) winner[h.date]=h.winner_team; });
+  const map={};
+  attendance.forEach(a=>{
+    if(!a.team||a.team==="SUB"||!winner[a.game_date]) return;
+    const r=map[a.player_id]||(map[a.player_id]={player_id:a.player_id,name:a.player_name,played:0,wins:0});
+    r.played++; if(a.team===winner[a.game_date]) r.wins++;
+  });
+  return Object.values(map).sort((a,b)=>b.wins-a.wins||(b.wins/b.played)-(a.wins/a.played));
+}
+function RankingVitorias({rows=[],currentPlayer}){
+  if(rows.length===0) return <div className="empty-msg">Ainda sem jogos com equipas e vencedor registados.</div>;
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+      {rows.map((r,i)=>{
+        const pct=Math.round(r.wins/r.played*100); const me=r.player_id===currentPlayer?.id;
+        return (<div key={r.player_id} className="list-row" style={me?{borderColor:"#d4af37"}:{}}>
+          <span className="list-num">{i+1}</span>
+          <div className="list-info"><span className="list-name">{r.name}</span><span style={{fontSize:10,color:"#6b7280"}}>{r.wins} vitórias em {r.played} jogos</span></div>
+          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>{pct}%</span>
+        </div>);
+      })}
     </div>
   );
 }

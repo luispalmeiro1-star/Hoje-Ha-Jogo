@@ -2593,23 +2593,40 @@ function faltaPara(alvo,agora=new Date()){
   return `${Math.floor(horas/24)}D ${horas%24}H`;
 }
 
+// Ecrãs reais da demonstração (nomes de exemplo), sem datas para não ficarem
+// desatualizados. No telemóvel passa um de cada vez; no computador ficam os
+// três lado a lado.
+const ECRAS_APP = [
+  {src:"/landing/ecra-1.png", legenda:"Cada um responde VOU ou NÃO VOU"},
+  {src:"/landing/ecra-2.png", legenda:"A lista faz-se sozinha"},
+  {src:"/landing/ecra-3.png", legenda:"Vês logo quem ainda não respondeu"},
+];
+function EcrasDaApp() {
+  const [ativo,setAtivo]=useState(0);
+  useEffect(()=>{
+    if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t=setInterval(()=>setAtivo(x=>(x+1)%ECRAS_APP.length),3500);
+    return ()=>clearInterval(t);
+  },[]);
+  return (
+    <div className="ecras">
+      <div className="ecras-fila">
+        {ECRAS_APP.map((e,k)=>(
+          <figure key={e.src} className={`ecra ${k===ativo?"ecra-ativo":""}`}>
+            <div className="ecra-moldura"><img src={e.src} alt={`${e.legenda} — ecrã da app com nomes de exemplo`} width="390" height="740" loading="lazy"/></div>
+            <figcaption>{e.legenda}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <div className="ecras-pontos">
+        {ECRAS_APP.map((e,k)=><button key={k} aria-label={`Ver ecrã ${k+1}`} className={k===ativo?"on":""} onClick={()=>setAtivo(k)}/>)}
+      </div>
+    </div>
+  );
+}
+
 // ── LANDING VIEW ────────────────────────────────────────────────────────────
 function LandingView({setView}) {
-  // Contagem animada do "confirmados" do mockup: a única animação da
-  // landing, e só porque mostra literalmente a promessa do título — a
-  // lista a encher-se sozinha — em vez de a dizer só em palavras.
-  const [confirmados,setConfirmados]=useState(0);
-  useEffect(()=>{
-    const alvo=8, duracao=900, inicio=performance.now();
-    let frame;
-    const passo=(agora)=>{
-      const t=Math.min(1,(agora-inicio)/duracao);
-      setConfirmados(Math.round(t*alvo));
-      if(t<1) frame=requestAnimationFrame(passo);
-    };
-    frame=requestAnimationFrame(passo);
-    return ()=>cancelAnimationFrame(frame);
-  },[]);
   // A barra fixa só aparece depois de os botões do topo saírem do ecrã: antes
   // disso seria o mesmo botão duas vezes.
   const [mostrarBarra,setMostrarBarra]=useState(false);
@@ -2619,22 +2636,6 @@ function LandingView({setView}) {
     window.addEventListener("scroll",onScroll,{passive:true});
     return ()=>window.removeEventListener("scroll",onScroll);
   },[]);
-  const jogo=proximaQuarta();
-  // Mês abreviado: por extenso, "Quarta-feira, 16 de Setembro" parte-se a meio
-  // da frase na largura do cartão.
-  const dataJogo=`Quarta, ${jogo.getDate()} de ${MESES_PT[jogo.getMonth()].slice(0,3)}`;
-  const contagem=faltaPara(jogo);
-  // O ecrã do telemóvel mostra as contas, não o botão de confirmar presença:
-  // quem cria o grupo é quem anda a cobrar, e é esse problema que o título
-  // promete resolver. Confirmar presença é a tarefa do jogador, não a dele.
-  // As três respostas possíveis, cada uma com a sua cor, como no ecrã real:
-  // verde para quem vai, cinzento para quem não vai, âmbar para quem ainda não
-  // respondeu. É esse âmbar que dá a dor do título.
-  const presencas=[
-    {nome:"Rui M.",iniciais:"RM",cor:"#1ea851",estado:"vai",resposta:"✓ vai"},
-    {nome:"Tiago S.",iniciais:"TS",cor:"#b45309",estado:"nao",resposta:"não vai"},
-    {nome:"Bruno A.",iniciais:"BA",cor:"#4338ca",estado:"sem",resposta:"sem resposta"},
-  ];
   return (
     <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative",paddingBottom:mostrarBarra?76:0}}>
       <div style={{position:"absolute",top:-120,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"2px solid rgba(212,175,55,0.35)",borderRadius:"50%",opacity:0.25,pointerEvents:"none"}}/>
@@ -2645,122 +2646,32 @@ function LandingView({setView}) {
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,color:"white"}}>HOJE HÁ <span style={{color:"#d4af37",fontWeight:400}}>JOGO</span></div>
         </div>
 
-        {/* Hero */}
-        <div style={{padding:"32px 24px 8px",textAlign:"center"}}>
-          {/* O título continua a frase do cartaz que traz as pessoas até aqui.
-              Já esteve no dinheiro ("cobrar 3€ ao pessoal"), e isso foi melhor
-              do que a frase genérica que lá estava antes. Mas os posts que
-              trazem gente de facto falam de presenças — "quantos somos na
-              quarta", "19 por responder" — e quem clicava com essa pergunta na
-              cabeça aterrava a falar de contas. Em 28 dias, das 136 chegadas a
-              frio, 3 tocaram num botão e nenhuma criou conta. O dinheiro não
-              desapareceu: desceu para a frase de baixo, que é onde estava a
-              presença antes. */}
-          {/* 40px e não 44: medido na Bebas real, uma linha de 21 caracteres dá
-              332px a 44px e não cabe num telemóvel de 360px de largura. */}
-          <h1 style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,color:"white",letterSpacing:0.5,lineHeight:1.05,margin:"0 0 14px"}}>
-            Nunca mais perguntes<br/><span style={{color:"#d4af37"}}>quem joga na quarta.</span>
-          </h1>
-          <p style={{fontSize:14.5,color:"#8a9080",maxWidth:310,margin:"0 auto 18px",lineHeight:1.6}}>
-            <strong style={{color:"#d8d8d8"}}>Organizas o jogo da malta?</strong> Cria o grupo em 2 minutos. Cada um diz se vai ou não vai, a lista faz-se sozinha e as contas ficam à vista de todos.
+        {/* Hero
+            Estrutura de 05/11, escolhida pelo Luís: um título que diz o que a
+            app é, uma linha com a dor, uma frase a explicar e UM botão grande.
+            A demonstração passa a link de texto para não competir com o botão.
+            O título antigo ("Nunca mais perguntes quem joga na quarta") só
+            falava a quem joga à quarta. */}
+        <div style={{padding:"28px 22px 8px",textAlign:"center"}}>
+          <h1 className="hero-titulo">Organiza o futebol<br/>com os teus amigos.</h1>
+          <p className="hero-dor">Sem grupos intermináveis no WhatsApp.</p>
+          <p style={{fontSize:14.5,color:"#a3a897",maxWidth:330,margin:"0 auto 22px",lineHeight:1.55}}>
+            Cria o grupo, convida a malta e a app trata das confirmações por ti. Em 2 minutos.
           </p>
-          <p style={{fontSize:12.5,color:"#7d8472",margin:"0 0 22px",fontWeight:700}}>
-            Sem instalar. Abre no browser.
+          <button className="hero-cta" onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}}>
+            ⚽ Criar o meu jogo grátis
+          </button>
+          <button className="hero-link" onClick={()=>setView("demo")}>
+            Vê como funciona em 30 segundos →
+          </button>
+          <p style={{fontSize:12.5,color:"#7d8472",margin:"4px 0 0",fontWeight:600}}>
+            Grátis · Sem instalação · Funciona no browser
           </p>
-
-          {/* CTAs
-              A ordem mudou por causa do que os números dizem. O botão do código
-              de convite ocupava o segundo lugar, mas quase ninguém o usa como
-              botão: em 28 dias, 28 pessoas entraram com código e só 2 lhe
-              tocaram — as outras vieram por um link que já traz o código
-              dentro. Quem chega de um post não tem código nenhum, e ficava sem
-              nada para fazer senão o passo mais pesado de todos.
-              Agora o segundo lugar é de quem ainda não decidiu: ver primeiro.
-              O código desce para texto, que é como de facto é usado.
-
-              Sobem para antes do mockup: com 136 visitas frias e só 3 toques
-              em qualquer botão em 28 dias, o mockup sozinho (~440px) empurrava
-              o primeiro botão para bem perto do fim do ecrã visível num
-              telemóvel médio. O mockup continua logo a seguir, a reforçar a
-              decisão, não a bloqueá-la. */}
-          <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320,margin:"0 auto"}}>
-            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:"16px",background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:16,cursor:"pointer"}}>
-              ⚽ Criar grupo grátis
-            </button>
-            <button onClick={()=>setView("demo")} style={{width:"100%",padding:"16px",background:"#14160f",border:"1px solid #23271b",borderRadius:14,color:"white",fontWeight:700,fontSize:15,cursor:"pointer"}}>
-              👀 Ver um grupo a funcionar
-            </button>
-          </div>
-          <p style={{fontSize:12,color:"#7d8472",maxWidth:300,margin:"14px auto 0",lineHeight:1.5}}>
+          <p style={{fontSize:12,color:"#7d8472",maxWidth:300,margin:"12px auto 0",lineHeight:1.5}}>
             Só jogas? Pede a quem organiza o jogo o link ou o código de convite do grupo.
           </p>
 
-          {/* Mockup do telemóvel. É uma ilustração: sem o aria-hidden, os
-              leitores de ecrã liam os nomes inventados como se fossem reais. */}
-          <div aria-hidden="true" style={{display:"flex",justifyContent:"center",marginBottom:26}}>
-            <div style={{width:212,background:"#0d0f0a",border:"2px solid #24291b",borderRadius:26,padding:7,boxShadow:"0 30px 70px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.06)",transform:"rotate(-3deg)"}}>
-              {/* O ecrã alinha à esquerda como a app real. Herdava o
-                  textAlign:center do hero, e as linhas das contas ficavam
-                  todas ao meio, como nenhuma lista de dívidas se apresenta. */}
-              <div style={{background:"#0a0b08",borderRadius:20,overflow:"hidden",aspectRatio:"9/18.5",display:"flex",flexDirection:"column",padding:"14px 12px",textAlign:"left"}}>
-                <div style={{fontSize:7.5,letterSpacing:1.5,color:"#7d8472",textTransform:"uppercase"}}>GRUPO</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,letterSpacing:0.5,margin:"1px 0 10px",color:"white",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Futebolada de Quarta</div>
-                <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:10,marginBottom:9}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                    <div>
-                      <div style={{fontSize:9.5,fontWeight:700,color:"white",lineHeight:1.3}}>{dataJogo}</div>
-                      <div style={{fontSize:8,color:"#8a9080",marginTop:3,lineHeight:1.3}}>23:30 · Pavilhão Municipal</div>
-                    </div>
-                    <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",color:"#d4af37",fontSize:19,lineHeight:1,whiteSpace:"nowrap"}}>{contagem}</div>
-                      <div style={{fontSize:6,color:"#7d8472",textAlign:"right",letterSpacing:1,marginTop:2}}>FALTAM</div>
-                    </div>
-                  </div>
-                  {/* Dois chips, como no ecrã real — e nenhum deles dourado. A
-                      contagem decrescente já é dourada aqui ao lado, e dois
-                      dourados no mesmo ecrã anulam-se. Estado é verde e âmbar. */}
-                  <div style={{display:"flex",gap:5,marginTop:9,flexWrap:"wrap"}}>
-                    <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(74,222,128,0.12)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:20,padding:"3px 8px",fontSize:8,fontWeight:700,color:"#4ade80"}}>
-                      <span style={{width:4,height:4,borderRadius:"50%",background:"#4ade80",flexShrink:0,display:"inline-block"}}/> 8 vão
-                    </span>
-                    <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(217,119,6,0.12)",border:"1px solid rgba(217,119,6,0.4)",borderRadius:20,padding:"3px 8px",fontSize:8,fontWeight:700,color:"#fbbf24"}}>
-                      <span style={{width:4,height:4,borderRadius:"50%",background:"#fbbf24",flexShrink:0,display:"inline-block"}}/> 4 sem resposta
-                    </span>
-                  </div>
-                </div>
-                <div style={{flex:1,display:"flex",flexDirection:"column",gap:7,minHeight:0}}>
-                  {/* O número que o título promete: quantos são. A barra mostra
-                      de relance o que falta para o jogo acontecer. */}
-                  <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"9px 10px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
-                      <div style={{fontSize:6.5,letterSpacing:1.2,color:"#7d8472"}}>CONFIRMADOS</div>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:21,color:"#4ade80",lineHeight:1}}>{confirmados}<span style={{color:"#7d8472"}}>/12</span></div>
-                    </div>
-                    <div style={{height:4,borderRadius:99,background:"#23271b",marginTop:6,overflow:"hidden"}}>
-                      <div style={{width:`${(confirmados/12)*100}%`,height:"100%",background:"#1ea851",borderRadius:99}}/>
-                    </div>
-                  </div>
-                  {presencas.map((p)=>(
-                    <div key={p.nome} style={{display:"flex",alignItems:"center",gap:7}}>
-                      <div style={{width:17,height:17,borderRadius:"50%",background:p.cor,color:"white",fontSize:6.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:p.estado==="sem"?0.5:1}}>{p.iniciais}</div>
-                      <div style={{fontSize:8.5,color:p.estado==="sem"?"#8a9080":"#d8d8d8",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
-                      <div style={{fontSize:8,fontWeight:800,whiteSpace:"nowrap",color:p.estado==="vai"?"#4ade80":p.estado==="nao"?"#7d8472":"#fbbf24"}}>
-                        {p.resposta}
-                      </div>
-                    </div>
-                  ))}
-                  {/* O que o organizador ganha em troca: deixa de ser ele a
-                      perguntar. É isso que fecha o argumento do título. */}
-                  <div style={{marginTop:"auto",background:"rgba(74,222,128,0.12)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:11,textAlign:"center",padding:9,fontSize:8.5,fontWeight:800,color:"#4ade80"}}>
-                    🔔 A app avisa quem falta
-                  </div>
-                </div>
-                <div style={{display:"flex",justifyContent:"space-around",marginTop:9,paddingTop:9,borderTop:"1px solid #23271b"}}>
-                  <span style={{fontSize:12,opacity:1}}>⚽</span><span style={{fontSize:12,opacity:0.35}}>💸</span><span style={{fontSize:12,opacity:0.35}}>📊</span><span style={{fontSize:12,opacity:0.35}}>👤</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <EcrasDaApp/>
 
           {/* Prova social honesta: números reais do grupo 37 (PRODUCT.md), com
               nomes inventados — as pessoas reais não aparecem em publicidade.
@@ -2858,8 +2769,8 @@ function LandingView({setView}) {
       </div>
       {mostrarBarra&&(
         <div style={{position:"fixed",left:0,right:0,bottom:0,zIndex:50,background:"rgba(10,11,8,0.96)",borderTop:"1px solid #23271b",padding:"10px 16px calc(10px + env(safe-area-inset-bottom))",display:"flex",gap:8,justifyContent:"center"}}>
-          <button onClick={()=>{marcarPasso("clicou_barra");marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{flex:"1 1 0",maxWidth:200,padding:"13px 10px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>⚽ Criar grupo grátis</button>
-          <button onClick={()=>setView("demo")} style={{flex:"1 1 0",maxWidth:160,padding:"13px 10px",background:"#14160f",border:"1px solid #2e3324",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>👀 Ver como funciona</button>
+          <button onClick={()=>{marcarPasso("clicou_barra");marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{flex:"1.4 1 0",maxWidth:230,padding:"13px 10px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:13,whiteSpace:"nowrap",cursor:"pointer"}}>⚽ Criar o meu jogo grátis</button>
+          <button onClick={()=>setView("demo")} style={{flex:"1 1 0",maxWidth:160,padding:"13px 10px",background:"#14160f",border:"1px solid #2e3324",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>Vê como funciona</button>
         </div>
       )}
     </div>
@@ -3061,6 +2972,9 @@ function DemoView({setView, showToast}) {
     {nome:"Paulo Moreira", ini:"PM", cor:"#15803d", estado:"nao"},
   ];
   const MAX = 12;
+  // A data era fixa ("1 de Outubro") e ficou no passado: quem abria a
+  // demonstração via um jogo de há um mês. Agora é sempre a próxima quarta.
+  const jogoDemo = proximaQuarta();
 
   const [euVou, setEuVou] = useState(null);   // null = ainda não respondeu
   const [respondeu, setRespondeu] = useState(false);
@@ -3112,12 +3026,12 @@ function DemoView({setView, showToast}) {
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
             <div>
               <div style={{fontSize:10,letterSpacing:2,color:"#7d8472",fontWeight:700}}>PRÓXIMO JOGO</div>
-              <div style={{fontSize:14,fontWeight:700,color:"white",marginTop:4}}>Quarta-feira, 1 de Outubro</div>
-              <div style={{fontSize:11,color:"#8a9080",marginTop:3}}>21:00 · Pavilhão Municipal</div>
+              <div style={{fontSize:14,fontWeight:700,color:"white",marginTop:4}}>{`Quarta-feira, ${jogoDemo.getDate()} de ${MESES_PT[jogoDemo.getMonth()]}`}</div>
+              <div style={{fontSize:11,color:"#8a9080",marginTop:3}}>23:30 · Pavilhão Municipal</div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
               <div style={{fontSize:10,letterSpacing:2,color:"#7d8472",fontWeight:700}}>FALTAM</div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,lineHeight:1,color:"#d4af37",whiteSpace:"nowrap"}}>4D 6H</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,lineHeight:1,color:"#d4af37",whiteSpace:"nowrap"}}>{faltaPara(jogoDemo)}</div>
             </div>
           </div>
         </div>
@@ -6845,6 +6759,26 @@ select.text-input{appearance:none;}
 .btn-save{width:100%;padding:11px;border-radius:10px;border:2px solid #23271b;background:#0f1c14;color:#8a9080;font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
 .btn-save-active{background:#1ea851;color:white;border-color:#1ea851;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-save-active:hover{background:#15803d;}
+.hero-titulo{font-family:'Bebas Neue',cursive;font-weight:400;font-size:42px;color:#fff;letter-spacing:.5px;line-height:1.02;margin:0 0 8px;text-wrap:balance;}
+.hero-dor{font-family:'Bebas Neue',cursive;font-size:25px;color:#d4af37;letter-spacing:.5px;line-height:1.1;margin:0 auto 14px;max-width:330px;text-wrap:balance;}
+.hero-cta{display:block;width:100%;max-width:340px;margin:0 auto;padding:18px 16px;background:#d4af37;border:none;border-radius:14px;color:#0a0b08;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(212,175,55,.55);}
+.hero-cta:active{transform:scale(.98);}
+.hero-link{background:none;border:none;color:#d4af37;font-weight:700;font-size:14.5px;padding:14px 10px 6px;cursor:pointer;}
+.hero-cta:focus-visible,.hero-link:focus-visible,.ecras-pontos button:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+.ecras{margin:30px auto 26px;}
+.ecras-fila{max-width:250px;margin:0 auto;}
+.ecra{margin:0;display:none;}
+.ecra-ativo{display:block;animation:ecraEntra .45s ease;}
+@keyframes ecraEntra{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.ecra-moldura{background:#0d0f0a;border:2px solid #24291b;border-radius:28px;padding:7px;box-shadow:0 30px 70px -20px rgba(0,0,0,.8),0 0 0 1px rgba(212,175,55,.06);}
+.ecra-moldura img{display:block;width:100%;height:auto;aspect-ratio:390/740;object-fit:contain;object-position:top;background:#0a0b08;border-radius:21px;}
+.ecra figcaption{font-size:13px;color:#a3a897;margin-top:12px;font-weight:600;}
+.ecras-pontos{display:flex;gap:2px;justify-content:center;margin-top:6px;}
+.ecras-pontos button{width:28px;height:28px;border:none;background:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ecras-pontos button::after{content:"";width:8px;height:8px;border-radius:50%;background:#2e3324;}
+.ecras-pontos button.on::after{background:#d4af37;}
+@media (min-width:900px){.hero-titulo{font-size:72px;}.hero-dor{font-size:38px;max-width:none;}.ecras-fila{max-width:860px;display:flex;gap:28px;justify-content:center;}.ecra{display:block;flex:1;max-width:250px;animation:none;}.ecras-pontos{display:none;}}
+@media (prefers-reduced-motion:reduce){.ecra-ativo{animation:none;}}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;font-family:'DM Sans',sans-serif;}
 .toast-undo{margin-left:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.55);border-radius:8px;color:white;font:inherit;font-weight:800;padding:4px 12px;cursor:pointer;}
 .toast-ok{background:#1ea851;}.toast-warn{background:#d97706;}.toast-err{background:#dc2626;}

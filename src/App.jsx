@@ -2730,6 +2730,11 @@ function LandingView({setView}) {
           <button className="hero-cta" onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}}>
             ⚽ Criar o meu jogo grátis
           </button>
+          {/* Subiu do fundo da página (05/11): quem já tem conta e chega pelo
+              site tinha de descer tudo para encontrar onde entrar. */}
+          <button className="hero-entrar" onClick={()=>setView("login")}>
+            Já tenho conta → <strong>Entrar</strong>
+          </button>
           <button className="hero-link" onClick={()=>setView("demo")}>
             Vê como funciona em 30 segundos →
           </button>
@@ -2776,10 +2781,6 @@ function LandingView({setView}) {
               💡 Para entrar num grupo precisas de um <strong style={{color:"#8a9080"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
             </p>
           </div>
-
-          <button onClick={()=>setView("login")} style={{marginTop:14,background:"transparent",border:"none",color:"#1ea851",fontSize:12,cursor:"pointer",fontWeight:700}}>
-            Já tenho conta → Entrar
-          </button>
         </div>
 
         {/* Funcionalidades */}
@@ -6843,7 +6844,10 @@ select.text-input{appearance:none;}
 .hero-dor{font-family:'Bebas Neue',cursive;font-size:25px;color:#d4af37;letter-spacing:.5px;line-height:1.1;margin:0 auto 14px;max-width:330px;text-wrap:balance;}
 .hero-cta{display:block;width:100%;max-width:340px;margin:0 auto;padding:18px 16px;background:#d4af37;border:none;border-radius:14px;color:#0a0b08;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(212,175,55,.55);}
 .hero-cta:active{transform:scale(.98);}
-.hero-link{background:none;border:none;color:#d4af37;font-weight:700;font-size:14.5px;padding:14px 10px 6px;cursor:pointer;}
+.hero-link{background:none;border:none;color:#d4af37;font-weight:700;font-size:14.5px;padding:6px 10px 6px;cursor:pointer;}
+.hero-entrar{display:block;margin:0 auto;background:none;border:none;color:#a3a897;font-size:13.5px;padding:12px 10px 4px;cursor:pointer;}
+.hero-entrar strong{color:#4ade80;}
+.hero-entrar:focus-visible{outline:2px solid #fff;outline-offset:3px;}
 .hero-cta:focus-visible,.hero-link:focus-visible,.ecras-pontos button:focus-visible{outline:2px solid #fff;outline-offset:3px;}
 .ecras{margin:30px auto 26px;}
 .ecras-fila{max-width:250px;margin:0 auto;}

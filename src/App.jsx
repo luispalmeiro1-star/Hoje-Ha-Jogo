@@ -2669,12 +2669,6 @@ function LandingView({setView}) {
           <button className="hero-link" onClick={()=>setView("demo")}>
             Vê como funciona em 30 segundos →
           </button>
-          <p style={{fontSize:12.5,color:"#7d8472",margin:"4px 0 0",fontWeight:600}}>
-            Grátis · Sem instalação · Funciona no browser
-          </p>
-          <p style={{fontSize:12,color:"#7d8472",maxWidth:300,margin:"12px auto 0",lineHeight:1.5}}>
-            Só jogas? Pede a quem organiza o jogo o link ou o código de convite do grupo.
-          </p>
 
           <EcrasDaApp/>
 

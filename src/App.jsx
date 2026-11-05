@@ -2724,9 +2724,6 @@ function LandingView({setView}) {
         <div style={{padding:"28px 22px 8px",textAlign:"center"}}>
           <h1 className="hero-titulo">Organiza o futebol<br/>com os teus amigos.</h1>
           <p className="hero-dor">Sem grupos intermináveis no WhatsApp.</p>
-          <p style={{fontSize:14.5,color:"#a3a897",maxWidth:330,margin:"0 auto 22px",lineHeight:1.55}}>
-            Cria o grupo, convida a malta e a app trata das confirmações por ti. Em 2 minutos.
-          </p>
           <button className="hero-cta" onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}}>
             ⚽ Criar o meu jogo grátis
           </button>
@@ -6835,7 +6832,7 @@ select.text-input{appearance:none;}
 .btn-save-active{background:#1ea851;color:white;border-color:#1ea851;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-save-active:hover{background:#15803d;}
 .hero-titulo{font-family:'Bebas Neue',cursive;font-weight:400;font-size:42px;color:#fff;letter-spacing:.5px;line-height:1.02;margin:0 0 8px;text-wrap:balance;}
-.hero-dor{font-family:'Bebas Neue',cursive;font-size:25px;color:#d4af37;letter-spacing:.5px;line-height:1.1;margin:0 auto 14px;max-width:330px;text-wrap:balance;}
+.hero-dor{font-family:'Bebas Neue',cursive;font-size:25px;color:#d4af37;letter-spacing:.5px;line-height:1.1;margin:0 auto 24px;max-width:330px;text-wrap:balance;}
 .hero-cta{display:block;width:100%;max-width:340px;margin:0 auto;padding:18px 16px;background:#d4af37;border:none;border-radius:14px;color:#0a0b08;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(212,175,55,.55);}
 .hero-cta:active{transform:scale(.98);}
 .hero-link{background:none;border:none;color:#d4af37;font-weight:700;font-size:14.5px;padding:6px 10px 6px;cursor:pointer;}

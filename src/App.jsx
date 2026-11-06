@@ -713,6 +713,7 @@ export default function App() {
   const [treasurerId, setTreasurerId]   = useState(null);
   const [treasurerName, setTreasurerName] = useState("");
   const [maxPlayers, setMaxPlayers]     = useState(12);
+  const [guestReleaseMin, setGuestReleaseMin] = useState(1890);
   const [sportType, setSportType]       = useState("futsal");
   const [autoReassignTeams, setAutoReassignTeams] = useState(true);
   const [teamConfig, setTeamConfig] = useState({});
@@ -808,7 +809,7 @@ export default function App() {
     groupIdRef.current = gid;
     await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadPayments(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
     // Carregar mbway do grupo
-    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game,team_config").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); setTeamConfig(data.team_config||{}); } });
+    supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game,team_config,guest_release_minutes").eq("id",gid).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setGuestReleaseMin(data.guest_release_minutes??1890); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); setTeamConfig(data.team_config||{}); } });
     supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",gid).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } });
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadPayments,loadMessages,loadMvp,loadAttendance]);
 
@@ -989,7 +990,7 @@ export default function App() {
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>{ if(groupIdRef.current) loadMvp(groupIdRef.current); }).subscribe(),
       supabase.channel("pg_ch").on("postgres_changes",{event:"*",schema:"public",table:"player_groups"},()=>{ if(groupIdRef.current) loadPlayers(groupIdRef.current); }).subscribe(),
       supabase.channel("gameinfo_treasurer_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"game_info"},()=>{ if(groupIdRef.current) supabase.from("game_info").select("treasurer_id,treasurer_name").eq("group_id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setTreasurerId(data.treasurer_id||null); setTreasurerName(data.treasurer_name||""); } }); }).subscribe(),
-      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); } }); }).subscribe(),
+      supabase.channel("groups_ch").on("postgres_changes",{event:"UPDATE",schema:"public",table:"groups"},()=>{ if(groupIdRef.current) supabase.from("groups").select("mbway_number,max_players,sport_type,auto_reassign_teams,rent_per_game,guest_release_minutes").eq("id",groupIdRef.current).maybeSingle().then(({data})=>{ if(data){ setMbwayNumber(data.mbway_number||""); setMaxPlayers(data.max_players||12); setGuestReleaseMin(data.guest_release_minutes??1890); setSportType(data.sport_type||"futsal"); setAutoReassignTeams(data.auto_reassign_teams!==false); setRentPerGame(data.rent_per_game??DEFAULT_RENT); } }); }).subscribe(),
     ];
     return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); clearInterval(pollTimer); };
   },[]);
@@ -1349,7 +1350,8 @@ export default function App() {
     if(!inviter) return;
     const gid=activeGroupId||null;
     const isFull = confirmed.length>=maxPlayers;
-    const guestStatus = isFull ? "wait" : "in";
+    // Convidados ficam sempre em espera até ao prazo; só depois entram (se houver vaga).
+    const guestStatus = (isFull||!guestRelease(gameInfo,guestReleaseMin).passou) ? "wait" : "in";
     const{data:inserted,error}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:guestStatus,is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:gid,position:position}).select(PLAYER_COLS).single();
     if(error||!inserted){ showToast("Não foi possível adicionar o convidado","err"); return; }
     const{error:errLigacao}=await supabase.from("player_groups").insert({player_id:inserted.id,group_id:gid,is_admin:false,status:guestStatus,paid:false,confirmed_at:Date.now()});
@@ -1620,7 +1622,7 @@ export default function App() {
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id)||currentUser : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,payments,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame,teamConfig};
+  const shared = {gameInfo:{...gameInfo,guestReleaseMin},cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,payments,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame,teamConfig};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -1971,6 +1973,42 @@ function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}
 // para quem o trouxe. Com muitos convidados (um jogo em que quase só havia
 // convidados) a conta chegava de surpresa — daí este aviso, mais forte a
 // partir do terceiro.
+// ── CONVIDADOS: prazo e lista ────────────────────────────────────────────────
+function guestRelease(gameInfo,minutos=1890){
+  const [y,m,d]=(gameInfo?.date||"").split("-").map(Number);
+  const [h,mi]=(gameInfo?.time||"22:30").split(":").map(Number);
+  if(!y) return {passou:true,label:"",horas:""};
+  const inicio=new Date(y,m-1,d,h,mi);
+  const quando=new Date(inicio.getTime()-minutos*60000);
+  const dias=["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+  const hh=String(quando.getHours()).padStart(2,"0"), mm=String(quando.getMinutes()).padStart(2,"0");
+  const horas=minutos%60===0?`${minutos/60}h`:`${Math.floor(minutos/60)}h${String(minutos%60).padStart(2,"0")}`;
+  return {passou:new Date()>=quando,label:`${dias[quando.getDay()]} às ${hh}:${mm}`,horas};
+}
+function ListaConvidados({guests=[],gameInfo}){
+  const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
+  const ordenados=[...guests].sort((a,b)=>a.confirmed_at-b.confirmed_at);
+  return (
+    <div style={{marginTop:12}}>
+      <p className="section-label">👤 CONVIDADOS</p>
+      <div className="guest-hint" style={{background:"rgba(37,99,235,0.12)",border:"1px solid rgba(37,99,235,0.3)",color:"#93c5fd"}}>
+        {r.passou
+          ?"O prazo dos convidados já passou: entram logo que houver vaga, por ordem de chegada. Os jogadores da app têm sempre prioridade."
+          :`Os convidados ficam em lista de espera até ${r.label} (${r.horas} antes do jogo). Nessa altura entram por ordem de chegada se houver vaga. Os jogadores da app têm prioridade.`}
+      </div>
+      {ordenados.length===0
+        ?<div className="empty-msg">Ainda sem convidados.</div>
+        :<div className="player-list">{ordenados.map((g,i)=>(
+          <div key={g.id} className="list-row row-guest">
+            <span className="list-num">{i+1}</span>
+            <div className="av-guest">{g.name[0]}</div>
+            <div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div>
+            <span className="tag-guest">{g.status==="in"?"✅ dentro":"⏳ em espera"}</span>
+          </div>))}</div>}
+    </div>
+  );
+}
+
 function AvisoConvidados({n=0,custo=3}) {
   const forte=n>=3;
   return (
@@ -5180,6 +5218,9 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span></div>)}</div></ExpandableListSection>}
         </ExpandableCard>
+        <ExpandableCard title="👤 CONVIDADOS">
+          <ListaConvidados guests={guests} gameInfo={gameInfo}/>
+        </ExpandableCard>
         <ExpandableCard title="👤 CONVIDAR ALGUÉM">
           {spotsLeft===0&&<div className="guest-locked">🔒 Jogo cheio — convidado vai para lista de espera</div>}
           <>
@@ -5636,7 +5677,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span>{p.paid&&<span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:"#fbbf24"}}>já pagou {gameInfo.cost_per_player||COST}€</span>}</div>)}</div></ExpandableListSection>}
-          {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
+          <ListaConvidados guests={guests} gameInfo={gameInfo}/>
           {/* Convidar */}
           <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>
             {spotsLeft===0&&<div className="guest-locked" style={{marginBottom:8}}>🔒 Jogo cheio — convidado vai para lista de espera</div>}

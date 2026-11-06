@@ -2031,7 +2031,7 @@ function AvisoConvidados({n=0,custo=3}) {
   );
 }
 
-function ExpandableList({confirmed, waiting=[]}) {
+function ExpandableList({confirmed, waiting=[], gameInfo=null}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginTop:4}}>
@@ -2616,7 +2616,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               {notYet&&notYet.length>0&&<div style={{background:"#1a1a0a",border:"1px solid #d4af3733",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#d4af37",flexShrink:0}}/><span style={{fontSize:11,color:"#fbbf24",fontWeight:700}}>{notYet.length} sem resposta</span></div>}
               {naoVao&&naoVao.length>0&&<div style={{background:"#161314",border:"1px solid #ef444433",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",flexShrink:0}}/><span style={{fontSize:11,color:"#d6a1a1",fontWeight:700}}>{naoVao.length} não {naoVao.length===1?"vai":"vão"}</span></div>}
               {waiting.length>0&&<div style={{background:"#1a1010",border:"1px solid #dc262633",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dc2626",flexShrink:0}}/><span style={{fontSize:11,color:"#f87171",fontWeight:700}}>{waiting.length} em espera</span></div>}
-              {confirmed.length>0&&<ExpandableList confirmed={confirmed} waiting={waiting}/>}
+              {confirmed.length>0&&<ExpandableList confirmed={confirmed} waiting={waiting} gameInfo={gameInfo}/>}
             </div>
           )}
         </>

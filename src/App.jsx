@@ -714,6 +714,10 @@ export default function App() {
   const [treasurerName, setTreasurerName] = useState("");
   const [maxPlayers, setMaxPlayers]     = useState(12);
   const [guestReleaseMin, setGuestReleaseMin] = useState(1890);
+  // Relógio: refaz o ecrã de 30 em 30 segundos para a contagem decrescente e o
+  // prazo dos convidados não dependerem de a base de dados mandar novidades.
+  const [,setRelogio] = useState(0);
+  useEffect(()=>{ const t=setInterval(()=>setRelogio(x=>x+1),30000); return ()=>clearInterval(t); },[]);
   const [sportType, setSportType]       = useState("futsal");
   const [autoReassignTeams, setAutoReassignTeams] = useState(true);
   const [teamConfig, setTeamConfig] = useState({});

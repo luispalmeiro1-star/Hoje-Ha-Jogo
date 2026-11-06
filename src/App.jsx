@@ -1257,6 +1257,19 @@ export default function App() {
     const querJogar = destino ? destino==="in" : (p.status!=="in"&&p.status!=="wait");
     if(!querJogar){ns="nao_vou";na=null;}
     else if(confirmed.length<maxPlayers){ns="in";na=Date.now();}
+    else if(!p.is_guest&&p.status!=="in"&&confirmed.some(c=>c.is_guest)){
+      // Jogo cheio e há convidados dentro: o jogador habitual tem prioridade.
+      // Sai o convidado que entrou mais tarde (mantém a hora de entrada, por
+      // isso na espera continua a respeitar a ordem dos convidados).
+      const{data:cedidos,error:errPrio}=await supabase.rpc("entrar_com_prioridade",{p_group_id:activeGroupId,p_player_id:playerId});
+      if(errPrio){ showToast("Não foi possível confirmar a presença","err"); return; }
+      ns="in";na=Date.now();
+      const cedido=cedidos?.[0];
+      if(cedido){
+        applyPlayers(prev=>prev.map(pl=>pl.id===cedido.guest_id?{...pl,status:"wait",paid:false}:pl));
+        showToast(`Entraste! O convidado ${cedido.guest_name} passou para a lista de espera`,"warn");
+      }
+    }
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
     // "Lesionado" é só um motivo do "não vou" deste jogo — não um estado à
     // parte. Qualquer outra transição limpa o motivo, para não sobreviver

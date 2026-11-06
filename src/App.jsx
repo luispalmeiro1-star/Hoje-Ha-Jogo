@@ -1989,13 +1989,13 @@ function EsperaAte({p,gameInfo}){
   if(!p?.is_guest) return null;
   const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
   if(r.passou) return <span className="guest-sub">convidado · entra se houver vaga</span>;
-  return <span className="guest-sub">convidado · em espera até {r.label}</span>;
+  return <span className="guest-sub">convidado · espera até {r.horas} antes do jogo ({r.label})</span>;
 }
 function NotaEsperaConvidados({waiting=[],gameInfo}){
   if(!waiting.some(p=>p.is_guest)) return null;
   const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
   if(r.passou) return null;
-  return <div className="guest-hint" style={{background:"rgba(37,99,235,0.12)",border:"1px solid rgba(37,99,235,0.3)",color:"#93c5fd"}}>⏳ Convidados em espera até {r.label}. Nessa altura entram por ordem de chegada se houver vaga.</div>;
+  return <div className="guest-hint" style={{background:"rgba(37,99,235,0.12)",border:"1px solid rgba(37,99,235,0.3)",color:"#93c5fd"}}>⏳ Convidados em espera até {r.horas} antes do jogo ({r.label}). Nessa altura entram por ordem de chegada se houver vaga.</div>;
 }
 function ListaConvidados({guests=[],gameInfo}){
   const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
@@ -2006,7 +2006,7 @@ function ListaConvidados({guests=[],gameInfo}){
       <div className="guest-hint" style={{background:"rgba(37,99,235,0.12)",border:"1px solid rgba(37,99,235,0.3)",color:"#93c5fd"}}>
         {r.passou
           ?"O prazo dos convidados já passou: entram logo que houver vaga, por ordem de chegada. Os jogadores da app têm sempre prioridade."
-          :`Os convidados ficam em lista de espera até ${r.label} (${r.horas} antes do jogo). Nessa altura entram por ordem de chegada se houver vaga. Os jogadores da app têm prioridade.`}
+          :`Os convidados ficam em lista de espera até ${r.horas} antes do jogo (${r.label}). Nessa altura entram por ordem de chegada se houver vaga. Os jogadores da app têm prioridade.`}
       </div>
       {ordenados.length===0
         ?<div className="empty-msg">Ainda sem convidados.</div>
@@ -2051,7 +2051,7 @@ function ExpandableList({confirmed, waiting=[], gameInfo=null}) {
         </div>
         {waiting.length>0&&<>
           <div style={{fontSize:10,color:"#f87171",fontWeight:700,letterSpacing:1,marginBottom:4}}>⏳ LISTA DE ESPERA</div>
-          {waiting.some(p=>p.is_guest)&&(()=>{const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);return <div style={{fontSize:10,color:"#fca5a5",marginBottom:5,lineHeight:1.4}}>{r.passou?"Convidados entram se houver vaga.":`Convidados em espera até ${r.label}, depois entram por ordem se houver vaga.`}</div>;})()}
+          {waiting.some(p=>p.is_guest)&&(()=>{const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);return <div style={{fontSize:10,color:"#fca5a5",marginBottom:5,lineHeight:1.4}}>{r.passou?"Convidados entram se houver vaga.":`Convidados em espera até ${r.horas} antes do jogo (${r.label}), depois entram por ordem se houver vaga.`}</div>;})()}
           <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
             {waiting.map((p,i)=><span key={p.id} style={{background:"rgba(220,38,38,0.2)",borderRadius:20,padding:"2px 7px",fontSize:10,color:"#fca5a5",fontWeight:600}}>{i+1}. {p.name}{p.is_guest?" 👤":""}</span>)}
           </div>

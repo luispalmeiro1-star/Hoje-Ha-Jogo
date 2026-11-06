@@ -5445,6 +5445,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   const [mbwayNumber,setMbwayNumber]=useState("");
   const [mbwaySaved,setMbwaySaved]=useState(false);
   const [editMaxPlayers,setEditMaxPlayers]=useState(12);
+  const [editGuestHours,setEditGuestHours]=useState(31.5);
   const [editSportType,setEditSportType]=useState(sportType);
   useEffect(()=>{ setEditSportType(sportType); },[sportType]);
   const [editRent,setEditRent]=useState(rentPerGame);
@@ -5496,7 +5497,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
   // Buscar código do grupo
   useEffect(()=>{
     if(!currentUser?.group_id) return;
-    supabase.from("groups").select("invite_code,mbway_number,max_players").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data){ setInviteCode(data.invite_code); setMbwayNumber(data.mbway_number||""); setEditMaxPlayers(data.max_players||12); } });
+    supabase.from("groups").select("invite_code,mbway_number,max_players,guest_release_minutes").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data){ setInviteCode(data.invite_code); setMbwayNumber(data.mbway_number||""); setEditMaxPlayers(data.max_players||12); setEditGuestHours((data.guest_release_minutes??1890)/60); } });
   },[currentUser?.group_id]);
 
   const handleShareCode = () => {
@@ -5875,6 +5876,17 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 </button>
               ))}
             </div>
+            <label className="field-label">⏳ Convidados em lista de espera até…</label>
+            <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Os convidados ficam em espera até X horas antes do jogo. Nessa altura entram, por ordem de chegada, nas vagas que os jogadores do grupo não ocuparam. Os jogadores têm sempre prioridade.</p>
+            <div style={{display:"flex",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+              {[{h:6,l:"6h"},{h:12,l:"12h"},{h:24,l:"24h"},{h:48,l:"48h"},{h:1000,l:"Sem espera"}].map(({h,l})=>(
+                <button key={l} onClick={()=>{setEditGuestHours(h);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${Number(editGuestHours)===h?"#ffffff":"#23271b"}`,background:Number(editGuestHours)===h?"#23271b":"#14160f",color:Number(editGuestHours)===h?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>{l}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+              <input className="text-input" type="number" min="0" max="1000" step="0.5" style={{maxWidth:110}} value={editGuestHours} onChange={e=>{setEditGuestHours(e.target.value);setEditedFormato(true);}}/>
+              <span style={{fontSize:12,color:"#8a9080"}}>{Number(editGuestHours)>=500?"horas · convidados entram logo se houver vaga":"horas antes do jogo"}</span>
+            </div>
             <label className="field-label">🎲 Recolocação automática de equipas</label>
             <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
@@ -5901,7 +5913,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             })}
             <button className={`btn-save ${editedFormato?"btn-save-active":""}`} disabled={!editedFormato} onClick={async()=>{
               if(groupId||currentUser?.group_id){
-                const{error}=await supabase.from("groups").update({max_players:editMaxPlayers||12,sport_type:editSportType,auto_reassign_teams:editAutoReassign,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
+                const{error}=await supabase.from("groups").update({max_players:editMaxPlayers||12,guest_release_minutes:Math.round(Math.min(1000,Math.max(0,Number(editGuestHours)||0))*60),sport_type:editSportType,auto_reassign_teams:editAutoReassign,team_config:editTeamConfig}).eq("id",groupId||currentUser.group_id);
                 if(error){ showToast("Não foi possível guardar. Tenta outra vez.","err"); return; }
                 // Subir o limite abre lugares: quem estava em espera passa a
                 // entrar (por ordem de chegada). Sem isto ficava preso na fila

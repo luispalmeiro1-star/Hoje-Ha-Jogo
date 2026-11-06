@@ -1985,6 +1985,18 @@ function guestRelease(gameInfo,minutos=1890){
   const horas=minutos%60===0?`${minutos/60}h`:`${Math.floor(minutos/60)}h${String(minutos%60).padStart(2,"0")}`;
   return {passou:new Date()>=quando,label:`${dias[quando.getDay()]} às ${hh}:${mm}`,horas};
 }
+function EsperaAte({p,gameInfo}){
+  if(!p?.is_guest) return null;
+  const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
+  if(r.passou) return <span className="guest-sub">convidado · entra se houver vaga</span>;
+  return <span className="guest-sub">convidado · em espera até {r.label}</span>;
+}
+function NotaEsperaConvidados({waiting=[],gameInfo}){
+  if(!waiting.some(p=>p.is_guest)) return null;
+  const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
+  if(r.passou) return null;
+  return <div className="guest-hint" style={{background:"rgba(37,99,235,0.12)",border:"1px solid rgba(37,99,235,0.3)",color:"#93c5fd"}}>⏳ Convidados em espera até {r.label}. Nessa altura entram por ordem de chegada se houver vaga.</div>;
+}
 function ListaConvidados({guests=[],gameInfo}){
   const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
   const ordenados=[...guests].sort((a,b)=>a.confirmed_at-b.confirmed_at);
@@ -5212,7 +5224,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         })()}
         <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`}>
           <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
-          {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+          {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><NotaEsperaConvidados waiting={waiting} gameInfo={gameInfo}/><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><div className="list-info" style={{marginLeft:4}}><span className="list-name">{p.name}</span><EsperaAte p={p} gameInfo={gameInfo}/></div></div>)}</div></>}
           {/* Quem ainda não respondeu e quem não vai: os nomes, não só a
               contagem — a malta vê quem falta responder. O admin já via. */}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
@@ -5674,7 +5686,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               </div>
             }
           </ExpandableSection>
-          {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+          {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><NotaEsperaConvidados waiting={waiting} gameInfo={gameInfo}/><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><div className="list-info" style={{marginLeft:4}}><span className="list-name">{p.name}</span><EsperaAte p={p} gameInfo={gameInfo}/></div></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span>{p.paid&&<span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:"#fbbf24"}}>já pagou {gameInfo.cost_per_player||COST}€</span>}</div>)}</div></ExpandableListSection>}
           <ListaConvidados guests={guests} gameInfo={gameInfo}/>

@@ -2051,8 +2051,9 @@ function ExpandableList({confirmed, waiting=[]}) {
         </div>
         {waiting.length>0&&<>
           <div style={{fontSize:10,color:"#f87171",fontWeight:700,letterSpacing:1,marginBottom:4}}>⏳ LISTA DE ESPERA</div>
+          {waiting.some(p=>p.is_guest)&&(()=>{const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);return <div style={{fontSize:10,color:"#fca5a5",marginBottom:5,lineHeight:1.4}}>{r.passou?"Convidados entram se houver vaga.":`Convidados em espera até ${r.label}, depois entram por ordem se houver vaga.`}</div>;})()}
           <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
-            {waiting.map((p,i)=><span key={p.id} style={{background:"rgba(220,38,38,0.2)",borderRadius:20,padding:"2px 7px",fontSize:10,color:"#fca5a5",fontWeight:600}}>{i+1}. {p.name}</span>)}
+            {waiting.map((p,i)=><span key={p.id} style={{background:"rgba(220,38,38,0.2)",borderRadius:20,padding:"2px 7px",fontSize:10,color:"#fca5a5",fontWeight:600}}>{i+1}. {p.name}{p.is_guest?" 👤":""}</span>)}
           </div>
         </>}
       </div>}

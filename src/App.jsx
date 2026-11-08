@@ -1461,9 +1461,14 @@ export default function App() {
       return true;
     }catch(e){ console.error("Erro ao enviar notificação:",e); return false; }
   };
-  const getNextGameDate = (gameDays=[3])=>{
+  // "depoisDe": a data do jogo que está a fechar. Fechar um jogo antes da hora
+  // (ex: sexta fechado no domingo antes) marcava o seguinte para uma data
+  // ANTERIOR ao próprio jogo, porque contava a partir de hoje.
+  const getNextGameDate = (gameDays=[3], depoisDe=null)=>{
     const days=gameDays.map(Number).sort((a,b)=>a-b);
-    const now=new Date();
+    const hoje=new Date();
+    const doJogo=depoisDe?new Date(`${depoisDe}T12:00:00`):null;
+    const now=doJogo&&!isNaN(doJogo)&&doJogo>hoje?doJogo:hoje;
     for(let i=1;i<=14;i++){
       const d=new Date(now); d.setDate(now.getDate()+i);
       if(days.includes(d.getDay())) return toDateStr(d);
@@ -1532,7 +1537,7 @@ export default function App() {
     await supabase.from("player_groups").update({status:"out",paid:false,confirmed_at:null,team:null,absence_reason:null}).eq("group_id",gid);
     const{data:grp}=gid?await supabase.from("groups").select("game_days").eq("id",gid).maybeSingle():{data:null};
     const gameDays=grp?.game_days||[3];
-    const nextDate=getNextGameDate(gameDays);
+    const nextDate=getNextGameDate(gameDays,gameInfo.date);
     await supabase.from("game_info").update({date:nextDate}).eq("id",gameInfo.id);
     await supabase.from("game_info").update({treasurer_id:null,treasurer_name:null}).eq("group_id",gid);
     showToast(isAuto?"Jogo fechado automaticamente ✓":"Jogo fechado ✓");
@@ -1779,7 +1784,7 @@ function PrimeirosPassos({groupId, gameInfo, showToast, onDone}) {
     const data=proximoDia(dia,hora);
     const sitio=local.trim()||"A definir";
     const r1=gameInfo?.id?await supabase.from("game_info").update({date:data,time:hora,location:sitio,cost_per_player:custo}).eq("id",gameInfo.id):{error:null};
-    const r2=await supabase.from("groups").update({time:hora,location:local.trim(),cost_per_player:custo,sport_type:tipo,max_players:sportConfig(tipo).defaultMaxPlayers}).eq("id",groupId);
+    const r2=await supabase.from("groups").update({time:hora,location:local.trim(),cost_per_player:custo,sport_type:tipo,max_players:sportConfig(tipo).defaultMaxPlayers,game_days:[dia]}).eq("id",groupId);
     setAGuardar(false);
     if(r1.error||r2.error){ showToast("Não foi possível guardar. Podes acertar depois em Gerir.","err"); }
     setPasso(2);
@@ -3344,7 +3349,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       const player=regResult.player;
       marcarPasso("conta_criada");
       await establishSession(regResult.session);
-      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers}).select().single();
+      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers,rent_per_game:0}).select().single();
       if(ge) throw ge;
       // A inscrição no grupo vem PRIMEIRO, e não a seguir. É ela que faz de
       // quem cria o grupo o admin dele, e há um trigger na base de dados que só

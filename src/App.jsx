@@ -750,6 +750,7 @@ export default function App() {
 
   // "acao" ({label,fn}) mostra um botão no aviso — usado pelo "Anular", que
   // dá 8 s para desfazer um toque enganado em vez dos 3 s habituais.
+  const [primeirosPassos,setPrimeirosPassos]=useState(()=>{ try{ return localStorage.getItem("hhb_primeiros_passos"); }catch(e){ return null; } });
   const showToast = (msg,type="ok",acao=null) => { setToast({msg,type,acao}); setTimeout(()=>setToast(null),acao?8000:3000); };
   useEffect(()=>{
     _confirmImpl = (message,opts={})=>new Promise(resolve=>{
@@ -1671,7 +1672,8 @@ export default function App() {
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
-      {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
+      {view==="admin" && liveUser && activeGroupId && primeirosPassos===String(activeGroupId) && <PrimeirosPassos groupId={activeGroupId} gameInfo={gameInfo} showToast={showToast} onDone={async()=>{ try{localStorage.removeItem("hhb_primeiros_passos");}catch(e){} setPrimeirosPassos(null); if(!liveUser.onboarding_seen) await markOnboardingSeen(liveUser.id); await reloadAll(activeGroupId); }}/>}
+      {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && primeirosPassos!==String(activeGroupId) && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
     </div>
   );
 }
@@ -1742,6 +1744,96 @@ function ChoiceModal({message, options, onSelect, onCancel}) {
           ))}
           <button ref={cancelRef} onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PRIMEIROS PASSOS ─────────────────────────────────────────────────────────
+// Logo a seguir a criar o jogo (08/11). O formulário de criação passou a pedir
+// só o nome; o que faltava (dia, hora, local, preço, tipo de jogo) e o convite
+// vêm aqui, um de cada vez, já dentro da app. Tudo pode ser saltado e mudado
+// depois em "Gerir".
+const DIAS_SEMANA=[["Seg",1],["Ter",2],["Qua",3],["Qui",4],["Sex",5],["Sáb",6],["Dom",0]];
+function proximoDia(diaSemana,hora){
+  const agora=new Date(); const d=new Date(agora);
+  let diff=(diaSemana-d.getDay()+7)%7;
+  const [h,m]=String(hora||"22:30").split(":").map(Number);
+  if(diff===0){ const hoje=new Date(agora); hoje.setHours(h||0,m||0,0,0); if(hoje<=agora) diff=7; }
+  d.setDate(d.getDate()+diff);
+  return toDateStr(d);
+}
+function PrimeirosPassos({groupId, gameInfo, showToast, onDone}) {
+  const [passo,setPasso]=useState(0);
+  const [dia,setDia]=useState(3);
+  const [hora,setHora]=useState(gameInfo?.time||"22:30");
+  const [local,setLocal]=useState("");
+  const [preco,setPreco]=useState(String(gameInfo?.cost_per_player??3));
+  const [tipo,setTipo]=useState("futsal");
+  const [grupo,setGrupo]=useState(null);
+  const [aGuardar,setAGuardar]=useState(false);
+  useEffect(()=>{ supabase.from("groups").select("name,invite_code,sport_type").eq("id",groupId).maybeSingle().then(({data})=>{ if(data){ setGrupo(data); if(data.sport_type) setTipo(data.sport_type); } }); },[groupId]);
+  const guardar=async()=>{
+    setAGuardar(true);
+    const custo=Number(String(preco).replace(",","."))||0;
+    const data=proximoDia(dia,hora);
+    const sitio=local.trim()||"A definir";
+    const r1=gameInfo?.id?await supabase.from("game_info").update({date:data,time:hora,location:sitio,cost_per_player:custo}).eq("id",gameInfo.id):{error:null};
+    const r2=await supabase.from("groups").update({time:hora,location:local.trim(),cost_per_player:custo,sport_type:tipo,max_players:sportConfig(tipo).defaultMaxPlayers}).eq("id",groupId);
+    setAGuardar(false);
+    if(r1.error||r2.error){ showToast("Não foi possível guardar. Podes acertar depois em Gerir.","err"); }
+    setPasso(2);
+  };
+  const chip=(ativo)=>({padding:"10px 12px",borderRadius:10,border:`2px solid ${ativo?"#1ea851":"#23271b"}`,background:ativo?"rgba(30,168,81,0.15)":"#14160f",color:ativo?"#4ade80":"#a3a897",fontWeight:800,fontSize:14,cursor:"pointer"});
+  const titulo={color:"white",fontWeight:800,fontSize:22,lineHeight:1.25,margin:"0 0 6px"};
+  const sub={color:"#8a9080",fontSize:13.5,margin:"0 0 18px",lineHeight:1.5};
+  const rotulo={color:"#8a9080",fontSize:11,fontWeight:700,letterSpacing:0.3,display:"block",margin:"16px 0 8px"};
+  const greenBtn={background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",border:"none"};
+  const link=grupo?.invite_code?`https://hojehajogo.pt?code=${grupo.invite_code}`:"";
+  return (
+    <div style={{position:"fixed",inset:0,background:"#0a0b08",zIndex:1000,overflowY:"auto"}}>
+      <div style={{maxWidth:440,margin:"0 auto",padding:"20px 20px 40px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
+          <span style={{color:"#7d8472",fontSize:12,fontWeight:700,letterSpacing:1}}>PASSO {passo+1} DE 3</span>
+          <button onClick={onDone} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:6}}>Saltar</button>
+        </div>
+        {passo===0&&<>
+          <h2 style={titulo}>Quando jogam?</h2>
+          <p style={sub}>O primeiro jogo fica marcado para o próximo dia que escolheres.</p>
+          <span style={rotulo}>DIA DA SEMANA</span>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {DIAS_SEMANA.map(([nome,n])=><button key={n} type="button" onClick={()=>setDia(n)} style={chip(dia===n)}>{nome}</button>)}
+          </div>
+          <span style={rotulo}>HORA</span>
+          <input className="text-input" type="time" value={hora} onChange={e=>setHora(e.target.value)} style={{colorScheme:"dark",marginBottom:24}}/>
+          <button className="btn-big" style={greenBtn} onClick={()=>setPasso(1)}>Seguinte →</button>
+        </>}
+        {passo===1&&<>
+          <h2 style={titulo}>Onde e quanto?</h2>
+          <p style={sub}>Se ainda não sabes, deixa em branco e acertas depois.</p>
+          <span style={rotulo}>LOCAL</span>
+          <input className="text-input" value={local} onChange={e=>setLocal(e.target.value)} placeholder="Ex: Pavilhão Municipal"/>
+          <span style={rotulo}>QUANTO PAGA CADA UM</span>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
+            {["0","2","3","4","5"].map(v=><button key={v} type="button" onClick={()=>setPreco(v)} style={chip(String(preco)===v)}>{v==="0"?"Grátis":v+"€"}</button>)}
+          </div>
+          <span style={rotulo}>QUE JOGO É</span>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24}}>
+            {Object.entries(SPORT_CONFIG).map(([k,c])=><button key={k} type="button" onClick={()=>setTipo(k)} style={chip(tipo===k)}>{c.label}</button>)}
+          </div>
+          <button className="btn-big" style={greenBtn} disabled={aGuardar} onClick={guardar}>{aGuardar?"A guardar...":"Seguinte →"}</button>
+          <button onClick={()=>setPasso(0)} style={{display:"block",margin:"12px auto 0",background:"none",border:"none",color:"#8a9080",fontSize:13,cursor:"pointer"}}>← Voltar</button>
+        </>}
+        {passo===2&&<>
+          <h2 style={titulo}>Convida a malta</h2>
+          <p style={sub}>Manda o convite para o grupo de WhatsApp do jogo. Quem tocar no link entra direto e já pode dizer se vai.</p>
+          {grupo?.invite_code?<>
+            <BotaoWhatsApp code={grupo.invite_code} groupName={grupo.name} texto="Enviar convite no WhatsApp" style={{marginBottom:10}}/>
+            <button onClick={()=>{navigator.clipboard?.writeText(link).then(()=>showToast("Link copiado ✓"),()=>{});}} style={{width:"100%",padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:24}}>Copiar link do convite</button>
+          </>:<p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>A preparar o convite…</p>}
+          <button className="btn-big" style={greenBtn} onClick={onDone}>Feito, ir para o jogo →</button>
+          <p style={{color:"#7d8472",fontSize:12,lineHeight:1.5,marginTop:12,textAlign:"center"}}>O convite fica sempre em "Gerir".</p>
+        </>}
       </div>
     </div>
   );
@@ -3274,6 +3366,9 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       marcarPasso("grupo_criado");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:group.id}));
       localStorage.setItem("hhb_new_group_code",code);
+      // Os primeiros passos (dia, hora, local, convite) aparecem uma vez,
+      // logo a seguir a criar — o formulário de criação já só pede o nome.
+      localStorage.setItem("hhb_primeiros_passos",String(group.id));
       window.location.reload();
     } catch(e) {
       marcarPasso("criar_erro");

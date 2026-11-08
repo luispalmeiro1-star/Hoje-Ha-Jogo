@@ -2711,7 +2711,7 @@ function LandingView({setView}) {
 
       <div style={{position:"relative",zIndex:1}}>
         <div style={{padding:"16px 20px"}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,color:"white"}}>HOJE HÁ <span style={{color:"#d4af37",fontWeight:400}}>JOGO</span></div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}><img src="/icon.svg" alt="" width="24" height="24"/><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,color:"white"}}>HOJE HÁ <span style={{color:"#d4af37",fontWeight:400}}>JOGO</span></div></div>
         </div>
 
         {/* Hero

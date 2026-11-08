@@ -882,6 +882,20 @@ export default function App() {
           const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin,membership_status").eq("player_id",saved.playerId);
           const{data:playerData}=await supabase.from("players").select(PLAYER_COLS).eq("id",saved.playerId).maybeSingle();
           const activeRows=(pgRaw||[]).filter(x=>x.membership_status==="active");
+          // Só um grupo: entra logo nele. Antes passava sempre por "Os meus
+          // grupos", e quem acabava de ser aceite tinha de tocar no único
+          // grupo que tem.
+          if(activeRows.length===1&&playerData&&!localStorage.getItem("hhb_url_code")){
+            const gid=Number(activeRows[0].group_id);
+            await reloadAll(gid);
+            setActiveGroupId(gid);
+            setCurrentUser(playerData);
+            linkOneSignal(playerData.id, gid);
+            localStorage.setItem("hhb_session",JSON.stringify({playerId:playerData.id,groupId:gid}));
+            setView(activeRows[0].is_admin?"admin":"player");
+            handled = true;
+            return;
+          }
           if(activeRows.length>0&&playerData){
             const gids=activeRows.map(x=>Number(x.group_id));
             const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
@@ -2107,7 +2121,7 @@ function GroupStatusCard({confirmed, notYet, members, players=[], maxPlayers=15}
   // ganhar, ou o aviso de GR nunca chega a aparecer.
   if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
   if(confirmed.length>=maxPlayers) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
-  else if(confirmed.length>=maxPlayers-3) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${maxPlayers-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
+  else if(confirmed.length>=maxPlayers-3) msgs.push({icon:"🔥",text:(()=>{const f=maxPlayers-confirmed.length;return `Lotação quase completa — só ${f===1?"falta 1 lugar":`faltam ${f} lugares`}!`;})(),color:"#d97706",bg:"rgba(217,119,6,0.1)"});
   if(confirmed.length>=MIN_PLAYERS&&grs.length>=2&&confirmed.length<maxPlayers) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#1ea851",bg:"rgba(30,168,81,0.1)"});
   // Um grupo novo, ou logo a seguir ao jogo fechar, passa por aqui com 0
   // confirmados — e sem nenhuma mensagem, é o momento em que mais falta um
@@ -5700,6 +5714,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
 
 
+        {/* Pedidos de entrada também aqui, e não só em "Gerir": no teste de
+            08/11 o ecrã principal dizia "estás sozinho neste grupo" com dois
+            jogadores à espera de aprovação. Em "Gerir" já aparece lá. */}
+        {adminTab!=="gerir"&&<PendingRequestsPanel groupId={gid} showToast={showToast}/>}
         {/* Banner código novo grupo — aparece só quando se cria um grupo */}
         {mostrarConvite&&(
           <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
@@ -6682,6 +6700,9 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       if(days===0) msg="🔥 Jogo hoje!";
       else if(days===1) msg="⚽ Jogo amanhã";
       else if(days>0&&days<=7) msg=`📅 Jogo em ${days} dias`;
+      // Mais de uma semana à frente continua a ser o próximo jogo — dizia
+      // "Sem jogo próximo" a um grupo com jogo marcado para daqui a 9 dias.
+      else if(days>7) msg=`📅 Jogo a ${gameDate.getDate()}/${String(gameDate.getMonth()+1).padStart(2,"0")}`;
       else msg="Sem jogo próximo";
       setStatus({msg, confirmed});
     })();

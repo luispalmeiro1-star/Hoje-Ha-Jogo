@@ -1241,12 +1241,16 @@ export default function App() {
   // necessariamente admin, e mudar a presença de OUTRO jogador é uma ação só
   // de admin — sem isto, a promoção era bloqueada em silêncio sempre que um
   // jogador normal (não admin) libertava o lugar.
-  const promoverFilaEspera = async(gid) => {
-    if(!gid) return;
+  // Devolve os nomes de quem entrou. "silencioso" deixa o aviso para quem
+  // chamou: o NÃO VOU junta-o ao seu próprio aviso, senão o "X entrou!"
+  // aparecia por cima e levava consigo o botão Anular.
+  const promoverFilaEspera = async(gid, silencioso=false) => {
+    if(!gid) return [];
     const{data,error}=await supabase.rpc("promote_waitlist",{p_group_id:gid});
-    if(error||!data?.length) return;
+    if(error||!data?.length) return [];
     const nomes=data.map(p=>p.player_name).filter(Boolean);
-    if(nomes.length) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
+    if(nomes.length&&!silencioso) showToast(`${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"}! Havia vaga 🎉`);
+    return nomes;
   };
 
   // O "destino" é opcional. O jogador diz explicitamente o que quer ("in" ou
@@ -1315,8 +1319,10 @@ export default function App() {
       // Já estava no "não vou" e só juntou o motivo (lesão): não há nada para anular.
       if(p.status==="nao_vou"){ showToast("🤕 Lesão registada"); return; }
       const antesDoToque={status:p.status,paid:p.paid};
-      showToast(Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`,"warn",{label:"Anular",fn:()=>desfazerNaoVou(playerId,antesDoToque)});
-      await promoverFilaEspera(activeGroupId);
+      const nomes=await promoverFilaEspera(activeGroupId,true);
+      const base=Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`;
+      const extra=nomes.length?` · ${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"} da espera`:"";
+      showToast(base+extra,"warn",{label:"Anular",fn:()=>desfazerNaoVou(playerId,antesDoToque)});
     }
   };
   // O Anular corre segundos depois do toque, e o togglePresence guardado nesse
@@ -7023,8 +7029,8 @@ select.text-input{appearance:none;}
 .ecras-pontos button.on::after{background:#d4af37;}
 @media (min-width:900px){.hero-titulo{font-size:72px;}.hero-dor{font-size:38px;max-width:none;}.ecras-fila{max-width:860px;display:flex;gap:28px;justify-content:center;}.ecra{display:block;flex:1;max-width:250px;animation:none;}.ecras-pontos{display:none;}}
 @media (prefers-reduced-motion:reduce){.ecra-ativo{animation:none;}}
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;font-family:'DM Sans',sans-serif;}
-.toast-undo{margin-left:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.55);border-radius:8px;color:white;font:inherit;font-weight:800;padding:4px 12px;cursor:pointer;}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);width:max-content;max-width:calc(100vw - 32px);display:flex;align-items:center;gap:4px;line-height:1.35;font-family:'DM Sans',sans-serif;}
+.toast-undo{margin-left:12px;flex-shrink:0;white-space:nowrap;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.55);border-radius:8px;color:white;font:inherit;font-weight:800;padding:4px 12px;cursor:pointer;}
 .toast-ok{background:#1ea851;}.toast-warn{background:#d97706;}.toast-err{background:#dc2626;}
 `;
 }

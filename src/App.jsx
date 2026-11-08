@@ -144,6 +144,20 @@ async function callAdminResetLink(playerId) {
   return await res.json();
 }
 
+// Avisa o admin de um pedido de entrada sem fazer a pessoa esperar por isso
+// (eram vários segundos no ecrã antes do "Pedido enviado"). O keepalive deixa
+// o pedido terminar mesmo com a página a recarregar logo a seguir.
+async function avisarPedidoEntrada(groupId) {
+  try {
+    const {data:{session}} = await supabase.auth.getSession();
+    fetch(`${SUPABASE_URL}/functions/v1/notify-membership`, {
+      method:"POST", keepalive:true,
+      headers:{"Content-Type":"application/json","apikey":ANON_KEY,"Authorization":`Bearer ${session?.access_token||ANON_KEY}`},
+      body:JSON.stringify({action:"request",group_id:groupId}),
+    }).catch(()=>{});
+  } catch(e) {}
+}
+
 function mensagemReposicao(nome, link) {
   return `Olá${nome?" "+nome.split(" ")[0]:""}! Aqui tens o link para escolheres uma password nova na Hoje Há Jogo:\n\n${link}\n\nO link só funciona uma vez e expira em 30 minutos.`;
 }
@@ -3752,7 +3766,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     if(!existing||existing.membership_status==="rejected"){
       await supabase.from("player_groups").upsert({player_id:p.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
       linkOneSignal(p.id);
-      await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+      avisarPedidoEntrada(group.id);
       marcarPasso("entrou_no_grupo");
     }
     localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id}));
@@ -3772,7 +3786,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     await establishSession(regResult.session);
     await supabase.from("player_groups").upsert({player_id:inserted.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
     linkOneSignal(inserted.id);
-    await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+    avisarPedidoEntrada(group.id);
     marcarPasso("entrou_no_grupo");
     showToast("Conta criada! Pedido enviado ao admin 🎉");
     localStorage.setItem("hhb_session",JSON.stringify({playerId:inserted.id}));
@@ -3839,7 +3853,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
               if(!existing||existing.membership_status==="rejected"){
                 const{error}=await supabase.from("player_groups").upsert({player_id:currentUser.id,group_id:group.id,is_admin:false,membership_status:"pending"},{onConflict:"player_id,group_id"});
                 if(error){ showToast("Erro ao enviar pedido","err"); setLoading(false); return; }
-                await supabase.functions.invoke("notify-membership",{body:{action:"request",group_id:group.id}});
+                avisarPedidoEntrada(group.id);
               }
               marcarPasso("entrou_no_grupo");
       showToast("Pedido enviado! Aguarda aprovação do admin.");

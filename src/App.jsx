@@ -1916,6 +1916,32 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
   );
 }
 
+// ── PARTILHAR A APP ──────────────────────────────────────────────────────────
+// Depois de um jogo, quem jogou é quem melhor recomenda a app a outro grupo de
+// amigos. Aparece nos 4 dias a seguir a um jogo em que a pessoa esteve, e some
+// de vez (para esse jogo) quando a pessoa partilha ou fecha.
+const MENSAGEM_PARTILHA="Olha esta app que usamos para o nosso futebol: cada um diz se vai ou não vai e a lista faz-se sozinha. É grátis 👉 https://hojehajogo.pt";
+function PartilharApp({lastClosedGame, userId}) {
+  const chave=lastClosedGame?`hhj_partilha_${lastClosedGame.date}`:null;
+  const [fechado,setFechado]=useState(()=>{ try{ return !chave||!!localStorage.getItem(chave); }catch(e){ return true; } });
+  if(!lastClosedGame||fechado) return null;
+  const jogou=(lastClosedGame.attendance||[]).some(a=>Number(a.player_id)===Number(userId));
+  const fechoMs=lastClosedGame.closedAt?new Date(lastClosedGame.closedAt).getTime():new Date(`${lastClosedGame.date}T23:59:00`).getTime();
+  if(!jogou||isNaN(fechoMs)||Date.now()-fechoMs>4*86400000) return null;
+  const fechar=()=>{ try{ localStorage.setItem(chave,"1"); }catch(e){} setFechado(true); };
+  return (
+    <div style={{background:"#14160f",border:"1px solid #2e3324",borderRadius:14,padding:"14px 14px 12px",marginBottom:8,position:"relative"}}>
+      <button onClick={fechar} aria-label="Fechar" style={{position:"absolute",top:6,right:6,background:"none",border:"none",color:"#7d8472",fontSize:18,cursor:"pointer",padding:6,lineHeight:1}}>×</button>
+      <div style={{fontSize:14,fontWeight:800,color:"white",marginBottom:4,paddingRight:24}}>Jogas noutro grupo?</div>
+      <div style={{fontSize:12.5,color:"#8a9080",lineHeight:1.5,marginBottom:12}}>Mostra-lhes a app — assim também deixam de andar a perguntar "quem vai?".</div>
+      <a href={`https://wa.me/?text=${encodeURIComponent(MENSAGEM_PARTILHA)}`} target="_blank" rel="noopener noreferrer" onClick={()=>{marcarPasso("partilhou_app");fechar();}}
+         style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",background:"#25D366",color:"#052e16",borderRadius:12,fontWeight:800,fontSize:14,textDecoration:"none"}}>
+        <WhatsAppIcon size={18}/> Mostrar no WhatsApp
+      </a>
+    </div>
+  );
+}
+
 // ── DEBT ROW ─────────────────────────────────────────────────────────────────
 // Dívida de um convidado: quem o trouxe é quem paga ao grupo, mas é o convidado
 // que deve a quem o trouxe. Este botão abre o WhatsApp com a mensagem pronta
@@ -5365,6 +5391,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             </div>
           );
         })()}
+        <PartilharApp lastClosedGame={lastClosedGame} userId={player.id}/>
         <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`}>
           <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><NotaEsperaConvidados waiting={waiting} gameInfo={gameInfo}/><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><div className="list-info" style={{marginLeft:4}}><span className="list-name">{p.name}</span><EsperaAte p={p} gameInfo={gameInfo}/></div></div>)}</div></>}
@@ -5857,6 +5884,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             if(!ctx) return null;
             return <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)} isPastGame={ctx.isPastGame} closedAt={ctx.closedAt}/>;
           })()}
+          <PartilharApp lastClosedGame={lastClosedGame} userId={currentUser.id}/>
           <FecharJogoGuiado confirmed={confirmed} gameInfo={gameInfo} sportType={sportType} teamConfig={teamConfig} winnerInicial={winnerTeam} onFechar={onResetGame}/>
         </>}
 

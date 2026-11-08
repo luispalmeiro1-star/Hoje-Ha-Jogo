@@ -1155,6 +1155,20 @@ export default function App() {
   };
 
   const deleteGroup = async(groupId)=>{
+    // Primeiro pela função do servidor (apagar_grupo): confirma que é o admin
+    // e apaga tudo de uma vez. Do lado da app, as regras da base de dados não
+    // deixam desligar os outros jogadores do grupo (players.group_id), e o
+    // grupo ficava a meio — sem membros mas por apagar (teste de 08/11).
+    // Se a função ainda não existir, segue o caminho antigo, abaixo.
+    const{error:erroRpc}=await supabase.rpc("apagar_grupo",{p_group_id:groupId});
+    if(!erroRpc){
+      const restantes=await loadMyGroups(currentUser.id);
+      setMyGroups(restantes);
+      showToast("Grupo apagado ✓");
+      if(restantes.length===0) handleLogout();
+      return;
+    }
+    if(erroRpc.code!=="PGRST202"&&!/apagar_grupo/.test(erroRpc.message||"")){ showToast("Não foi possível apagar o grupo","err"); return; }
     // A ordem importa: as regras da base de dados só deixam ver (e por isso
     // apagar) os dados de um grupo a quem ainda é membro. Antes tirava-se
     // primeiro o admin do grupo e todos os deletes seguintes apanhavam 0

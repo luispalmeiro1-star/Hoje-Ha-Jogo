@@ -680,6 +680,8 @@ export default function App() {
   // que o estado, e usa-se este (não "players") sempre que se calcula a
   // lista a passar a reassignAllTeams.
   const playersRef = useRef([]);
+  const togglePresenceRef = useRef(null);
+  const togglePaidRef = useRef(null);
   const applyPlayers = (next) => {
     playersRef.current = typeof next==="function" ? next(playersRef.current) : next;
     setPlayers(playersRef.current);
@@ -1310,9 +1312,32 @@ export default function App() {
     if(limpaPago&&p.paid) await syncPagamentoJogo(playerId,p.name,false);
     if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
     if(ns==="nao_vou"){
-      showToast(Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`,"warn",{label:"Anular",fn:()=>togglePresence(playerId,"in")});
+      // Já estava no "não vou" e só juntou o motivo (lesão): não há nada para anular.
+      if(p.status==="nao_vou"){ showToast("🤕 Lesão registada"); return; }
+      const antesDoToque={status:p.status,paid:p.paid};
+      showToast(Number(playerId)===Number(currentUser?.id)?"Marcaste que não vais":`${p.name}: não vai`,"warn",{label:"Anular",fn:()=>desfazerNaoVou(playerId,antesDoToque)});
       await promoverFilaEspera(activeGroupId);
     }
+  };
+  // O Anular corre segundos depois do toque, e o togglePresence guardado nesse
+  // aviso via a lista de jogadores de ANTES do NÃO VOU (contava a própria
+  // pessoa como dentro e podia pô-la em espera com lugar livre). Estes refs
+  // apontam sempre para a versão desta renderização, com o estado de agora.
+  togglePresenceRef.current=togglePresence;
+  // Desfaz um NÃO VOU tocado por engano. Quem estava dentro ou em espera volta
+  // a pedir lugar (com as regras de agora: prioridade sobre convidados, ou
+  // espera se o lugar já foi ocupado); quem ainda não tinha respondido volta a
+  // "sem resposta". Se foi o admin a tocar, o "pago" que o NÃO VOU limpou volta.
+  const desfazerNaoVou=async(playerId,antes)=>{
+    if(antes.status==="in"||antes.status==="wait"){
+      await togglePresenceRef.current(playerId,"in");
+    } else {
+      const{error}=await supabase.from("player_groups").update({status:"out",confirmed_at:null,absence_reason:null}).eq("player_id",playerId).eq("group_id",activeGroupId);
+      if(error){ showToast("Não foi possível anular","err"); return; }
+      applyPlayers(prev=>prev.map(pl=>pl.id===playerId?{...pl,status:"out",confirmed_at:null,absence_reason:null}:pl));
+      showToast("Anulado ✓");
+    }
+    if(antes.paid&&Number(playerId)!==Number(currentUser?.id)) await togglePaidRef.current?.(playerId,true);
   };
   // Troca manual entre um jogador em espera e um que está dentro — escolhida
   // pelo admin, não pela ordem de chegada. Pedido depois de um caso real: um
@@ -1370,6 +1395,7 @@ export default function App() {
     showToast(isFull?`${guestName} na lista de espera ⏳`:`${guestName} adicionado! 🎉`);
   };
   const removeGuest    = async(id)=>{ const era=players.find(p=>p.id===id); await supabase.from("player_groups").delete().eq("player_id",id); await supabase.from("players").delete().eq("id",id); applyPlayers(prev=>prev.filter(p=>p.id!==id)); if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current); if(era?.status==="in") await promoverFilaEspera(activeGroupId); showToast("Convidado removido"); };
+  togglePaidRef.current=(...a)=>togglePaid(...a);
   const togglePaid     = async(id,forcar=null)=>{
     const p=playersRef.current.find(pl=>pl.id===id)||players.find(pl=>pl.id===id);
     if(!p) return;

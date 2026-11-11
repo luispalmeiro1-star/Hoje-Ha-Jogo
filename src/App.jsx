@@ -450,6 +450,17 @@ function toDateStr(date) {
   const d=String(date.getDate()).padStart(2,"0");
   return `${y}-${m}-${d}`;
 }
+// Para onde vai um jogo que não se realizou: o mesmo dia da semana, na
+// primeira semana que ainda não passou. Se o admin já mudou a data para a
+// frente, fica como está.
+function proximaSemana(dataStr) {
+  const hoje=toDateStr(new Date());
+  if(!dataStr) return hoje;
+  const d=new Date(`${dataStr}T12:00:00`);
+  if(isNaN(d)) return hoje;
+  while(toDateStr(d)<=hoje) d.setDate(d.getDate()+7);
+  return toDateStr(d);
+}
 function nextWednesday() {
   const now = new Date();
   const diff = (3 - now.getDay() + 7) % 7 || 7;
@@ -1619,6 +1630,38 @@ export default function App() {
     sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.",confirmedMembers.filter(p=>!p.is_guest).map(p=>p.id));
     await reloadAll(gid);
   };
+  // O jogo não se realizou. A lista volta ao início sem registar nada: nem
+  // histórico, nem presenças, nem dívidas, nem sequências. Fechar o jogo fazia
+  // tudo isso como se se tivesse jogado, e era a única forma de limpar a lista.
+  // Os convidados saem (eram para aquele jogo). Quem já tinha pago continua
+  // pago: o pagamento passa para a nova data, senão ficava preso a um jogo
+  // que nunca existiu e já não dava para o retirar.
+  const naoHouveJogo = async(novaData)=>{
+    const gid=activeGroupId||groupIdRef.current||null;
+    if(!gid){ showToast("Erro: grupo não identificado","err"); return; }
+    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status").eq("group_id",gid);
+    const pids=(pgRows||[]).map(x=>x.player_id);
+    const{data:convs}=pids.length>0?await supabase.from("players").select("id").in("id",pids).eq("is_guest",true):{data:[]};
+    const guestIds=(convs||[]).map(p=>p.id);
+    const avisar=(pgRows||[]).filter(x=>(x.status==="in"||x.status==="wait")&&!guestIds.includes(x.player_id)).map(x=>x.player_id);
+    if(guestIds.length>0){
+      await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",gid);
+      await supabase.from("players").delete().in("id",guestIds);
+    }
+    const{error}=await supabase.from("player_groups").update({status:"out",confirmed_at:null,team:null,absence_reason:null}).eq("group_id",gid);
+    if(error){ showToast("Não foi possível limpar a lista","err"); return; }
+    const dataFinal=novaData||gameInfo.date;
+    if(dataFinal!==gameInfo.date){
+      await supabase.from("payments").update({game_date:dataFinal}).eq("group_id",gid).eq("game_date",gameInfo.date).eq("status","pago");
+      await supabase.from("game_info").update({date:dataFinal}).eq("id",gameInfo.id);
+    }
+    showToast("Lista limpa ✓ Ninguém está confirmado");
+    if(avisar.length>0){
+      const quando=new Date(`${dataFinal}T12:00:00`).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"});
+      sendPushNotification("⚽ Não houve jogo",`A lista voltou ao início. Confirma de novo a tua presença para ${quando}.`,avisar);
+    }
+    await reloadAll(gid);
+  };
   const addDebt  = async(playerId,playerName,amount,desc)=>{ const{error}=await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast(error?"Não foi possível registar a dívida":"Dívida registada ✓",error?"err":"ok"); };
   // Um duplo toque em "✓ Recebido" numa ligação lenta corria o pagamento
   // duas vezes (somava duas vezes ao jogo e criava dois recebimentos).
@@ -1744,7 +1787,7 @@ export default function App() {
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={(destino,motivo)=>togglePresence(liveUser.id,destino,motivo)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onNaoHouveJogo={naoHouveJogo} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} isAdmin={!!liveUser.is_admin} onPayDebt={payDebt} onAddDebt={addDebt} onSendPush={sendPushNotification} showToast={showToast} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
@@ -5626,7 +5669,36 @@ function FecharJogoGuiado({confirmed=[],gameInfo,sportType,teamConfig={},winnerI
   );
 }
 
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onSwapPresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
+// O jogo não se realizou: limpa a lista sem o registar como jogado.
+function NaoHouveJogo({gameInfo,onLimpar}) {
+  const [aberto,setAberto]=useState(false);
+  const [data,setData]=useState("");
+  const [aLimpar,setALimpar]=useState(false);
+  if(!aberto) return <button onClick={()=>{setData(proximaSemana(gameInfo.date));setAberto(true);}} style={{display:"block",width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:"12px 8px",marginTop:6,minHeight:44}}>Não houve jogo esta semana?</button>;
+  const limpar=async()=>{
+    if(aLimpar) return;
+    setALimpar(true);
+    try{ await onLimpar(data||null); setAberto(false); }
+    finally{ setALimpar(false); }
+  };
+  const botao={flex:1,justifyContent:"center"};
+  return (
+    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginTop:14}}>
+      <p style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>NÃO HOUVE JOGO</p>
+      <p style={{fontSize:15,fontWeight:800,color:"#fff",margin:"0 0 8px"}}>A lista volta ao início</p>
+      <p style={{fontSize:13,color:"#a3a897",lineHeight:1.45,margin:"0 0 12px"}}>Todos ficam sem resposta e os convidados saem. Não fica nada registado: nem presenças, nem dívidas, nem histórico. Quem já pagou continua como pago.</p>
+      <label htmlFor="nhj-data" style={{display:"block",fontSize:12,fontWeight:700,color:"#8a9080",marginBottom:6}}>Próximo jogo</label>
+      <input id="nhj-data" type="date" className="text-input" value={data} onChange={e=>setData(e.target.value)} style={{marginBottom:10}}/>
+      <p style={{fontSize:11,color:"#8a9080",margin:"0 0 12px"}}>Quem estava confirmado recebe um aviso para confirmar de novo.</p>
+      <div style={{display:"flex",gap:8}}>
+        <button className="btn-primary" style={{...botao,background:"#23271b",boxShadow:"none"}} onClick={()=>setAberto(false)} disabled={aLimpar}>Cancelar</button>
+        <button className="btn-primary" style={{...botao,background:"transparent",border:"1px solid #dc2626",color:"#f87171",boxShadow:"none"}} onClick={limpar} disabled={aLimpar||!data}>{aLimpar?"A limpar...":"Limpar a lista"}</button>
+      </div>
+    </div>
+  );
+}
+
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onNaoHouveJogo,onTogglePresence,onSwapPresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait",isAdminNao=myself.status==="nao_vou";
@@ -5938,6 +6010,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           })()}
           <PartilharApp lastClosedGame={lastClosedGame} userId={currentUser.id}/>
           <FecharJogoGuiado confirmed={confirmed} gameInfo={gameInfo} sportType={sportType} teamConfig={teamConfig} winnerInicial={winnerTeam} onFechar={onResetGame}/>
+          <NaoHouveJogo gameInfo={gameInfo} onLimpar={onNaoHouveJogo}/>
         </>}
 
         {adminTab==="equipas"&&<>

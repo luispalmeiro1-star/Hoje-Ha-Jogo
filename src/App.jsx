@@ -6032,7 +6032,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                     p.status!=="nao_vou"&&{label:"❌ Não vai",value:"nao_vou",neutral:true},
                     !p.is_guest&&p.status!=="out"&&{label:"❓ Sem resposta",value:"out",neutral:true},
                   ].filter(Boolean);
-                  const destino=await askChoice(saindo?`Mudar ${p.name} para quê? Isto também limpa o pagamento dele.`:`Mudar ${p.name} para quê?`,opcoes);
+                  // O pagamento só é retirado quando o admin mexe noutra pessoa
+                  // que já tinha pago: o aviso só aparece nesse caso.
+                  const retiraPago=saindo&&p.paid&&p.id!==currentUser.id;
+                  const destino=await askChoice(`Mudar ${p.name} para quê?${retiraPago?" Isto também retira o pagamento dele.":""}`,opcoes);
                   if(destino) onTogglePresence(p.id,destino);
                 }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳ Em espera":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
                 {p.status==="wait"&&<button className="icon-ghost" onClick={async()=>{

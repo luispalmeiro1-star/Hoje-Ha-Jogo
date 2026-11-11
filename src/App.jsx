@@ -450,17 +450,6 @@ function toDateStr(date) {
   const d=String(date.getDate()).padStart(2,"0");
   return `${y}-${m}-${d}`;
 }
-// Para onde vai um jogo que não se realizou: o mesmo dia da semana, na
-// primeira semana que ainda não passou. Se o admin já mudou a data para a
-// frente, fica como está.
-function proximaSemana(dataStr) {
-  const hoje=toDateStr(new Date());
-  if(!dataStr) return hoje;
-  const d=new Date(`${dataStr}T12:00:00`);
-  if(isNaN(d)) return hoje;
-  while(toDateStr(d)<=hoje) d.setDate(d.getDate()+7);
-  return toDateStr(d);
-}
 function nextWednesday() {
   const now = new Date();
   const diff = (3 - now.getDay() + 7) % 7 || 7;
@@ -1320,7 +1309,10 @@ export default function App() {
     const p=players.find(pl=>pl.id===playerId); if(!p) return;
     let ns,na;
     const querJogar = destino ? destino==="in" : (p.status!=="in"&&p.status!=="wait");
-    if(!querJogar){ns="nao_vou";na=null;}
+    // "out": o admin repõe o jogador em "sem resposta" — nem vai, nem não vai.
+    // Antes só dava para o pôr em "não vou", que é uma resposta que ele não deu.
+    if(destino==="out"){ns="out";na=null;}
+    else if(!querJogar){ns="nao_vou";na=null;}
     else if(confirmed.length<maxPlayers){ns="in";na=Date.now();}
     else if(!p.is_guest&&p.status!=="in"&&confirmed.some(c=>c.is_guest)){
       // Jogo cheio e há convidados dentro: o jogador habitual tem prioridade.
@@ -1368,6 +1360,13 @@ export default function App() {
     }
     if(limpaPago&&p.paid) await syncPagamentoJogo(playerId,p.name,false);
     if(podeAjustarEquipas()) await reassignAllTeams(playersRef.current.map(pl=>pl.id===playerId?{...pl,...mudanca}:pl));
+    if(ns==="out"){
+      // Se estava dentro, o lugar ficou livre: entra o primeiro da espera.
+      const nomes=p.status==="in"?await promoverFilaEspera(activeGroupId,true):[];
+      const extra=nomes.length?` · ${nomes.join(", ")} ${nomes.length>1?"entraram":"entrou"} da espera`:"";
+      showToast(`${p.name}: sem resposta`+extra);
+      return;
+    }
     if(ns==="nao_vou"){
       // Já estava no "não vou" e só juntou o motivo (lesão): não há nada para anular.
       if(p.status==="nao_vou"){ showToast("🤕 Lesão registada"); return; }
@@ -1630,36 +1629,26 @@ export default function App() {
     sendPushNotification("🏆 Vota no MVP!","O jogo fechou! Entra na app e vota no melhor jogador de hoje.",confirmedMembers.filter(p=>!p.is_guest).map(p=>p.id));
     await reloadAll(gid);
   };
-  // O jogo não se realizou. A lista volta ao início sem registar nada: nem
-  // histórico, nem presenças, nem dívidas, nem sequências. Fechar o jogo fazia
-  // tudo isso como se se tivesse jogado, e era a única forma de limpar a lista.
-  // Os convidados saem (eram para aquele jogo). Quem já tinha pago continua
-  // pago: o pagamento passa para a nova data, senão ficava preso a um jogo
-  // que nunca existiu e já não dava para o retirar.
-  const naoHouveJogo = async(novaData)=>{
+  // Repõe toda a gente em "sem resposta" — e só isso. Pedido do Luís depois de
+  // uma quarta sem jogo: os confirmados ficavam na lista para a semana
+  // seguinte, e a única forma de limpar era fechar o jogo, que o registava
+  // como jogado. Não muda a data, não mexe em pagamentos, não regista nada e
+  // não manda avisos. Os convidados saem, porque um convidado só existe na
+  // lista como lugar pedido: não tem como ficar "sem resposta".
+  const reiniciarLista = async()=>{
     const gid=activeGroupId||groupIdRef.current||null;
     if(!gid){ showToast("Erro: grupo não identificado","err"); return; }
-    const{data:pgRows}=await supabase.from("player_groups").select("player_id,status").eq("group_id",gid);
+    const{data:pgRows}=await supabase.from("player_groups").select("player_id").eq("group_id",gid);
     const pids=(pgRows||[]).map(x=>x.player_id);
     const{data:convs}=pids.length>0?await supabase.from("players").select("id").in("id",pids).eq("is_guest",true):{data:[]};
     const guestIds=(convs||[]).map(p=>p.id);
-    const avisar=(pgRows||[]).filter(x=>(x.status==="in"||x.status==="wait")&&!guestIds.includes(x.player_id)).map(x=>x.player_id);
     if(guestIds.length>0){
       await supabase.from("player_groups").delete().in("player_id",guestIds).eq("group_id",gid);
       await supabase.from("players").delete().in("id",guestIds);
     }
     const{error}=await supabase.from("player_groups").update({status:"out",confirmed_at:null,team:null,absence_reason:null}).eq("group_id",gid);
-    if(error){ showToast("Não foi possível limpar a lista","err"); return; }
-    const dataFinal=novaData||gameInfo.date;
-    if(dataFinal!==gameInfo.date){
-      await supabase.from("payments").update({game_date:dataFinal}).eq("group_id",gid).eq("game_date",gameInfo.date).eq("status","pago");
-      await supabase.from("game_info").update({date:dataFinal}).eq("id",gameInfo.id);
-    }
-    showToast("Lista limpa ✓ Ninguém está confirmado");
-    if(avisar.length>0){
-      const quando=new Date(`${dataFinal}T12:00:00`).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"});
-      sendPushNotification("⚽ Não houve jogo",`A lista voltou ao início. Confirma de novo a tua presença para ${quando}.`,avisar);
-    }
+    if(error){ showToast("Não foi possível reiniciar a lista","err"); return; }
+    showToast("Lista reiniciada ✓ Todos sem resposta");
     await reloadAll(gid);
   };
   const addDebt  = async(playerId,playerName,amount,desc)=>{ const{error}=await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:activeGroupId||null}); showToast(error?"Não foi possível registar a dívida":"Dívida registada ✓",error?"err":"ok"); };
@@ -1787,7 +1776,7 @@ export default function App() {
       {view==="repor-password" && <ReporPasswordView token={resetToken} setView={setView} showToast={showToast}/>}
       {view==="pedido-pendente" && <PedidoPendenteView groupName={pendingRequest?.groupName} status={pendingRequest?.status||"pending"} onTryAnother={()=>{ setPendingRequest(null); setView("entrar-convite"); }} onLogout={handleLogout}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={(destino,motivo)=>togglePresence(liveUser.id,destino,motivo)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onNaoHouveJogo={naoHouveJogo} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onReiniciarLista={reiniciarLista} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} isAdmin={!!liveUser.is_admin} onPayDebt={payDebt} onAddDebt={addDebt} onSendPush={sendPushNotification} showToast={showToast} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
@@ -5669,36 +5658,7 @@ function FecharJogoGuiado({confirmed=[],gameInfo,sportType,teamConfig={},winnerI
   );
 }
 
-// O jogo não se realizou: limpa a lista sem o registar como jogado.
-function NaoHouveJogo({gameInfo,onLimpar}) {
-  const [aberto,setAberto]=useState(false);
-  const [data,setData]=useState("");
-  const [aLimpar,setALimpar]=useState(false);
-  if(!aberto) return <button onClick={()=>{setData(proximaSemana(gameInfo.date));setAberto(true);}} style={{display:"block",width:"100%",background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:"12px 8px",marginTop:6,minHeight:44}}>Não houve jogo esta semana?</button>;
-  const limpar=async()=>{
-    if(aLimpar) return;
-    setALimpar(true);
-    try{ await onLimpar(data||null); setAberto(false); }
-    finally{ setALimpar(false); }
-  };
-  const botao={flex:1,justifyContent:"center"};
-  return (
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginTop:14}}>
-      <p style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>NÃO HOUVE JOGO</p>
-      <p style={{fontSize:15,fontWeight:800,color:"#fff",margin:"0 0 8px"}}>A lista volta ao início</p>
-      <p style={{fontSize:13,color:"#a3a897",lineHeight:1.45,margin:"0 0 12px"}}>Todos ficam sem resposta e os convidados saem. Não fica nada registado: nem presenças, nem dívidas, nem histórico. Quem já pagou continua como pago.</p>
-      <label htmlFor="nhj-data" style={{display:"block",fontSize:12,fontWeight:700,color:"#8a9080",marginBottom:6}}>Próximo jogo</label>
-      <input id="nhj-data" type="date" className="text-input" value={data} onChange={e=>setData(e.target.value)} style={{marginBottom:10}}/>
-      <p style={{fontSize:11,color:"#8a9080",margin:"0 0 12px"}}>Quem estava confirmado recebe um aviso para confirmar de novo.</p>
-      <div style={{display:"flex",gap:8}}>
-        <button className="btn-primary" style={{...botao,background:"#23271b",boxShadow:"none"}} onClick={()=>setAberto(false)} disabled={aLimpar}>Cancelar</button>
-        <button className="btn-primary" style={{...botao,background:"transparent",border:"1px solid #dc2626",color:"#f87171",boxShadow:"none"}} onClick={limpar} disabled={aLimpar||!data}>{aLimpar?"A limpar...":"Limpar a lista"}</button>
-      </div>
-    </div>
-  );
-}
-
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onNaoHouveJogo,onTogglePresence,onSwapPresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onReiniciarLista,onTogglePresence,onSwapPresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdatePosition,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onRemoveMvpVote,onLogout,showToast,setView,view,groupId=null,treasurerId=null,treasurerName="",maxPlayers=12,sportType="futsal",autoReassignTeams=true,rentPerGame=DEFAULT_RENT,onMovePlayer,teamConfig={}}) {
   const cfg=sportConfig(sportType);
   const myself=players.find(p=>p.id===currentUser.id)||currentUser;
   const isAdminIn=myself.status==="in",isAdminWait=myself.status==="wait",isAdminNao=myself.status==="nao_vou";
@@ -6010,7 +5970,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           })()}
           <PartilharApp lastClosedGame={lastClosedGame} userId={currentUser.id}/>
           <FecharJogoGuiado confirmed={confirmed} gameInfo={gameInfo} sportType={sportType} teamConfig={teamConfig} winnerInicial={winnerTeam} onFechar={onResetGame}/>
-          <NaoHouveJogo gameInfo={gameInfo} onLimpar={onNaoHouveJogo}/>
+          <button onClick={async()=>{ if(await askConfirm("Reiniciar a lista? Todos os jogadores voltam a «sem resposta» e os convidados saem. Não muda mais nada.",{danger:true,confirmLabel:"Reiniciar"})) onReiniciarLista(); }} style={{display:"block",width:"100%",background:"transparent",border:"1px solid #2e3324",borderRadius:10,color:"#c9cdbd",fontSize:13,fontWeight:800,cursor:"pointer",padding:"12px 8px",marginTop:10,minHeight:44,fontFamily:"'DM Sans',sans-serif"}}>🔄 Reiniciar a lista</button>
         </>}
 
         {adminTab==="equipas"&&<>
@@ -6062,7 +6022,19 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
                   <span className="guest-sub">{p.is_guest?`convidado de ${p.invited_by}`:`@${p.username||"sem-username"}`} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
                 </div>
-                <button className={`paid-btn ${p.status==="in"?"paid-yes":p.status==="wait"?"st-wait":p.status==="nao_vou"?"paid-no":"st-none"}`} style={{fontSize:11}} onClick={async()=>{ const saindo=p.status==="in"||p.status==="wait"; if(await askConfirm(saindo?`Marcar ${p.name} como "não vou"? Isto também limpa o pagamento dele.`:`Marcar ${p.name} como confirmado?`,{danger:saindo,confirmLabel:saindo?"Marcar":"Confirmar"})) onTogglePresence(p.id); }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳ Em espera":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
+                <button className={`paid-btn ${p.status==="in"?"paid-yes":p.status==="wait"?"st-wait":p.status==="nao_vou"?"paid-no":"st-none"}`} style={{fontSize:11}} onClick={async()=>{
+                  // O admin escolhe para onde vai o jogador. Antes era só um
+                  // sim/não: quem estava dentro só podia passar a "não vou".
+                  // Convidados não têm "sem resposta": só existem na lista.
+                  const saindo=p.status==="in"||p.status==="wait";
+                  const opcoes=[
+                    !saindo&&{label:"✅ Vai jogar",value:"in",neutral:true},
+                    p.status!=="nao_vou"&&{label:"❌ Não vai",value:"nao_vou",neutral:true},
+                    !p.is_guest&&p.status!=="out"&&{label:"❓ Sem resposta",value:"out",neutral:true},
+                  ].filter(Boolean);
+                  const destino=await askChoice(saindo?`Mudar ${p.name} para quê? Isto também limpa o pagamento dele.`:`Mudar ${p.name} para quê?`,opcoes);
+                  if(destino) onTogglePresence(p.id,destino);
+                }}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳ Em espera":p.status==="nao_vou"?"❌ Não vai":"❓ Sem resposta"}</button>
                 {p.status==="wait"&&<button className="icon-ghost" onClick={async()=>{
                   const dentro=players.filter(m=>m.status==="in"&&!m.is_admin);
                   if(!dentro.length){ showToast("Não há ninguém dentro para trocar","warn"); return; }

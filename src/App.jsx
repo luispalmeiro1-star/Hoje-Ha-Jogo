@@ -343,7 +343,8 @@ function marcarPasso(passo) {
   } catch (e) { /* janela privada: contar é o comportamento certo */ }
   // Dispara e segue. Isto nunca pode atrasar nem partir o que a pessoa está a
   // fazer — é medição, não é funcionalidade.
-  supabase.from("funil").insert({ passo, sessao: idDaVisita() })
+  // Devolve a promessa para quem precisa de esperar por ela (ver "grupo_criado").
+  return supabase.from("funil").insert({ passo, sessao: idDaVisita() })
     .then(() => {}, () => {});
 }
 
@@ -3463,7 +3464,9 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
     }
     setLoading(true);
     try {
-      const code=await generateCode();
+      // O código de convite é pedido ao mesmo tempo que a conta é criada, em
+      // vez de antes: era mais de um segundo de espera à frente de tudo.
+      const codigoP=generateCode(); codigoP.catch(()=>{});
       // A conta do admin é criada ANTES do grupo. Ao contrário, se o registo
       // falhasse (username já usado, por exemplo) ficava um grupo sem dono na
       // base de dados, com o código de convite gasto, a cada tentativa.
@@ -3484,6 +3487,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       const player=regResult.player;
       marcarPasso("conta_criada");
       await establishSession(regResult.session);
+      const code=await codigoP;
       const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code,sport_type:sportType,max_players:sportConfig(sportType).defaultMaxPlayers,rent_per_game:0}).select().single();
       if(ge) throw ge;
       // A inscrição no grupo vem PRIMEIRO, e não a seguir. É ela que faz de
@@ -3499,11 +3503,17 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // parar à vista de Admin ou à de Jogador. Faltava aqui, e por isso
       // quem criava um grupo via "Criar grupo" recarregava a página e
       // caía na vista de Jogador, sem perceber porquê.
-      const{error:pgIdErr}=await supabase.from("players").update({group_id:group.id,is_admin:true}).eq("id",player.id);
-      if(pgIdErr) throw pgIdErr;
       const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return toDateStr(d);};
-      await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
-      marcarPasso("grupo_criado");
+      // As duas escritas não dependem uma da outra: seguem juntas.
+      const[{error:pgIdErr}]=await Promise.all([
+        supabase.from("players").update({group_id:group.id,is_admin:true}).eq("id",player.id),
+        supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id}),
+      ]);
+      if(pgIdErr) throw pgIdErr;
+      // Espera-se pelo registo (no máximo 1 s) antes de recarregar a página.
+      // Sem isto o recarregamento cancelava o pedido a meio e o grupo criado
+      // não aparecia na medição — foi o que aconteceu ao segundo grupo de 13/11.
+      await Promise.race([marcarPasso("grupo_criado"),new Promise(r=>setTimeout(r,1000))]);
       localStorage.setItem("hhb_session",JSON.stringify({playerId:player.id,groupId:group.id}));
       localStorage.setItem("hhb_new_group_code",code);
       // Os primeiros passos (dia, hora, local, convite) aparecem uma vez,

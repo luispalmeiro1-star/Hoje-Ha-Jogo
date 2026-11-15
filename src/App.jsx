@@ -1133,6 +1133,18 @@ export default function App() {
     return true;
   };
 
+  // Quem acabou de criar o jogo entra logo, sem recarregar a página. Antes
+  // a app fechava e abria de novo (cerca de 3 s) só para ler do zero o que
+  // já tinha na mão: a conta e o grupo acabados de criar.
+  const entrarDepoisDeCriar = async(player,gid)=>{
+    setCurrentUser({...player,is_admin:true,group_id:gid});
+    linkOneSignal(player.id, gid);
+    setPrimeirosPassos(String(gid));
+    setActiveGroupId(gid);
+    await reloadAll(gid);
+    setView("admin");
+  };
+
   const handleLogout  = ()=>{ localStorage.removeItem("hhb_session"); supabase.auth.signOut(); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
   const switchAccount = ()=>{ localStorage.removeItem("hhb_session"); supabase.auth.signOut(); setCurrentUser(null); setActiveGroupId(null); setView("landing"); setViewingDate(null); };
 
@@ -1761,7 +1773,7 @@ export default function App() {
       {view==="demo"           && <DemoView setView={setView} showToast={showToast}/>}
       {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={selectGroup} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setActiveGroupId(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser} onLeave={leaveGroup} onDelete={deleteGroup}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
-      {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}
+      {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll} onCriado={entrarDepoisDeCriar}/>}
       {view==="entrar-convite" && <EntrarConviteView setView={setView} showToast={showToast} currentUser={currentUser} onGrupoAdicionado={async()=>{
         if(currentUser){
           const groups=await loadMyGroups(currentUser.id);
@@ -3413,7 +3425,7 @@ function DemoView({setView, showToast}) {
 
 
 // ── CRIAR GRUPO VIEW ────────────────────────────────────────────────────────
-function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
+function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
   const [step, setStep]               = useState(()=>{
     // Se já há um código pendente no localStorage, ir direto para passo 3
     return localStorage.getItem("hhb_pending_code") ? 3 : 1;
@@ -3519,7 +3531,10 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
       // Os primeiros passos (dia, hora, local, convite) aparecem uma vez,
       // logo a seguir a criar — o formulário de criação já só pede o nome.
       localStorage.setItem("hhb_primeiros_passos",String(group.id));
-      window.location.reload();
+      // Entra direto. Se alguma coisa falhar aí, recarrega como antes: a
+      // sessão já está guardada e a app abre no jogo.
+      try{ await onCriado(player,group.id); }
+      catch(e){ window.location.reload(); }
     } catch(e) {
       marcarPasso("criar_erro");
       showToast("Erro ao criar grupo: "+e.message,"err");

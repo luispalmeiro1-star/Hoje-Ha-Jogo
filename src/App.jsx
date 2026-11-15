@@ -2221,8 +2221,11 @@ function guestRelease(gameInfo,minutos=1890){
 function EsperaAte({p,gameInfo}){
   if(!p?.is_guest) return null;
   const r=guestRelease(gameInfo,gameInfo?.guestReleaseMin??1890);
-  if(r.passou) return <span className="guest-sub">convidado · entra se houver vaga</span>;
-  return <span className="guest-sub">convidado · espera até {r.horas} antes do jogo ({r.label})</span>;
+  // A explicação do prazo já está uma vez por cima da lista (NotaEsperaConvidados).
+  // Repeti-la em cada linha tornava a lista ilegível com vários convidados.
+  const de=p.invited_by?`convidado de ${p.invited_by}`:"convidado";
+  if(r.passou) return <span className="guest-sub">{de} · entra se houver vaga</span>;
+  return <span className="guest-sub">{de}</span>;
 }
 function NotaEsperaConvidados({waiting=[],gameInfo}){
   if(!waiting.some(p=>p.is_guest)) return null;
@@ -3614,9 +3617,12 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
         {step===2&&<>
           <p style={{color:"#8a9080",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
           <label style={fieldLabel}>O TEU NOME *</label>
-          <input className="text-input" value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
-          <label style={fieldLabel}>USERNAME *</label>
-          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(normalizeUsername(e.target.value))} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
+          {/* O utilizador é sugerido a partir do nome enquanto a pessoa não
+              lhe mexer: metade de quem chegava aqui desistia neste campo. */}
+          <input className="text-input" value={adminName} onChange={e=>{const v=e.target.value; if(adminUsername===normalizeUsername(adminName)) setAdminUsername(normalizeUsername(v)); setAdminName(v);}} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
+          <label style={fieldLabel}>UTILIZADOR *</label>
+          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(normalizeUsername(e.target.value))} placeholder="Ex: joaosilva" autoCapitalize="none" style={{marginBottom:4}}/>
+          <p style={{color:"#7d8472",fontSize:12,margin:"0 0 14px"}}>É com este nome que entras na app.</p>
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           {/* Telemóvel e email são opcionais: ficam fechados para o ecrã
@@ -3919,7 +3925,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
                 </div>
                 <div>
                   <div style={{fontSize:14,fontWeight:700}}>Já tenho conta</div>
-                  <div style={{color:"rgba(4,36,15,0.7)",fontSize:12}}>Entrar com username e password</div>
+                  <div style={{color:"rgba(4,36,15,0.7)",fontSize:12}}>Entrar com utilizador e password</div>
                 </div>
               </button>
               <button onClick={()=>setStep(4)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
@@ -3949,9 +3955,10 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
         {step===4&&group&&<>
           <p style={{color:"#8a9080",fontSize:13,marginBottom:20}}>Criar conta no grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
           <label style={fieldLabel}>O TEU NOME *</label>
-          <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
-          <label style={fieldLabel}>USERNAME *</label>
-          <input className="text-input" value={username} onChange={e=>setUsername(normalizeUsername(e.target.value))} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
+          <input className="text-input" value={name} onChange={e=>{const v=e.target.value; if(username===normalizeUsername(name)) setUsername(normalizeUsername(v)); setName(v);}} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
+          <label style={fieldLabel}>UTILIZADOR *</label>
+          <input className="text-input" value={username} onChange={e=>setUsername(normalizeUsername(e.target.value))} placeholder="Ex: pedrosantos" autoCapitalize="none" style={{marginBottom:4}}/>
+          <p style={{color:"#7d8472",fontSize:12,margin:"0 0 14px"}}>É com este nome que entras na app.</p>
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
@@ -5944,7 +5951,8 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><NotaEsperaConvidados waiting={waiting} gameInfo={gameInfo}/><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><div className="list-info" style={{marginLeft:4}}><span className="list-name">{p.name}</span><EsperaAte p={p} gameInfo={gameInfo}/></div></div>)}</div></>}
           {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span>{p.paid&&<span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:"#fbbf24"}}>já pagou {gameInfo.cost_per_player||COST}€</span>}</div>)}</div></ExpandableListSection>}
-          <ListaConvidados guests={guests} gameInfo={gameInfo}/>
+          {/* Os convidados já aparecem nos confirmados e na espera. A lista
+              à parte mostrava cada um segunda vez. */}
           {/* Convidar */}
           <ExpandableSection icon="👤" title="Convidar alguém" subtitle={`${spotsLeft>0?`${spotsLeft} vagas`:"Jogo cheio — lista de espera"}`}>
             {spotsLeft===0&&<div className="guest-locked" style={{marginBottom:8}}>🔒 Jogo cheio — convidado vai para lista de espera</div>}

@@ -1791,8 +1791,8 @@ export default function App() {
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} isTreasurer={liveUser.id===treasurerId} treasurerName={treasurerName} showToast={showToast} onToggle={(destino,motivo)=>togglePresence(liveUser.id,destino,motivo)} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} groupId={activeGroupId} currentUser={liveUser} treasurerId={treasurerId} treasurerName={treasurerName} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onReiniciarLista={reiniciarLista} onTogglePresence={togglePresence} onSwapPresence={swapPresence} onAddGuest={(n,pos)=>addGuest(n,liveUser.id,pos)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onMovePlayer={movePlayerToTeam} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid,gd)=>voteForMvp(liveUser.id,vid,gd)} onRemoveMvpVote={gd=>removeMvpVote(liveUser.id,gd)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onDeleteMessage={deleteMessage} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="financas" && liveUser && <FinancasView {...shared} player={liveUser} isAdmin={!!liveUser.is_admin} onPayDebt={payDebt} onAddDebt={addDebt} onSendPush={sendPushNotification} showToast={showToast} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/>}
+      {view==="financas" && liveUser && <><FinancasView {...shared} player={liveUser} isAdmin={!!liveUser.is_admin} onPayDebt={payDebt} onAddDebt={addDebt} onSendPush={sendPushNotification} showToast={showToast} mbwayNumber={mbwayNumber} effectiveCost={gameInfo.cost_per_player||COST} piggybank={piggybank} groupId={activeGroupId} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/><div style={{height:76}}/><BottomNav view="financas" setView={setView} isAdmin={!!liveUser.is_admin} hasDebts={liveUser.is_admin?debts.length>0:debts.some(d=>d.player_id===liveUser.id)} unreadChat={false} showToast={showToast}/></>}
+      {view==="stats"   && liveUser && <><StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")} piggybank={piggybank} effectiveCost={gameInfo.cost_per_player||COST} groupId={activeGroupId}/><div style={{height:76}}/><BottomNav view="stats" setView={setView} isAdmin={!!liveUser.is_admin} hasDebts={liveUser.is_admin?debts.length>0:debts.some(d=>d.player_id===liveUser.id)} unreadChat={false} showToast={showToast}/></>}
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
@@ -2797,7 +2797,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
             <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
             <div style={{display:"flex",gap:12,marginTop:4,flexWrap:"wrap"}}>
               <div style={{display:"flex",alignItems:"center",gap:5,color:"#8a9080"}}><Icon name="clock" size={12}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span></div>
-              {gameInfo.location&&<div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:5,color:"#4ade80",cursor:"pointer"}}><Icon name="pin" size={12}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span></div>}
+              {gameInfo.location&&gameInfo.location!=="A definir"&&<div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:5,color:"#4ade80",cursor:"pointer"}}><Icon name="pin" size={12}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span></div>}
             </div>
           </div>
           <div style={{textAlign:"right"}}>
@@ -2828,7 +2828,8 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
                   <div style={{display:"flex",alignItems:"center",gap:6,color:"#8a9080"}}>
                     <Icon name="clock" size={13}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span>
                   </div>
-                  {gameInfo.location&&(
+                  {gameInfo.location==="A definir"&&<div style={{display:"flex",alignItems:"center",gap:6,color:"#8a9080"}}><Icon name="pin" size={13}/><span style={{fontSize:12,fontWeight:600}}>Local por definir</span></div>}
+                  {gameInfo.location&&gameInfo.location!=="A definir"&&(
                     <div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:6,color:"#4ade80",cursor:"pointer"}}>
                       <Icon name="pin" size={13}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span>
                     </div>
@@ -3043,7 +3044,7 @@ function LandingView({setView}) {
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#8a9080",textAlign:"center",marginBottom:22}}>COMO FUNCIONA</div>
           <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:400,margin:"0 auto"}}>
             {[
-              {n:"1",text:"O admin cria o grupo em menos de 2 minutos"},
+              {n:"1",text:"Crias o teu jogo em menos de 2 minutos"},
               {n:"2",text:"Partilha o código, QR Code ou link com o grupo"},
               {n:"3",text:"Todos confirmam presença, pagam e acompanham as stats"},
             ].map((s,i)=>(
@@ -3060,7 +3061,7 @@ function LandingView({setView}) {
           <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:"white",margin:"0 0 6px"}}>Pronto para o próximo jogo?</h2>
           <p style={{color:"#8a9080",fontSize:13,margin:"0 0 22px"}}>Grátis, sem publicidade, sem complicações.</p>
           <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-            Começa agora — é grátis
+            ⚽ Criar o meu jogo grátis
           </button>
           {/* A seguir a este botão pedimos o nome e o telemóvel a um
               desconhecido. É o momento exato em que faz falta poder ver quem
@@ -3681,6 +3682,12 @@ function PedidoPendenteView({groupName=null, status="pending", onTryAnother, onL
           ? <>O teu pedido para entrar {groupName?<>em <strong style={{color:"#d4af37"}}>{groupName}</strong></>:"no grupo"} não foi aceite pelo admin.</>
           : <>Estás à espera que o admin {groupName?<>de <strong style={{color:"#d4af37"}}>{groupName}</strong></>:""} aprove a tua entrada. Assim que for aceite, avisamos-te.</>}
       </div>
+      {!isRejected&&<>
+        <div style={{color:"#c9cdbd",fontSize:13,lineHeight:1.6,maxWidth:300,margin:"-14px 0 18px"}}>Para ser mais rápido, avisa o admin no vosso grupo de WhatsApp.</div>
+        <button onClick={()=>window.location.reload()} style={{width:"100%",maxWidth:300,padding:"14px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:10}}>
+          Já fui aceite? Ver agora
+        </button>
+      </>}
       <button onClick={onTryAnother} style={{width:"100%",maxWidth:300,padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>
         Tentar outro código
       </button>
@@ -5446,7 +5453,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             </button>
           </div>
         )}
-          <p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 14px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>
+          {!isIn&&!isWait&&!isNao&&<p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 14px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>}
         {/* Só convidados confirmados ("in") entram na conta — um convidado
             que ficou em espera não vai jogar, não gera dívida nenhuma, e
             cobrá-lo já no valor do MBWay estava a inflar o que a pessoa via
@@ -5806,6 +5813,29 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
 
 
+        {/* Os separadores vêm logo no topo. Estavam por baixo do cartão do
+            jogo, do convite e dos botões de Chat: era preciso descer um ecrã
+            inteiro para lhes chegar (revisão de 15/11). */}
+        <div className="tabs" style={{flexWrap:"wrap"}}>
+          {[
+            ["jogo","⚽ Jogo"],
+            ["equipas","🎲 Equipas"],
+            ["jogadores","👥 Jogadores"],
+            ["historico","📋 Histórico"],
+            ["gerir","⚙️ Gerir"],
+          ].map(([k,l])=>(
+            <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)} style={{position:"relative"}}>
+              {l}
+              {k==="gerir"&&pendingCount>0&&(
+                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
+              )}
+              {k==="jogadores"&&pwResetCount>0&&(
+                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pwResetCount}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* Pedidos de entrada também aqui, e não só em "Gerir": no teste de
             08/11 o ecrã principal dizia "estás sozinho neste grupo" com dois
             jogadores à espera de aprovação. Em "Gerir" já aparece lá. */}
@@ -5887,26 +5917,6 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             Ordem por uso: primeiro o jogo em si (Jogo/Equipas/Jogadores, o
             que se consulta toda a semana), depois gestão (Dívidas/
             Histórico/Gerir, o que se mexe mais raramente). */}
-        <div className="tabs" style={{flexWrap:"wrap"}}>
-          {[
-            ["jogo","⚽ Jogo"],
-            ["equipas","🎲 Equipas"],
-            ["jogadores","👥 Jogadores"],
-            ["historico","📋 Histórico"],
-            ["gerir","⚙️ Gerir"],
-          ].map(([k,l])=>(
-            <button key={k} className={`tab ${adminTab===k?"tab-active":""}`} onClick={()=>setAdminTab(k)} style={{position:"relative"}}>
-              {l}
-              {k==="gerir"&&pendingCount>0&&(
-                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pendingCount}</span>
-              )}
-              {k==="jogadores"&&pwResetCount>0&&(
-                <span style={{position:"absolute",top:1,right:6,background:"#dc2626",color:"white",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{pwResetCount}</span>
-              )}
-            </button>
-          ))}
-        </div>
-
         {adminTab==="jogo"&&<>
           <ExpandableCard title={isAdminIn?"✅ Também vais jogar":isAdminWait?"⏳ Estás em espera":isAdminNao?"❌ Disseste que não vais":"⚽ Confirma a tua presença"} defaultOpen={!isAdminIn&&!isAdminWait&&!isAdminNao}>
           <div className={`status-banner sb-${isAdminIn?"in":isAdminWait?"wait":isAdminNao?"nao":"out"}`} style={{marginBottom:10}}>
@@ -5934,7 +5944,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               </button>
             </div>
           )}
-          <p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 10px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>
+          {!isAdminIn&&!isAdminWait&&!isAdminNao&&<p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 10px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{
@@ -6051,9 +6061,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               .map(p=>(
               <div key={p.id} className={`list-row ${p.is_guest?"row-guest":""}`} style={{flexWrap:"wrap",paddingBottom:12,alignItems:"flex-start",gap:8}}>
                 <Avatar player={players.find(pl=>pl.id===p.id)||p} size={30} style={{marginTop:2}}/>
-                <div className="list-info" style={{flex:1}}>
-                  <span className="list-name">{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
-                  <span className="guest-sub">{p.is_guest?`convidado de ${p.invited_by}`:`@${p.username||"sem-username"}`} · {p.status==="in"?"✅":p.status==="wait"?"⏳":p.status==="nao_vou"?"❌":"❓"} · {p.total_games||0} jogos</span>
+                <div className="list-info" style={{flex:1,minWidth:0}}>
+                  <span className="list-name" style={{display:"block",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}{p.is_admin&&<span className="admin-chip"> ★</span>}</span>
+                  <span className="guest-sub" style={{display:"block",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.is_guest?`convidado de ${p.invited_by}`:`@${p.username||"sem-utilizador"} · ${p.total_games||0} jogos`}</span>
                 </div>
                 <button className={`paid-btn ${p.status==="in"?"paid-yes":p.status==="wait"?"st-wait":p.status==="nao_vou"?"paid-no":"st-none"}`} style={{fontSize:11}} onClick={async()=>{
                   // O admin escolhe para onde vai o jogador. Antes era só um

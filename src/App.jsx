@@ -1796,7 +1796,7 @@ export default function App() {
       {view==="zona"    && liveUser && <ZonaView player={liveUser} players={players} onBack={()=>setView(liveUser.is_admin?"admin":"player")} showToast={showToast}/>}
       {view==="novidades" && liveUser && <NovidadesView player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} activeGroupId={activeGroupId} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount} onMudarGrupo={handleMudarGrupo} onEntrarCodigo={()=>setView("entrar-convite")} showToast={showToast}/>}
-      {view==="admin" && liveUser && activeGroupId && primeirosPassos===String(activeGroupId) && <PrimeirosPassos groupId={activeGroupId} gameInfo={gameInfo} showToast={showToast} onDone={async()=>{ try{localStorage.removeItem("hhb_primeiros_passos");}catch(e){} setPrimeirosPassos(null); if(!liveUser.onboarding_seen) await markOnboardingSeen(liveUser.id); await reloadAll(activeGroupId); }}/>}
+      {view==="admin" && liveUser && activeGroupId && primeirosPassos===String(activeGroupId) && <PrimeirosPassos groupId={activeGroupId} playerId={liveUser.id} gameInfo={gameInfo} showToast={showToast} onDone={async()=>{ try{localStorage.removeItem("hhb_primeiros_passos");}catch(e){} setPrimeirosPassos(null); if(!liveUser.onboarding_seen) await markOnboardingSeen(liveUser.id); await reloadAll(activeGroupId); }}/>}
       {(view==="player"||view==="admin") && liveUser && !liveUser.onboarding_seen && primeirosPassos!==String(activeGroupId) && <OnboardingModal isAdmin={!!liveUser.is_admin} sportType={sportType} onDone={()=>markOnboardingSeen(liveUser.id)}/>}
     </div>
   );
@@ -1887,8 +1887,13 @@ function proximoDia(diaSemana,hora){
   d.setDate(d.getDate()+diff);
   return toDateStr(d);
 }
-function PrimeirosPassos({groupId, gameInfo, showToast, onDone}) {
+function PrimeirosPassos({groupId, playerId, gameInfo, showToast, onDone}) {
   const [passo,setPasso]=useState(0);
+  // O pedido de notificações só aparece a quem ainda pode responder: nem a
+  // quem já aceitou ou bloqueou, nem onde o telemóvel não as tem.
+  const podePedirAvisos=estadoNotificacoes()==="default";
+  const [aPedirAvisos,setAPedirAvisos]=useState(false);
+  const totalPassos=podePedirAvisos?4:3;
   const [dia,setDia]=useState(3);
   const [hora,setHora]=useState(gameInfo?.time||"22:30");
   const [local,setLocal]=useState("");
@@ -1918,7 +1923,7 @@ function PrimeirosPassos({groupId, gameInfo, showToast, onDone}) {
     <div style={{position:"fixed",inset:0,background:"#0a0b08",zIndex:1000,overflowY:"auto"}}>
       <div style={{maxWidth:440,margin:"0 auto",padding:"20px 20px 40px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
-          <span style={{color:"#7d8472",fontSize:12,fontWeight:700,letterSpacing:1}}>PASSO {passo+1} DE 3</span>
+          <span style={{color:"#7d8472",fontSize:12,fontWeight:700,letterSpacing:1}}>PASSO {passo+1} DE {totalPassos}</span>
           <button onClick={onDone} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:6}}>Saltar</button>
         </div>
         {passo===0&&<>
@@ -1955,8 +1960,19 @@ function PrimeirosPassos({groupId, gameInfo, showToast, onDone}) {
             <BotaoWhatsApp code={grupo.invite_code} groupName={grupo.name} texto="Enviar convite no WhatsApp" style={{marginBottom:10}}/>
             <button onClick={()=>{navigator.clipboard?.writeText(link).then(()=>showToast("Link copiado ✓"),()=>{});}} style={{width:"100%",padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:24}}>Copiar link do convite</button>
           </>:<p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>A preparar o convite…</p>}
-          <button className="btn-big" style={greenBtn} onClick={onDone}>Feito, ir para o jogo →</button>
+          <button className="btn-big" style={greenBtn} onClick={()=>podePedirAvisos?setPasso(3):onDone()}>{podePedirAvisos?"Seguinte →":"Feito, ir para o jogo →"}</button>
           <p style={{color:"#7d8472",fontSize:12,lineHeight:1.5,marginTop:12,textAlign:"center"}}>O convite fica sempre em "Gerir".</p>
+        </>}
+        {/* Os dois primeiros organizadores de fora (13/11) criaram o grupo e
+            nunca ligaram as notificações: sem telemóvel nem email, não havia
+            maneira de os lembrar do jogo. O pedido passa a vir aqui, com o
+            motivo dito por palavras, em vez de mais tarde num cartão. */}
+        {passo===3&&<>
+          <div style={{fontSize:44,marginBottom:10}}>🔔</div>
+          <h2 style={titulo}>Queres saber quando alguém confirmar?</h2>
+          <p style={sub}>Avisamos-te quando a malta responder e quando o jogo estiver a chegar. Só avisos do teu jogo, nada de publicidade.</p>
+          <button className="btn-big" style={greenBtn} disabled={aPedirAvisos} onClick={async()=>{ setAPedirAvisos(true); try{ await pedirPermissaoNotificacoes(playerId,groupId); }catch(e){} marcarPasso(estadoNotificacoes()==="granted"?"avisos_sim":"avisos_nao"); onDone(); }}>{aPedirAvisos?"A ligar...":"🔔 Sim, avisem-me"}</button>
+          <button onClick={()=>{ marcarPasso("avisos_nao"); try{ localStorage.setItem(NOTIF_ADIADO_KEY,String(Date.now()+7*UM_DIA)); }catch(e){} onDone(); }} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:10}}>Agora não</button>
         </>}
       </div>
     </div>

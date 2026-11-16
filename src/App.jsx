@@ -3067,6 +3067,10 @@ function LandingView({setView}) {
               desconhecido. É o momento exato em que faz falta poder ver quem
               está do outro lado e o que acontece aos dados. */}
           <div style={{marginTop:26,fontSize:11.5,color:"#7d8472"}}>
+            <a href="/guias/" style={{color:"#8a9080",textDecoration:"underline"}}>Guias</a>
+            <span style={{margin:"0 8px"}}>·</span>
+            <a href="/guias/sortear-equipas/" style={{color:"#8a9080",textDecoration:"underline"}}>Sortear equipas</a>
+            <span style={{margin:"0 8px"}}>·</span>
             <a href="/privacidade" style={{color:"#8a9080",textDecoration:"underline"}}>Política de Privacidade</a>
             <span style={{margin:"0 8px"}}>·</span>
             Sem publicidade. Não vendemos os teus dados.

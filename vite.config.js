@@ -36,7 +36,7 @@ export default defineConfig({
         // e quem já tem a app instalada nunca veria a página — veria o ecrã de
         // entrada. Vale para quem partilha o link e para quem o vai buscar de
         // fora (a Play Store, por exemplo).
-        navigateFallbackDenylist: [/^\/privacidade/]
+        navigateFallbackDenylist: [/^\/privacidade/, /^\/guias/]
       }
     })
   ]

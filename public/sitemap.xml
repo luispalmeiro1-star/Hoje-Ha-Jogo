@@ -1,19 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Só há duas páginas reais. O resto da app são ecrãs dentro do JavaScript, sem
-  endereço próprio, por isso não há mais nada para indexar. Quando houver
-  páginas de conteúdo, juntam-se aqui.
--->
+<!-- Gerado por scripts/gerar-guias.py -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://hojehajogo.pt/</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://hojehajogo.pt/guias/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hojehajogo.pt/guias/organizar-jogo-futebol-amigos/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hojehajogo.pt/guias/sortear-equipas/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hojehajogo.pt/guias/lista-de-presencas-futebol/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hojehajogo.pt/guias/dividir-custo-do-campo/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hojehajogo.pt/guias/lista-de-espera-futebol/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://hojehajogo.pt/privacidade</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

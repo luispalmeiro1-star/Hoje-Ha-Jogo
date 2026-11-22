@@ -2762,6 +2762,29 @@ function useCountUp(value, duration=500) {
   },[value, duration]);
   return display;
 }
+// Convite para o grupo, ao lado da contagem. Os quatro primeiros grupos de
+// fora (13–21/11) foram criados e nunca convidaram ninguém: o convite vivia
+// em "Gerir". Aqui fica à vista de todos, admin e jogadores — quem entra pelo
+// link continua a precisar da aprovação do admin.
+function ConvidarParaGrupo({groupId, groupName}) {
+  const [code,setCode]=useState(null);
+  useEffect(()=>{
+    if(!groupId) return;
+    let vivo=true;
+    supabase.from("groups").select("invite_code").eq("id",groupId).maybeSingle()
+      .then(({data})=>{ if(vivo&&data?.invite_code) setCode(data.invite_code); },()=>{});
+    return ()=>{ vivo=false; };
+  },[groupId]);
+  if(!code) return null;
+  const href=`https://wa.me/?text=${encodeURIComponent(inviteMessage(code,groupName))}`;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="convidar-grupo" aria-label="Convidar amigos para o grupo pelo WhatsApp">
+      <WhatsAppIcon size={18}/>
+      <span><b>Convidar</b><small>para o grupo</small></span>
+    </a>
+  );
+}
+
 function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
   const confirmadosAnimado=useCountUp(confirmed.length);
   const pct=Math.round((confirmed.length/maxPlayers)*100);
@@ -2857,9 +2880,12 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
                   <Icon name="cal" size={13}/> <span style={{textDecoration:"underline"}}>Adicionar ao calendário</span>
                 </button>
               </div>
-              <div style={{flexShrink:0,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",textAlign:"center",boxShadow:"inset 0 2px 6px rgba(0,0,0,0.5)"}}>
-                <div style={{fontSize:10,color:"#7d8472",fontWeight:800,letterSpacing:1.5,marginBottom:2}}>FALTAM</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:38,color:"#d4af37",lineHeight:1,letterSpacing:1,fontVariantNumeric:"tabular-nums"}}>{cdStr}</div>
+              <div style={{flexShrink:0,display:"flex",flexDirection:"column",gap:10,alignItems:"stretch"}}>
+                <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",textAlign:"center",boxShadow:"inset 0 2px 6px rgba(0,0,0,0.5)"}}>
+                  <div style={{fontSize:10,color:"#7d8472",fontWeight:800,letterSpacing:1.5,marginBottom:2}}>FALTAM</div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:38,color:"#d4af37",lineHeight:1,letterSpacing:1,fontVariantNumeric:"tabular-nums"}}>{cdStr}</div>
+                </div>
+                {isLoggedIn&&<ConvidarParaGrupo groupId={gameInfo.group_id} groupName={gameInfo.app_name}/>}
               </div>
             </div>
           </div>
@@ -7122,6 +7148,12 @@ input,textarea,select{font-size:16px !important;}
 .btn-nao{background:#14160f;border:2px solid #3a2020;color:#d6a1a1;box-shadow:none;}
 .btn-nao:hover{border-color:#5c2c2c;color:#f0b8b8;}
 .btn-add{background:#1ea851;color:white;border:none;border-radius:10px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
+.convidar-grupo{display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:7px 10px;border-radius:10px;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.45);color:#4ade80;text-decoration:none;text-align:left;transition:background .15s,transform .1s;}
+.convidar-grupo span{display:flex;flex-direction:column;line-height:1.05;}
+.convidar-grupo b{font-size:13px;font-weight:800;color:#eafff1;}
+.convidar-grupo small{font-size:10.5px;font-weight:700;color:#4ade80;letter-spacing:.2px;}
+.convidar-grupo:active{transform:scale(.97);background:rgba(37,211,102,0.2);}
+.convidar-grupo:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 .btn-danger-full{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;width:100%;text-align:center;}
 .icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;min-width:40px;min-height:40px;justify-content:center;color:#8a9080;cursor:pointer;display:flex;align-items:center;}
 .icon-ghost:hover{background:#1a2e1a;color:#f0f0f0;}

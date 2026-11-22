@@ -2785,6 +2785,28 @@ function ConvidarParaGrupo({groupId, groupName}) {
   );
 }
 
+// Lembrar quem ainda não respondeu. Antes era preciso ir ao WhatsApp e
+// escrever os nomes à mão — o trabalho que quem organiza repete todas as
+// semanas. Um toque abre o WhatsApp com a mensagem pronta, com os nomes.
+function mensagemLembrete({notYet=[],confirmed=[],gameInfo,maxPlayers}) {
+  const quando=gameInfo?.date?formatDisplayDate(gameInfo.date):"o próximo jogo";
+  const MAX=15;
+  const nomes=notYet.map(p=>p.name).filter(Boolean);
+  const lista=nomes.length>MAX?`${nomes.slice(0,MAX).join(", ")} e mais ${nomes.length-MAX}`:nomes.join(", ");
+  return `⚽ ${quando}${gameInfo?.time?` às ${gameInfo.time}`:""} — já somos ${confirmed.length}/${maxPlayers}.\n\nAinda falta responder: ${lista}.\n\nVais ou não vais? Responde aqui 👉 https://hojehajogo.pt`;
+}
+function LembrarSemResposta({notYet=[],confirmed=[],gameInfo,maxPlayers}) {
+  if(!notYet.length||confirmed.length>=maxPlayers) return null;
+  const href=`https://wa.me/?text=${encodeURIComponent(mensagemLembrete({notYet,confirmed,gameInfo,maxPlayers}))}`;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="lembrar-sem-resposta">
+      <span aria-hidden="true">📣</span>
+      <span>Lembrar {notYet.length===1?"quem falta responder":`os ${notYet.length} que faltam responder`}</span>
+      <WhatsAppIcon size={15}/>
+    </a>
+  );
+}
+
 function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
   const confirmadosAnimado=useCountUp(confirmed.length);
   const pct=Math.round((confirmed.length/maxPlayers)*100);
@@ -2911,6 +2933,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               {confirmed.length>0&&<ExpandableList confirmed={confirmed} waiting={waiting} gameInfo={gameInfo}/>}
             </div>
           )}
+          {isLoggedIn&&<LembrarSemResposta notYet={notYet} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers}/>}
         </>
       )}
     </div>
@@ -7141,6 +7164,10 @@ input,textarea,select{font-size:16px !important;}
 .btn-nao{background:#14160f;border:2px solid #3a2020;color:#d6a1a1;box-shadow:none;}
 .btn-nao:hover{border-color:#5c2c2c;color:#f0b8b8;}
 .btn-add{background:#1ea851;color:white;border:none;border-radius:10px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
+.lembrar-sem-resposta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;min-height:44px;padding:10px 14px;border-radius:10px;background:#0a0b08;border:1px solid #2e3324;color:#e9eadf;font-size:13px;font-weight:700;text-decoration:none;transition:background .15s,transform .1s;}
+.lembrar-sem-resposta svg{color:#4ade80;}
+.lembrar-sem-resposta:active{transform:scale(.98);background:#14160f;}
+.lembrar-sem-resposta:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 .convidar-grupo{display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:7px 10px;border-radius:10px;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.45);color:#4ade80;text-decoration:none;text-align:left;transition:background .15s,transform .1s;}
 .convidar-grupo span{display:flex;flex-direction:column;line-height:1.05;}
 .convidar-grupo b{font-size:13px;font-weight:800;color:#eafff1;}

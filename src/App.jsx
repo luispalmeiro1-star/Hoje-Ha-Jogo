@@ -1957,7 +1957,7 @@ function PrimeirosPassos({groupId, playerId, gameInfo, showToast, onDone}) {
           <h2 style={titulo}>Convida a malta</h2>
           <p style={sub}>Manda o convite para o grupo de WhatsApp do jogo. Quem tocar no link entra direto e já pode dizer se vai.</p>
           {grupo?.invite_code?<>
-            <BotaoWhatsApp code={grupo.invite_code} groupName={grupo.name} texto="Enviar convite no WhatsApp" style={{marginBottom:10}}/>
+            <BotaoWhatsApp code={grupo.invite_code} groupName={grupo.name} style={{marginBottom:10}}/>
             <button onClick={()=>{navigator.clipboard?.writeText(link).then(()=>showToast("Link copiado ✓"),()=>{});}} style={{width:"100%",padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:24}}>Copiar link do convite</button>
           </>:<p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>A preparar o convite…</p>}
           <button className="btn-big" style={greenBtn} onClick={()=>podePedirAvisos?setPasso(3):onDone()}>{podePedirAvisos?"Seguinte →":"Feito, ir para o jogo →"}</button>
@@ -2569,7 +2569,7 @@ function WhatsAppIcon({size=18}) {
 
 // Abre o WhatsApp com a mensagem já escrita e deixa a pessoa escolher a
 // conversa. O wa.me funciona no telemóvel e no computador.
-function BotaoWhatsApp({code, groupName, texto="Partilhar no WhatsApp", style={}}) {
+function BotaoWhatsApp({code, groupName, texto="Convidar para o grupo", style={}}) {
   if(!code) return null;
   const href=`https://wa.me/?text=${encodeURIComponent(inviteMessage(code,groupName))}`;
   return (
@@ -3589,13 +3589,7 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
     }
   };
 
-  const handleShare = () => {
-    if(navigator.share){
-      navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo "${groupName}"!\nCódigo: ${inviteCode}`,url:"https://hojehajogo.pt"});
-    } else {
-      navigator.clipboard.writeText(inviteCode).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); showToast("Código copiado ✓"); });
-    }
-  };
+
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inviteCode).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); showToast("Código copiado ✓"); });
@@ -5834,10 +5828,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
     supabase.from("groups").select("invite_code,mbway_number,max_players,guest_release_minutes").eq("id",groupId||currentUser.group_id).maybeSingle().then(({data})=>{ if(data){ setInviteCode(data.invite_code); setMbwayNumber(data.mbway_number||""); setEditMaxPlayers(data.max_players||12); setEditGuestHours((data.guest_release_minutes??1890)/60); } });
   },[currentUser?.group_id]);
 
-  const handleShareCode = () => {
-    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${inviteCode}`,url:"https://hojehajogo.pt"}); }
-    else { navigator.clipboard.writeText(inviteCode).then(()=>{setCodeCopied(true);setTimeout(()=>setCodeCopied(false),2500);showToast("Código copiado ✓");}); }
-  };
+
   const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode).then(()=>{setCodeCopied(true);setTimeout(()=>setCodeCopied(false),2500);showToast("Código copiado ✓");});
   };
@@ -7068,8 +7059,10 @@ function GroupCodeCard({groupId, isAdmin=false, showToast=()=>{}}) {
   };
 
   const handleShare=()=>{
-    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${code}`,url:`https://hojehajogo.pt?code=${code}`}); }
-    else { navigator.clipboard.writeText(code).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); }
+    // A mesma mensagem que os outros botões de convite da app.
+    const t=inviteMessage(code);
+    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:t}).catch(()=>{}); }
+    else { navigator.clipboard.writeText(t).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); }
   };
 
   return (

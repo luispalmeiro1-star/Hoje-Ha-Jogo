@@ -2807,6 +2807,54 @@ function LembrarSemResposta({notYet=[],confirmed=[],gameInfo,maxPlayers}) {
   );
 }
 
+// Botão de partilha pelo WhatsApp, no mesmo estilo do "Lembrar".
+function BotaoAcaoWhatsApp({texto, emoji, mensagem, style={}}) {
+  const href=`https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="lembrar-sem-resposta" style={style}>
+      <span aria-hidden="true">{emoji}</span><span>{texto}</span><WhatsAppIcon size={15}/>
+    </a>
+  );
+}
+
+// Cobrar o grupo todo de uma vez: uma mensagem para o grupo de WhatsApp com
+// quem deve quanto e o MB WAY. Até aqui só havia o lembrete pessoa a pessoa.
+function mensagemCobranca(devedores, mbwayNumber) {
+  const linhas=devedores.map(m=>`• ${m.name}: ${m.total}€`).join("\n");
+  const total=eur(devedores.reduce((s,m)=>s+Number(m.total),0));
+  return `💸 Contas do futebol — faltam ${total}€\n\n${linhas}${mbwayNumber?`\n\nMB WAY: ${mbwayNumber}`:""}\n\nVê o que deves 👉 https://hojehajogo.pt`;
+}
+
+// As equipas sorteadas, prontas a colar no grupo.
+function mensagemEquipas(confirmed, sportType, teamConfig, gameInfo) {
+  const letras=["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType));
+  const blocos=letras.map(t=>{ const js=confirmed.filter(p=>p.team===t); return js.length?`*${teamLabel(teamConfig,t)}*\n${js.map((p,i)=>`${i+1}. ${p.name}`).join("\n")}`:null; }).filter(Boolean);
+  const sup=confirmed.filter(p=>!p.team||p.team==="SUB");
+  if(sup.length) blocos.push(`*Suplentes*\n${sup.map(p=>p.name).join(", ")}`);
+  const quando=gameInfo?.date?formatDisplayDate(gameInfo.date):"";
+  return `🎽 Equipas${quando?` — ${quando}`:""}${gameInfo?.time?` às ${gameInfo.time}`:""}\n\n${blocos.join("\n\n")}`;
+}
+
+// Pedir reforços quando faltam poucos e o jogo está perto. Usa o link da vaga
+// aberta se estiver ligada (entra sem conta); senão, o convite do grupo.
+function PedirReforcos({spotsLeft, gameInfo, inviteCode}) {
+  if(!gameInfo?.date||spotsLeft<1||spotsLeft>3) return null;
+  const [y,m,d]=gameInfo.date.split("-").map(Number); const [h,mi]=(gameInfo.time||"22:30").split(":").map(Number);
+  const faltaHoras=(new Date(y,m-1,d,h,mi)-new Date())/36e5;
+  if(faltaHoras<0||faltaHoras>48) return null;
+  const vaga=gameInfo.open_join_enabled&&gameInfo.open_join_code;
+  const link=vaga?`https://hojehajogo.pt?vaga=${gameInfo.open_join_code}`:(inviteCode?inviteLink(inviteCode):"https://hojehajogo.pt");
+  const quando=formatDisplayDate(gameInfo.date);
+  const msg=`🚨 ${spotsLeft===1?"Falta 1":`Faltam ${spotsLeft}`} para o jogo de ${quando} às ${gameInfo.time||"22:30"}${gameInfo.location&&gameInfo.location!=="A definir"?`, ${gameInfo.location}`:""}!\n\nQuem quer vir? Entra aqui 👉 ${link}`;
+  return (
+    <div style={{background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.35)",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+      <div style={{fontSize:13,fontWeight:800,color:"#fbbf24",marginBottom:2}}>{spotsLeft===1?"Falta 1 jogador":`Faltam ${spotsLeft} jogadores`}</div>
+      <div style={{fontSize:12,color:"#a3a897",lineHeight:1.45}}>{vaga?"Partilha a vaga aberta: quem entrar não precisa de conta.":"Partilha num grupo de WhatsApp para arranjar reforços."}</div>
+      <BotaoAcaoWhatsApp emoji="🚨" texto="Pedir reforços" mensagem={msg}/>
+    </div>
+  );
+}
+
 function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
   const confirmadosAnimado=useCountUp(confirmed.length);
   const pct=Math.round((confirmed.length/maxPlayers)*100);
@@ -4427,6 +4475,7 @@ function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,o
     <>
           <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
           {debtsByPlayer.length===0&&<p className="empty-msg">🎉 Sem dívidas em aberto!</p>}
+          {debtsByPlayer.length>0&&<BotaoAcaoWhatsApp emoji="💸" texto={debtsByPlayer.length===1?"Cobrar no grupo":`Cobrar os ${debtsByPlayer.length} no grupo`} mensagem={mensagemCobranca(debtsByPlayer,mbwayNumber)} style={{marginTop:0,marginBottom:12}}/>}
           {debtsByPlayer.map(m=>(
             <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -5978,6 +6027,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             que se consulta toda a semana), depois gestão (Dívidas/
             Histórico/Gerir, o que se mexe mais raramente). */}
         {adminTab==="jogo"&&<>
+          <PedirReforcos spotsLeft={spotsLeft} gameInfo={gameInfo} inviteCode={inviteCode}/>
           <ExpandableCard title={isAdminIn?"✅ Também vais jogar":isAdminWait?"⏳ Estás em espera":isAdminNao?"❌ Disseste que não vais":"⚽ Confirma a tua presença"} defaultOpen={!isAdminIn&&!isAdminWait&&!isAdminNao}>
           <div className={`status-banner sb-${isAdminIn?"in":isAdminWait?"wait":isAdminNao?"nao":"out"}`} style={{marginBottom:10}}>
             <span className="sb-icon">{isAdminIn?"✅":isAdminWait?"⏳":isAdminNao?"❌":"⚽"}</span>
@@ -6083,6 +6133,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             :<>
               <div style={{background:"#14160f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{numTeamsFor(confirmed.length,sportType)===3?`🏆 3 equipas de ${cfg.teamSize}`:`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
               <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams} sportType={sportType} isAdmin={true} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/>
+              {confirmed.some(p=>p.team&&p.team!=="SUB")&&<BotaoAcaoWhatsApp emoji="🎽" texto="Partilhar as equipas" mensagem={mensagemEquipas(confirmed,sportType,teamConfig,gameInfo)}/>}
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
                 {["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType)).map(t=>(

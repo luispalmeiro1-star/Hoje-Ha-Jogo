@@ -357,13 +357,13 @@ function PasswordDefinida({nome, valor, onFechar, showToast}) {
     <div style={{width:"100%",marginTop:8,background:"rgba(74,222,128,0.09)",border:"1px solid rgba(74,222,128,0.42)",borderRadius:10,padding:"10px 12px"}}>
       <div style={{fontSize:11,color:"#4ade80",fontWeight:800,marginBottom:6}}>✓ Password de {nome} definida</div>
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
-        <code style={{flex:1,minWidth:0,background:"#0a0b08",border:"1px solid #23271b",borderRadius:8,padding:"8px 10px",fontSize:14,color:"#fff",fontFamily:"monospace",wordBreak:"break-all"}}>{valor}</code>
+        <code style={{flex:1,minWidth:0,background:"#0d1410",border:"1px solid #2a362c",borderRadius:8,padding:"8px 10px",fontSize:14,color:"#fff",fontFamily:"monospace",wordBreak:"break-all"}}>{valor}</code>
         <button onClick={()=>{navigator.clipboard.writeText(valor);showToast("Password copiada ✓");}} style={{background:"rgba(212,175,55,0.15)",border:"1px solid #d4af37",borderRadius:8,padding:"8px 10px",color:"#d4af37",fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>
           <Icon name="copy" size={13}/> Copiar
         </button>
         <button className="icon-ghost" onClick={onFechar}><Icon name="x" size={13}/></button>
       </div>
-      <div style={{fontSize:10.5,color:"#8a9080",marginTop:6}}>Copia e envia-lha tal e qual. É esta que funciona.</div>
+      <div style={{fontSize:10.5,color:"#aab3a3",marginTop:6}}>Copia e envia-lha tal e qual. É esta que funciona.</div>
     </div>
   );
 }
@@ -1754,7 +1754,7 @@ export default function App() {
   const shared = {gameInfo:{...gameInfo,guestReleaseMin},cdStr,confirmed,waiting,notYet,naoVao,guests,spotsLeft,members,players,history,piggybank,debts,payments,messages,mvpVotes,attendance,lastClosedGame,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost,maxPlayers,treasurerId,treasurerName,sportType,autoReassignTeams,rentPerGame,teamConfig};
 
   if(loading) return (
-    <div style={{minHeight:"100vh",background:"#0a0b08",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+    <div style={{minHeight:"100vh",background:"#0d1410",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
       <style>{getCss()}</style>
       <div style={{fontSize:48}}>⚽</div>
       <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"white",letterSpacing:2}}>HOJE HÁ JOGO</div>
@@ -1763,7 +1763,7 @@ export default function App() {
   );
 
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh"}}>
       <style>{getCss()}</style>
       {showIconNotice&&<IconUpdateNotice onDismiss={dismissIconNotice}/>}
       {toast&&<div className={`toast toast-${toast.type}`} role="status">{toast.msg}{toast.acao&&<button onClick={()=>{ const f=toast.acao.fn; setToast(null); f(); }} className="toast-undo">{toast.acao.label}</button>}</div>}
@@ -1806,13 +1806,13 @@ export default function App() {
 function IconUpdateNotice({onDismiss}) {
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onDismiss}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"26px 22px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14,alignItems:"center",textAlign:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#111a14",border:"1px solid #2a362c",borderRadius:16,padding:"26px 22px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14,alignItems:"center",textAlign:"center"}}>
         <div style={{fontSize:40}}>🔄</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white",letterSpacing:1}}>NOVA ATUALIZAÇÃO</div>
-        <p style={{fontSize:13,color:"#8a9080",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
+        <p style={{fontSize:13,color:"#aab3a3",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
           Há melhorias novas na app, mas o teu telemóvel não as aplica sozinho ao que já tens instalado.
         </p>
-        <p style={{fontSize:13,color:"#8a9080",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
+        <p style={{fontSize:13,color:"#aab3a3",lineHeight:1.5,margin:0,fontFamily:"'DM Sans',sans-serif"}}>
           Para as teres: <strong style={{color:"white"}}>desinstala a app e instala-a outra vez</strong>. O link é o mesmo, não perdes nada.
         </p>
         <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginTop:6}} onClick={onDismiss}>Entendi</button>
@@ -1836,10 +1836,10 @@ function ConfirmModal({message, danger=false, confirmLabel, cancelLabel="Cancela
   },[onCancel]);
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#111a14",border:"1px solid #2a362c",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:16}}>
         <div style={{fontSize:14,color:"white",lineHeight:1.5,fontFamily:"'DM Sans',sans-serif"}}>{message}</div>
         <div style={{display:"flex",gap:10}}>
-          <button ref={danger?safeBtnRef:null} onClick={onCancel} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{cancelLabel}</button>
+          <button ref={danger?safeBtnRef:null} onClick={onCancel} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #2a362c",background:"transparent",color:"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{cancelLabel}</button>
           <button ref={danger?null:safeBtnRef} onClick={onConfirm} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"linear-gradient(180deg,#2fd66b,#1ea851)",color:danger?"white":"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{confirmLabel||"Confirmar"}</button>
         </div>
       </div>
@@ -1860,13 +1860,13 @@ function ChoiceModal({message, options, onSelect, onCancel}) {
   },[onCancel]);
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onCancel}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#0f100b",border:"1px solid #23271b",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14}}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:340,background:"#111a14",border:"1px solid #2a362c",borderRadius:16,padding:"22px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.5)",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{fontSize:14,color:"white",lineHeight:1.5,fontFamily:"'DM Sans',sans-serif"}}>{message}</div>
         <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
           {options.map(opt=>(
-            <button key={opt.value} onClick={()=>onSelect(opt.value)} style={{padding:"11px",borderRadius:10,border:opt.danger?"none":opt.neutral?"1px solid #23271b":"2px solid #3a2020",background:opt.danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"#14160f",color:opt.danger?"white":opt.neutral?"white":"#d6a1a1",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{opt.label}</button>
+            <button key={opt.value} onClick={()=>onSelect(opt.value)} style={{padding:"11px",borderRadius:10,border:opt.danger?"none":opt.neutral?"1px solid #2a362c":"2px solid #3a2020",background:opt.danger?"linear-gradient(135deg,#ef4444,#b91c1c)":"#18211a",color:opt.danger?"white":opt.neutral?"white":"#d6a1a1",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{opt.label}</button>
           ))}
-          <button ref={cancelRef} onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
+          <button ref={cancelRef} onClick={onCancel} style={{padding:"11px",borderRadius:10,border:"1px solid #2a362c",background:"transparent",color:"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -1913,18 +1913,18 @@ function PrimeirosPassos({groupId, playerId, gameInfo, showToast, onDone}) {
     if(r1.error||r2.error){ showToast("Não foi possível guardar. Podes acertar depois em Gerir.","err"); }
     setPasso(2);
   };
-  const chip=(ativo)=>({padding:"10px 12px",borderRadius:10,border:`2px solid ${ativo?"#1ea851":"#23271b"}`,background:ativo?"rgba(30,168,81,0.15)":"#14160f",color:ativo?"#4ade80":"#a3a897",fontWeight:800,fontSize:14,cursor:"pointer"});
+  const chip=(ativo)=>({padding:"10px 12px",borderRadius:10,border:`2px solid ${ativo?"#1ea851":"#2a362c"}`,background:ativo?"rgba(30,168,81,0.15)":"#18211a",color:ativo?"#4ade80":"#a3a897",fontWeight:800,fontSize:14,cursor:"pointer"});
   const titulo={color:"white",fontWeight:800,fontSize:22,lineHeight:1.25,margin:"0 0 6px"};
-  const sub={color:"#8a9080",fontSize:13.5,margin:"0 0 18px",lineHeight:1.5};
-  const rotulo={color:"#8a9080",fontSize:11,fontWeight:700,letterSpacing:0.3,display:"block",margin:"16px 0 8px"};
+  const sub={color:"#aab3a3",fontSize:13.5,margin:"0 0 18px",lineHeight:1.5};
+  const rotulo={color:"#aab3a3",fontSize:11,fontWeight:700,letterSpacing:0.3,display:"block",margin:"16px 0 8px"};
   const greenBtn={background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",border:"none"};
   const link=grupo?.invite_code?`https://hojehajogo.pt?code=${grupo.invite_code}`:"";
   return (
-    <div style={{position:"fixed",inset:0,background:"#0a0b08",zIndex:1000,overflowY:"auto"}}>
+    <div style={{position:"fixed",inset:0,background:"#0d1410",zIndex:1000,overflowY:"auto"}}>
       <div style={{maxWidth:440,margin:"0 auto",padding:"20px 20px 40px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
-          <span style={{color:"#7d8472",fontSize:12,fontWeight:700,letterSpacing:1}}>PASSO {passo+1} DE {totalPassos}</span>
-          <button onClick={onDone} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:6}}>Saltar</button>
+          <span style={{color:"#98a290",fontSize:12,fontWeight:700,letterSpacing:1}}>PASSO {passo+1} DE {totalPassos}</span>
+          <button onClick={onDone} style={{background:"none",border:"none",color:"#aab3a3",fontSize:13,fontWeight:700,cursor:"pointer",padding:6}}>Saltar</button>
         </div>
         {passo===0&&<>
           <h2 style={titulo}>Quando jogam?</h2>
@@ -1951,17 +1951,17 @@ function PrimeirosPassos({groupId, playerId, gameInfo, showToast, onDone}) {
             {Object.entries(SPORT_CONFIG).map(([k,c])=><button key={k} type="button" onClick={()=>setTipo(k)} style={chip(tipo===k)}>{c.label}</button>)}
           </div>
           <button className="btn-big" style={greenBtn} disabled={aGuardar} onClick={guardar}>{aGuardar?"A guardar...":"Seguinte →"}</button>
-          <button onClick={()=>setPasso(0)} style={{display:"block",margin:"12px auto 0",background:"none",border:"none",color:"#8a9080",fontSize:13,cursor:"pointer"}}>← Voltar</button>
+          <button onClick={()=>setPasso(0)} style={{display:"block",margin:"12px auto 0",background:"none",border:"none",color:"#aab3a3",fontSize:13,cursor:"pointer"}}>← Voltar</button>
         </>}
         {passo===2&&<>
           <h2 style={titulo}>Convida a malta</h2>
           <p style={sub}>Manda o convite para o grupo de WhatsApp do jogo. Quem tocar no link entra direto e já pode dizer se vai.</p>
           {grupo?.invite_code?<>
             <BotaoWhatsApp code={grupo.invite_code} groupName={grupo.name} style={{marginBottom:10}}/>
-            <button onClick={()=>{navigator.clipboard?.writeText(link).then(()=>showToast("Link copiado ✓"),()=>{});}} style={{width:"100%",padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:24}}>Copiar link do convite</button>
-          </>:<p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>A preparar o convite…</p>}
+            <button onClick={()=>{navigator.clipboard?.writeText(link).then(()=>showToast("Link copiado ✓"),()=>{});}} style={{width:"100%",padding:"14px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:24}}>Copiar link do convite</button>
+          </>:<p style={{color:"#aab3a3",fontSize:13,marginBottom:24}}>A preparar o convite…</p>}
           <button className="btn-big" style={greenBtn} onClick={()=>podePedirAvisos?setPasso(3):onDone()}>{podePedirAvisos?"Seguinte →":"Feito, ir para o jogo →"}</button>
-          <p style={{color:"#7d8472",fontSize:12,lineHeight:1.5,marginTop:12,textAlign:"center"}}>O convite fica sempre em "Gerir".</p>
+          <p style={{color:"#98a290",fontSize:12,lineHeight:1.5,marginTop:12,textAlign:"center"}}>O convite fica sempre em "Gerir".</p>
         </>}
         {/* Os dois primeiros organizadores de fora (13/11) criaram o grupo e
             nunca ligaram as notificações: sem telemóvel nem email, não havia
@@ -1972,7 +1972,7 @@ function PrimeirosPassos({groupId, playerId, gameInfo, showToast, onDone}) {
           <h2 style={titulo}>Queres saber quando alguém confirmar?</h2>
           <p style={sub}>Avisamos-te quando a malta responder e quando o jogo estiver a chegar. Só avisos do teu jogo, nada de publicidade.</p>
           <button className="btn-big" style={greenBtn} disabled={aPedirAvisos} onClick={async()=>{ setAPedirAvisos(true); try{ await pedirPermissaoNotificacoes(playerId,groupId); }catch(e){} marcarPasso(estadoNotificacoes()==="granted"?"avisos_sim":"avisos_nao"); onDone(); }}>{aPedirAvisos?"A ligar...":"🔔 Sim, avisem-me"}</button>
-          <button onClick={()=>{ marcarPasso("avisos_nao"); try{ localStorage.setItem(NOTIF_ADIADO_KEY,String(Date.now()+7*UM_DIA)); }catch(e){} onDone(); }} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",padding:10}}>Agora não</button>
+          <button onClick={()=>{ marcarPasso("avisos_nao"); try{ localStorage.setItem(NOTIF_ADIADO_KEY,String(Date.now()+7*UM_DIA)); }catch(e){} onDone(); }} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#aab3a3",fontSize:13,fontWeight:700,cursor:"pointer",padding:10}}>Agora não</button>
         </>}
       </div>
     </div>
@@ -2005,17 +2005,17 @@ function OnboardingModal({isAdmin, sportType="futsal", onDone}) {
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{width:"100%",maxWidth:480,background:"#0f100b",borderTop:"1px solid #23271b",borderRadius:"20px 20px 0 0",padding:"28px 24px 24px",display:"flex",flexDirection:"column",gap:20,boxShadow:"0 -8px 24px rgba(0,0,0,0.6)"}}>
+      <div style={{width:"100%",maxWidth:480,background:"#111a14",borderTop:"1px solid #2a362c",borderRadius:"20px 20px 0 0",padding:"28px 24px 24px",display:"flex",flexDirection:"column",gap:20,boxShadow:"0 -8px 24px rgba(0,0,0,0.6)"}}>
         <div style={{display:"flex",justifyContent:"flex-end"}}>
-          {!isLast && <button onClick={onDone} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer"}}>Saltar</button>}
+          {!isLast && <button onClick={onDone} style={{background:"none",border:"none",color:"#aab3a3",fontSize:13,fontWeight:700,cursor:"pointer"}}>Saltar</button>}
         </div>
         <div style={{textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:14,minHeight:180}}>
           <div style={{fontSize:56}}>{s.icon}</div>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1}}>{s.title}</div>
-          <p style={{fontSize:14,color:"#8a9080",lineHeight:1.5,margin:0,maxWidth:360}}>{s.text}</p>
+          <p style={{fontSize:14,color:"#aab3a3",lineHeight:1.5,margin:0,maxWidth:360}}>{s.text}</p>
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:6}}>
-          {slides.map((_,i)=><div key={i} style={{width:6,height:6,borderRadius:3,background:i===step?"#d4af37":"#23271b",transform:i===step?"scaleX(3)":"scaleX(1)",transformOrigin:"center",transition:"transform 0.2s, background 0.2s"}}/>)}
+          {slides.map((_,i)=><div key={i} style={{width:6,height:6,borderRadius:3,background:i===step?"#d4af37":"#2a362c",transform:i===step?"scaleX(3)":"scaleX(1)",transformOrigin:"center",transition:"transform 0.2s, background 0.2s"}}/>)}
         </div>
         <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>isLast?onDone():setStep(s=>s+1)}>
           {isLast?"COMEÇAR":"SEGUINTE"} {!isLast&&<Icon name="right" size={14}/>}
@@ -2039,10 +2039,10 @@ function PartilharApp({lastClosedGame, userId}) {
   if(!jogou||isNaN(fechoMs)||Date.now()-fechoMs>4*86400000) return null;
   const fechar=()=>{ try{ localStorage.setItem(chave,"1"); }catch(e){} setFechado(true); };
   return (
-    <div style={{background:"#14160f",border:"1px solid #2e3324",borderRadius:14,padding:"14px 14px 12px",marginBottom:8,position:"relative"}}>
-      <button onClick={fechar} aria-label="Fechar" style={{position:"absolute",top:6,right:6,background:"none",border:"none",color:"#7d8472",fontSize:18,cursor:"pointer",padding:6,lineHeight:1}}>×</button>
+    <div style={{background:"#18211a",border:"1px solid #2e3324",borderRadius:14,padding:"14px 14px 12px",marginBottom:8,position:"relative"}}>
+      <button onClick={fechar} aria-label="Fechar" style={{position:"absolute",top:6,right:6,background:"none",border:"none",color:"#98a290",fontSize:18,cursor:"pointer",padding:6,lineHeight:1}}>×</button>
       <div style={{fontSize:14,fontWeight:800,color:"white",marginBottom:4,paddingRight:24}}>Jogas noutro grupo?</div>
-      <div style={{fontSize:12.5,color:"#8a9080",lineHeight:1.5,marginBottom:12}}>Mostra-lhes a app — assim também deixam de andar a perguntar "quem vai?".</div>
+      <div style={{fontSize:12.5,color:"#aab3a3",lineHeight:1.5,marginBottom:12}}>Mostra-lhes a app — assim também deixam de andar a perguntar "quem vai?".</div>
       <a href={`https://wa.me/?text=${encodeURIComponent(MENSAGEM_PARTILHA)}`} target="_blank" rel="noopener noreferrer" onClick={()=>{marcarPasso("partilhou_app");fechar();}}
          style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",background:"#25D366",color:"#052e16",borderRadius:12,fontWeight:800,fontSize:14,textDecoration:"none"}}>
         <WhatsAppIcon size={18}/> Mostrar no WhatsApp
@@ -2070,7 +2070,7 @@ function DebtRow({debt, onPayDebt, mbwayNumber=""}) {
   return (
     <div style={{background:"#1a1410",borderRadius:8,padding:"8px 10px",marginBottom:5,border:"1px solid #92400e"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:12,color:"#8a9080"}}>{descDivida(debt.description)} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
+        <span style={{fontSize:12,color:"#aab3a3"}}>{descDivida(debt.description)} · <strong style={{color:"#dc2626"}}>{debt.amount}€</strong></span>
         <div style={{display:"flex",gap:6}}>
           <span style={{fontSize:11,fontWeight:700,color:"#f87171",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>💸 Em dívida</span>
           <button style={{background:"#1ea851",border:"none",borderRadius:8,padding:"8px 12px",fontSize:11,fontWeight:800,color:"#04240f",cursor:"pointer",whiteSpace:"nowrap"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
@@ -2099,7 +2099,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
         const pPct=totalGames>0?Math.round(((p.total_games||0)/totalGames)*100):0;
         const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
         return (
-          <div key={p.id} style={{background:"#14160f",border:isMe?"2px solid #1ea851":"1px solid #23271b",borderRadius:12,overflow:"hidden"}}>
+          <div key={p.id} style={{background:"#18211a",border:isMe?"2px solid #1ea851":"1px solid #2a362c",borderRadius:12,overflow:"hidden"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",cursor:"pointer"}} onClick={()=>setExpandedId(isOpen?null:p.id)}>
               <span style={{fontSize:12,fontWeight:800,color:i===0?"#fbbf24":i===1?"#cbd5e1":i===2?"#d97706":"#6b7d70",width:18,flexShrink:0}}>{medal}</span>
               <Avatar player={p} size={28}/>
@@ -2122,7 +2122,7 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
                 {[{label:"🔥 Série Atual",value:`${p.current_streak||0} jogos`},{label:"🏆 Melhor Série",value:`${p.best_streak||0} jogos`},{label:"💰 Total Pago",value:`${p.total_paid||0}€`},{label:"🧤 Posição",value:p.position||"Polivalente"},{label:"⭐ MVPs",value:`${mvps} vez${mvps!==1?"es":"ez"}`},{label:"📈 Presença",value:`${pPct}%`}]
                   .map((s,si)=>(
                   <div key={si} style={{background:"#0a1a0a",borderRadius:8,padding:"8px 10px"}}>
-                    <div style={{fontSize:10,color:"#8a9080",marginBottom:2}}>{s.label}</div>
+                    <div style={{fontSize:10,color:"#aab3a3",marginBottom:2}}>{s.label}</div>
                     <div style={{fontSize:13,fontWeight:800,color:"white"}}>{s.value}</div>
                   </div>
                 ))}
@@ -2153,7 +2153,7 @@ function HallOfFameMVP({history=[], members=[]}) {
         {lastMvp&&(<div style={{flex:1,background:"rgba(217,119,6,0.15)",borderRadius:12,padding:"10px 12px",border:"1px solid #d97706"}}><div style={{fontSize:10,fontWeight:800,color:"#d97706",letterSpacing:1,marginBottom:4}}>👑 MVP ATUAL</div><div style={{fontSize:14,fontWeight:800,color:"#fbbf24"}}>{lastMvp.mvp_name}</div><div style={{fontSize:10,color:"#fcd34d"}}>{lastMvp.date}</div></div>)}
         {mvpAno&&(<div style={{flex:1,background:"#1e2a3a",borderRadius:12,padding:"10px 12px",border:"1px solid #2563eb"}}><div style={{fontSize:10,fontWeight:800,color:"#60a5fa",letterSpacing:1,marginBottom:4}}>📅 MVP DO ANO</div><div style={{fontSize:14,fontWeight:800,color:"#93c5fd"}}>{mvpAno[0]}</div><div style={{fontSize:10,color:"#60a5fa"}}>{mvpAno[1]} vez{mvpAno[1]!==1?"es":""}</div></div>)}
       </div>
-      <div style={{background:"#14160f",borderRadius:14,border:"1px solid #23271b",overflow:"hidden"}}>
+      <div style={{background:"#18211a",borderRadius:14,border:"1px solid #2a362c",overflow:"hidden"}}>
         {ranked.map(([name,count],i)=>{
           const pl=members.find(m=>m.name===name);
           return (
@@ -2162,7 +2162,7 @@ function HallOfFameMVP({history=[], members=[]}) {
               {pl?<Avatar player={pl} size={28}/>:<div style={{width:28,height:28,borderRadius:"50%",background:"#1ea851",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"white"}}>{name[0]}</div>}
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:"white"}}>{name}</div>
-                <div style={{height:4,background:"#14160f",borderRadius:99,marginTop:4,overflow:"hidden"}}><div style={{width:`${(count/ranked[0][1])*100}%`,height:"100%",background:"linear-gradient(90deg,#d97706,#fbbf24)",borderRadius:99}}/></div>
+                <div style={{height:4,background:"#18211a",borderRadius:99,marginTop:4,overflow:"hidden"}}><div style={{width:`${(count/ranked[0][1])*100}%`,height:"100%",background:"linear-gradient(90deg,#d97706,#fbbf24)",borderRadius:99}}/></div>
               </div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#d97706",flexShrink:0}}>{count}⭐</div>
             </div>
@@ -2289,7 +2289,7 @@ function ListaConvidados({guests=[],gameInfo}){
 function AvisoConvidados({n=0,custo=3}) {
   const forte=n>=3;
   return (
-    <div style={{background:forte?"rgba(217,119,6,0.12)":"#14160f",border:`1px solid ${forte?"#d97706":"#23271b"}`,borderRadius:10,padding:"9px 12px",marginBottom:10,fontSize:12,lineHeight:1.5,color:forte?"#fbbf24":"#a3a897"}}>
+    <div style={{background:forte?"rgba(217,119,6,0.12)":"#18211a",border:`1px solid ${forte?"#d97706":"#2a362c"}`,borderRadius:10,padding:"9px 12px",marginBottom:10,fontSize:12,lineHeight:1.5,color:forte?"#fbbf24":"#a3a897"}}>
       {forte?"⚠️ ":"💡 "}Cada convidado são {custo}€ que ficas a pagar por ele.
       {n>0&&<> Já tens <strong style={{color:"#ffffff"}}>{n} {n===1?"convidado":"convidados"} = {eur(n*custo)}€</strong>.</>}
     </div>
@@ -2371,9 +2371,9 @@ async function buildGameCardImage({historyGame, gameInfo, effectiveDate, piggyba
   const ctx=canvas.getContext("2d");
   try { await document.fonts.load('400 100px "Bebas Neue"'); await document.fonts.ready; } catch(e){}
 
-  const gray="#8a9080", white="#ffffff", gold="#d4af37";
+  const gray="#aab3a3", white="#ffffff", gold="#d4af37";
   const maxTextWidth=W-160;
-  ctx.fillStyle="#0a0b08"; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#0d1410"; ctx.fillRect(0,0,W,H);
   ctx.textAlign="center";
 
   ctx.fillStyle=gold;
@@ -2383,7 +2383,7 @@ async function buildGameCardImage({historyGame, gameInfo, effectiveDate, piggyba
   ctx.fillStyle=gray;
   ctx.font='600 28px system-ui, -apple-system, sans-serif';
   ctx.fillText(formatDisplayDate(effectiveDate),W/2,156);
-  ctx.strokeStyle="#23271b"; ctx.lineWidth=2;
+  ctx.strokeStyle="#2a362c"; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(100,200); ctx.lineTo(W-100,200); ctx.stroke();
 
   // Próximo jogo (se houver um agendado depois deste) fica reservado em
@@ -2442,7 +2442,7 @@ async function buildGameCardImage({historyGame, gameInfo, effectiveDate, piggyba
   }
 
   if(hasNextGame){
-    ctx.strokeStyle="#23271b"; ctx.lineWidth=2;
+    ctx.strokeStyle="#2a362c"; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(100,nextGameTop-20); ctx.lineTo(W-100,nextGameTop-20); ctx.stroke();
     ctx.fillStyle=gray;
     ctx.font='700 24px system-ui, sans-serif';
@@ -2522,14 +2522,14 @@ function PartilharResumoButton({historyGame, gameInfo, effectiveDate, piggybank=
   const textos={idle:"🖼️ PARTILHAR CARTÃO","a-gerar":"A preparar…",partilhado:"RESUMO COPIADO ✓",descarregado:"CARTÃO GUARDADO ✓"};
   return (
     <>
-      <button onClick={gerar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"#14160f",border:"1px solid #2e3324",borderRadius:10,padding:"10px 14px",color:"#ffffff",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
+      <button onClick={gerar} disabled={estado==="a-gerar"} style={{marginTop:12,width:"100%",background:"#18211a",border:"1px solid #2e3324",borderRadius:10,padding:"10px 14px",color:"#ffffff",fontSize:12,fontWeight:800,letterSpacing:0.5,cursor:estado==="a-gerar"?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:estado==="a-gerar"?0.7:1}}>
         {textos[estado]||"🖼️ PARTILHAR CARTÃO"}
       </button>
       {estado==="pre-visualizar"&&preview&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:2000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,gap:16}} onClick={()=>{fecharPreview();setEstado("idle");}}>
           <img src={preview.url} alt="Pré-visualização do cartão" onClick={e=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"65vh",borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}/>
           <div onClick={e=>e.stopPropagation()} style={{display:"flex",gap:10,width:"100%",maxWidth:340}}>
-            <button onClick={()=>{fecharPreview();setEstado("idle");}} style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
+            <button onClick={()=>{fecharPreview();setEstado("idle");}} style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid #2a362c",background:"transparent",color:"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancelar</button>
             <button onClick={confirmarPartilha} style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Partilhar</button>
           </div>
         </div>
@@ -2625,11 +2625,11 @@ function SegueNos() {
   if(!redes.length) return null;
   return (
     <div style={{marginTop:14}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:8}}>SEGUE-NOS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#98a290",letterSpacing:2,marginBottom:8}}>SEGUE-NOS</div>
       <div style={{display:"flex",gap:8}}>
         {redes.map(r=>(
           <a key={r.chave} href={r.href} target="_blank" rel="noopener noreferrer"
-             style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px",color:r.cor,fontSize:13,fontWeight:700,textDecoration:"none"}}>
+             style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px",color:r.cor,fontSize:13,fontWeight:700,textDecoration:"none"}}>
             {r.icone}<span style={{color:"white"}}>{r.nome}</span>
           </a>
         ))}
@@ -2690,10 +2690,10 @@ function AvisoNotificacoes({playerId,groupId}) {
 
   // Neutro, não dourado: a contagem decrescente do FieldHeader já é o
   // dourado deste ecrã, e a Regra do Ouro Raro do DESIGN.md só permite um.
-  const caixa={background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:14,marginBottom:14};
+  const caixa={background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:14,marginBottom:14};
   const titulo={fontSize:13,fontWeight:800,color:"white",marginBottom:4};
-  const texto={fontSize:12,color:"#8a9080",lineHeight:1.5};
-  const adiarBtn={background:"transparent",border:"none",color:"#8a9080",fontSize:12,cursor:"pointer",marginTop:4,padding:"10px 12px",minHeight:40};
+  const texto={fontSize:12,color:"#aab3a3",lineHeight:1.5};
+  const adiarBtn={background:"transparent",border:"none",color:"#aab3a3",fontSize:12,cursor:"pointer",marginTop:4,padding:"10px 12px",minHeight:40};
 
   // Depois de um bloqueio, nenhum código consegue voltar a perguntar — só a
   // própria pessoa nas definições. Por isso aqui não há botão: há instruções.
@@ -2733,7 +2733,7 @@ function AvisoNotificacoes({playerId,groupId}) {
       <div style={{...texto,marginBottom:12}}>
         Avisamos-te quando <strong style={{color:"#a8ae9c"}}>abrir vaga</strong>, quando o jogo for marcado e quando tiveres contas por acertar. Sem isto, tens de andar a espreitar a app.
       </div>
-      <button onClick={ativar} disabled={aPedir} style={{width:"100%",padding:"13px",background:aPedir?"#0d0f0a":"#1c2016",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:aPedir?"default":"pointer"}}>
+      <button onClick={ativar} disabled={aPedir} style={{width:"100%",padding:"13px",background:aPedir?"#0d0f0a":"#1c2016",border:"1px solid #2a362c",borderRadius:12,color:"white",fontWeight:800,fontSize:14,cursor:aPedir?"default":"pointer"}}>
         {aPedir?"A pedir...":"Ativar notificações"}
       </button>
       <button onClick={()=>adiar(7)} style={adiarBtn}>Agora não</button>
@@ -2867,77 +2867,77 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
   const isLive=now>=gameStart&&now<gameEnd;
   const isOver=now>=gameEnd;
   return (
-    <div style={{background:"#14160f",borderBottom:"1px solid #23271b",padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,0.45)",position:"relative",zIndex:1}}>
+    <div style={{background:"#18211a",borderBottom:"1px solid #2a362c",padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,0.45)",position:"relative",zIndex:1}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:3}}>GRUPO</div>
+          <div style={{fontSize:10,fontWeight:700,color:"#98a290",letterSpacing:2,marginBottom:3}}>GRUPO</div>
           <div style={{fontSize:20,fontWeight:800,color:"white",letterSpacing:0.5}}>{gameInfo.app_name||"Hoje Há Jogo"}</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,padding:"0 10px 0 7px",minHeight:36,cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700}} aria-label="Ver jogo anterior" title="Ver jogo anterior" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/> <span style={{whiteSpace:"nowrap"}}>Jogo anterior</span></button>
-          {isViewingHistory&&<button style={{background:"#23271b",border:"1px solid #23271b",borderRadius:10,padding:"0 10px",minHeight:36,cursor:"pointer",color:"#d4af37",fontSize:11,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
-          {canFwd&&<button style={{background:"#23271b",border:"1px solid #2e3324",borderRadius:10,minWidth:36,minHeight:36,justifyContent:"center",cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center"}} aria-label="Ver jogo seguinte" title="Ver jogo seguinte" onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
+          <button style={{background:"#2a362c",border:"1px solid #2e3324",borderRadius:10,padding:"0 10px 0 7px",minHeight:36,cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700}} aria-label="Ver jogo anterior" title="Ver jogo anterior" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={14}/> <span style={{whiteSpace:"nowrap"}}>Jogo anterior</span></button>
+          {isViewingHistory&&<button style={{background:"#2a362c",border:"1px solid #2a362c",borderRadius:10,padding:"0 10px",minHeight:36,cursor:"pointer",color:"#d4af37",fontSize:11,fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
+          {canFwd&&<button style={{background:"#2a362c",border:"1px solid #2e3324",borderRadius:10,minWidth:36,minHeight:36,justifyContent:"center",cursor:"pointer",color:"#c9cdbf",display:"flex",alignItems:"center"}} aria-label="Ver jogo seguinte" title="Ver jogo seguinte" onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={14}/></button>}
           {extraRight}
         </div>
       </div>
       {isViewingHistory?(
-        <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #23271b"}}>
-          <div style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,marginBottom:10,textTransform:"capitalize"}}>{formatDisplayDate(effectiveDate)}</div>
+        <div style={{background:"#0d1410",borderRadius:12,padding:"14px 16px",border:"1px solid #2a362c"}}>
+          <div style={{fontSize:11,color:"#aab3a3",fontWeight:700,letterSpacing:1,marginBottom:10,textTransform:"capitalize"}}>{formatDisplayDate(effectiveDate)}</div>
           {historyGame?(
             <div>
               <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:10}}>
-                <div><div style={{fontSize:28,fontWeight:800,color:"#4ade80",lineHeight:1}}>{historyGame.players_count}</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>JOGADORES</div></div>
-                {historyGame.winner_team&&<div><div style={{fontSize:28,fontWeight:800,color:"#60a5fa",lineHeight:1}}>Equipa {historyGame.winner_team}</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>VENCEDOR</div></div>}
-                {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:10,color:"#7d8472",letterSpacing:1,marginTop:2}}>MVP</div></div>}
+                <div><div style={{fontSize:28,fontWeight:800,color:"#4ade80",lineHeight:1}}>{historyGame.players_count}</div><div style={{fontSize:10,color:"#98a290",letterSpacing:1,marginTop:2}}>JOGADORES</div></div>
+                {historyGame.winner_team&&<div><div style={{fontSize:28,fontWeight:800,color:"#60a5fa",lineHeight:1}}>Equipa {historyGame.winner_team}</div><div style={{fontSize:10,color:"#98a290",letterSpacing:1,marginTop:2}}>VENCEDOR</div></div>}
+                {historyGame.mvp_name&&<div><div style={{fontSize:28,fontWeight:800,color:"#f472b6",lineHeight:1}}>{historyGame.mvp_name}</div><div style={{fontSize:10,color:"#98a290",letterSpacing:1,marginTop:2}}>MVP</div></div>}
               </div>
               {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
-                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#23271b",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#8a9080",fontWeight:600}}>{a.player_name}</span>)}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"#2a362c",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#aab3a3",fontWeight:600}}>{a.player_name}</span>)}</div>
               )}
             </div>
-          ):<div style={{fontSize:13,color:"#7d8472"}}>Sem registo para esta semana</div>}
+          ):<div style={{fontSize:13,color:"#98a290"}}>Sem registo para esta semana</div>}
         </div>
       ):isLive?(
-        <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #1ea85133",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{background:"#0d1410",borderRadius:12,padding:"14px 16px",border:"1px solid #1ea85133",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
-            <div style={{background:"#14160f",border:"1px solid #1ea85155",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+            <div style={{background:"#18211a",border:"1px solid #1ea85155",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
               <div style={{width:6,height:6,borderRadius:"50%",background:"#1ea851"}}/>
               <span style={{fontSize:11,color:"#4ade80",fontWeight:800,letterSpacing:1}}>A JOGAR</span>
             </div>
-            <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
+            <div style={{fontSize:13,color:"#aab3a3",textTransform:"capitalize"}}>{formatDisplayDate(gameInfo.date)}</div>
             <div style={{display:"flex",gap:12,marginTop:4,flexWrap:"wrap"}}>
-              <div style={{display:"flex",alignItems:"center",gap:5,color:"#8a9080"}}><Icon name="clock" size={12}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:5,color:"#aab3a3"}}><Icon name="clock" size={12}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span></div>
               {gameInfo.location&&gameInfo.location!=="A definir"&&<div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:5,color:"#4ade80",cursor:"pointer"}}><Icon name="pin" size={12}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span></div>}
             </div>
           </div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:10,color:"#7d8472",fontWeight:700,letterSpacing:1,marginBottom:4}}>JOGADORES</div>
+            <div style={{fontSize:10,color:"#98a290",fontWeight:700,letterSpacing:1,marginBottom:4}}>JOGADORES</div>
             <div style={{fontSize:40,fontWeight:900,color:"#4ade80",lineHeight:1}}>{confirmed.length}</div>
           </div>
         </div>
       ):isOver?(
-        <div style={{background:"#0a0b08",borderRadius:12,padding:"14px 16px",border:"1px solid #23271b"}}>
-          <div style={{background:"#23271b",border:"1px solid #23271b",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
-            <span style={{fontSize:11,color:"#8a9080",fontWeight:800,letterSpacing:1}}>JOGO TERMINADO</span>
+        <div style={{background:"#0d1410",borderRadius:12,padding:"14px 16px",border:"1px solid #2a362c"}}>
+          <div style={{background:"#2a362c",border:"1px solid #2a362c",borderRadius:20,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+            <span style={{fontSize:11,color:"#aab3a3",fontWeight:800,letterSpacing:1}}>JOGO TERMINADO</span>
           </div>
-          <div style={{fontSize:13,color:"#8a9080",textTransform:"capitalize",marginBottom:4}}>{formatDisplayDate(gameInfo.date)}</div>
-          <div style={{fontSize:12,color:"#7d8472"}}>A aguardar fecho automático...</div>
+          <div style={{fontSize:13,color:"#aab3a3",textTransform:"capitalize",marginBottom:4}}>{formatDisplayDate(gameInfo.date)}</div>
+          <div style={{fontSize:12,color:"#98a290"}}>A aguardar fecho automático...</div>
         </div>
       ):(
         <>
-          <div style={{background:"#0a0b08",borderRadius:12,padding:"16px",marginBottom:12,border:"1px solid #23271b",position:"relative",overflow:"hidden"}}>
+          <div style={{background:"#0d1410",borderRadius:12,padding:"16px",marginBottom:12,border:"1px solid #2a362c",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:-60,left:-60,width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,rgba(30,168,81,0.16) 0%,rgba(30,168,81,0) 70%)",pointerEvents:"none"}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,position:"relative"}}>
               <div style={{minWidth:0}}>
-                <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:20,padding:"3px 10px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
-                  <div style={{width:5,height:5,borderRadius:"50%",background:"#7d8472"}}/>
-                  <span style={{fontSize:10,color:"#8a9080",fontWeight:800,letterSpacing:1}}>PRÓXIMO JOGO</span>
+                <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:20,padding:"3px 10px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
+                  <div style={{width:5,height:5,borderRadius:"50%",background:"#98a290"}}/>
+                  <span style={{fontSize:10,color:"#aab3a3",fontWeight:800,letterSpacing:1}}>PRÓXIMO JOGO</span>
                 </div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"white",letterSpacing:1,textTransform:"capitalize",lineHeight:1.1}}>{formatDisplayDate(gameInfo.date)}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,color:"#8a9080"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,color:"#aab3a3"}}>
                     <Icon name="clock" size={13}/><span style={{fontSize:12,fontWeight:600}}>{gameInfo.time}</span>
                   </div>
-                  {gameInfo.location==="A definir"&&<div style={{display:"flex",alignItems:"center",gap:6,color:"#8a9080"}}><Icon name="pin" size={13}/><span style={{fontSize:12,fontWeight:600}}>Local por definir</span></div>}
+                  {gameInfo.location==="A definir"&&<div style={{display:"flex",alignItems:"center",gap:6,color:"#aab3a3"}}><Icon name="pin" size={13}/><span style={{fontSize:12,fontWeight:600}}>Local por definir</span></div>}
                   {gameInfo.location&&gameInfo.location!=="A definir"&&(
                     <div onClick={()=>openLocationInMaps(gameInfo.location)} style={{display:"flex",alignItems:"center",gap:6,color:"#4ade80",cursor:"pointer"}}>
                       <Icon name="pin" size={13}/><span style={{fontSize:12,fontWeight:600,textDecoration:"underline"}}>{gameInfo.location}</span>
@@ -2951,8 +2951,8 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
                 </button>
               </div>
               <div style={{flexShrink:0,display:"flex",flexDirection:"column",gap:10,alignItems:"stretch"}}>
-                <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",textAlign:"center",boxShadow:"inset 0 2px 6px rgba(0,0,0,0.5)"}}>
-                  <div style={{fontSize:10,color:"#7d8472",fontWeight:800,letterSpacing:1.5,marginBottom:2}}>FALTAM</div>
+                <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:10,padding:"10px 14px",textAlign:"center",boxShadow:"inset 0 2px 6px rgba(0,0,0,0.5)"}}>
+                  <div style={{fontSize:10,color:"#98a290",fontWeight:800,letterSpacing:1.5,marginBottom:2}}>FALTAM</div>
                   <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:38,color:"#d4af37",lineHeight:1,letterSpacing:1,fontVariantNumeric:"tabular-nums"}}>{cdStr}</div>
                 </div>
                 {isLoggedIn&&<ConvidarParaGrupo groupId={gameInfo.group_id} groupName={gameInfo.app_name}/>}
@@ -2961,10 +2961,10 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
           </div>
           <div style={{marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-              <span style={{fontSize:11,color:"#7d8472",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
-              <span style={{fontSize:11,color:pct>=100?"#f87171":"#7d8472",fontWeight:700}}>{confirmadosAnimado} / {maxPlayers}</span>
+              <span style={{fontSize:11,color:"#98a290",fontWeight:700,letterSpacing:1}}>CONFIRMADOS</span>
+              <span style={{fontSize:11,color:pct>=100?"#f87171":"#98a290",fontWeight:700}}>{confirmadosAnimado} / {maxPlayers}</span>
             </div>
-            <div style={{height:6,background:"#23271b",borderRadius:99,overflow:"hidden"}}>
+            <div style={{height:6,background:"#2a362c",borderRadius:99,overflow:"hidden"}}>
               <div style={{width:"100%",height:"100%",background:pct>=100?"#dc2626":"#1ea851",borderRadius:99,transform:`scaleX(${Math.min(pct,100)/100})`,transformOrigin:"left",transition:"transform 0.6s"}}/>
             </div>
             {pct>=100&&<div style={{marginTop:8,background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.4)",borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
@@ -2974,7 +2974,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
           </div>
           {isLoggedIn&&(
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {confirmed.length>0&&<div style={{background:"#14160f",border:"1px solid #1ea85133",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#1ea851",flexShrink:0}}/><span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>{confirmed.length} confirmados</span></div>}
+              {confirmed.length>0&&<div style={{background:"#18211a",border:"1px solid #1ea85133",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#1ea851",flexShrink:0}}/><span style={{fontSize:11,color:"#4ade80",fontWeight:700}}>{confirmed.length} confirmados</span></div>}
               {notYet&&notYet.length>0&&<div style={{background:"#1a1a0a",border:"1px solid #d4af3733",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#d4af37",flexShrink:0}}/><span style={{fontSize:11,color:"#fbbf24",fontWeight:700}}>{notYet.length} sem resposta</span></div>}
               {naoVao&&naoVao.length>0&&<div style={{background:"#161314",border:"1px solid #ef444433",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",flexShrink:0}}/><span style={{fontSize:11,color:"#d6a1a1",fontWeight:700}}>{naoVao.length} não {naoVao.length===1?"vai":"vão"}</span></div>}
               {waiting.length>0&&<div style={{background:"#1a1010",border:"1px solid #dc262633",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}><div style={{width:5,height:5,borderRadius:"50%",background:"#dc2626",flexShrink:0}}/><span style={{fontSize:11,color:"#f87171",fontWeight:700}}>{waiting.length} em espera</span></div>}
@@ -3064,9 +3064,9 @@ function LandingView({setView}) {
     return ()=>window.removeEventListener("scroll",onScroll);
   },[]);
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",overflowX:"hidden",position:"relative",paddingBottom:mostrarBarra?76:0}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",overflowX:"hidden",position:"relative",paddingBottom:mostrarBarra?76:0}}>
       <div style={{position:"absolute",top:-120,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"2px solid rgba(212,175,55,0.35)",borderRadius:"50%",opacity:0.25,pointerEvents:"none"}}/>
-      <div style={{position:"absolute",top:340,left:"50%",transform:"translateX(-50%)",width:1400,height:1400,border:"1px solid #23271b",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",top:340,left:"50%",transform:"translateX(-50%)",width:1400,height:1400,border:"1px solid #2a362c",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
 
       <div style={{position:"relative",zIndex:1}}>
         <div style={{padding:"16px 20px"}}>
@@ -3099,42 +3099,42 @@ function LandingView({setView}) {
           {/* Prova social honesta: números reais do grupo 37 (PRODUCT.md), com
               nomes inventados — as pessoas reais não aparecem em publicidade.
               Atualizar à mão de vez em quando (jogos, presenças, votos). */}
-          <div style={{maxWidth:320,margin:"22px auto 0",background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 14px 12px",textAlign:"left"}}>
-            <div style={{fontSize:10,letterSpacing:1.2,color:"#7d8472",fontWeight:700,marginBottom:10}}>UM GRUPO REAL, ÀS QUARTAS</div>
+          <div style={{maxWidth:320,margin:"22px auto 0",background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:"14px 14px 12px",textAlign:"left"}}>
+            <div style={{fontSize:10,letterSpacing:1.2,color:"#98a290",fontWeight:700,marginBottom:10}}>UM GRUPO REAL, ÀS QUARTAS</div>
             <div style={{display:"flex",gap:6,marginBottom:12}}>
               {[["29","jogadores"],["7","jogos"],["80","presenças"],["52","votos MVP"]].map(([n,l])=>(
                 <div key={l} style={{flex:1,textAlign:"center"}}>
                   <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#4ade80",lineHeight:1}}>{n}</div>
-                  <div style={{fontSize:10,color:"#8a9080",marginTop:2}}>{l}</div>
+                  <div style={{fontSize:10,color:"#aab3a3",marginTop:2}}>{l}</div>
                 </div>
               ))}
             </div>
-            <div style={{borderTop:"1px solid #23271b",paddingTop:10,display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{borderTop:"1px solid #2a362c",paddingTop:10,display:"flex",flexDirection:"column",gap:6}}>
               {[["Rui Matos","7 de 7 jogos"],["Tiago Serra","7 de 7 jogos"],["Bruno Alves","6 de 7 jogos"]].map(([nome,v],k)=>(
                 <div key={nome} style={{display:"flex",alignItems:"center",gap:8,fontSize:12}}>
-                  <span style={{width:18,color:"#7d8472",fontWeight:800}}>{k+1}.</span>
+                  <span style={{width:18,color:"#98a290",fontWeight:800}}>{k+1}.</span>
                   <span style={{flex:1,color:"#d8d8d8"}}>{nome}</span>
-                  <span style={{color:"#8a9080"}}>{v}</span>
+                  <span style={{color:"#aab3a3"}}>{v}</span>
                 </div>
               ))}
             </div>
-            <div style={{fontSize:10,color:"#7d8472",marginTop:9}}>Números reais · nomes inventados</div>
+            <div style={{fontSize:10,color:"#98a290",marginTop:9}}>Números reais · nomes inventados</div>
           </div>
 
-          <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{marginTop:18,background:"transparent",border:"none",color:"#8a9080",fontSize:13,fontWeight:700,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:4,textDecorationColor:"#3a4034"}}>
+          <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{marginTop:18,background:"transparent",border:"none",color:"#aab3a3",fontSize:13,fontWeight:700,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:4,textDecorationColor:"#3a4034"}}>
             📲 Tenho um código de convite
           </button>
 
-          <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%",margin:"16px auto 0"}}>
+          <div style={{marginTop:16,background:"#18211a",border:"1px solid #2a362c",borderRadius:10,padding:"10px 14px",maxWidth:320,width:"100%",margin:"16px auto 0"}}>
             <p style={{fontSize:12.5,color:"#a3a897",margin:0,lineHeight:1.55}}>
-              💡 Para entrar num grupo precisas de um <strong style={{color:"#8a9080"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
+              💡 Para entrar num grupo precisas de um <strong style={{color:"#aab3a3"}}>código de convite</strong> do teu admin — via QR Code, link ou código.
             </p>
           </div>
         </div>
 
         {/* Funcionalidades */}
-        <div style={{padding:"34px 24px",borderTop:"1px solid #23271b"}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#8a9080",textAlign:"center",marginBottom:22}}>FUNCIONALIDADES</div>
+        <div style={{padding:"34px 24px",borderTop:"1px solid #2a362c"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#aab3a3",textAlign:"center",marginBottom:22}}>FUNCIONALIDADES</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,maxWidth:400,margin:"0 auto"}}>
             {[
               {icon:LandingIcons.presencas,label:"A lista faz-se sozinha"},
@@ -3144,7 +3144,7 @@ function LandingView({setView}) {
               {icon:LandingIcons.equipas,label:"Sorteadas em segundos"},
               {icon:LandingIcons.zona,label:"Reforços perto de ti"},
             ].map((f,i)=>(
-              <div key={i} style={{textAlign:"center",padding:"18px 8px",background:"#14160f",border:"1px solid #23271b",borderRadius:14}}>
+              <div key={i} style={{textAlign:"center",padding:"18px 8px",background:"#18211a",border:"1px solid #2a362c",borderRadius:14}}>
                 <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>{f.icon}</div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,color:"white",letterSpacing:0.3,lineHeight:1.15}}>{f.label}</div>
               </div>
@@ -3153,47 +3153,47 @@ function LandingView({setView}) {
         </div>
 
         {/* Como funciona */}
-        <div style={{padding:"34px 24px 48px",borderTop:"1px solid #23271b"}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#8a9080",textAlign:"center",marginBottom:22}}>COMO FUNCIONA</div>
+        <div style={{padding:"34px 24px 48px",borderTop:"1px solid #2a362c"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:12,letterSpacing:4,color:"#aab3a3",textAlign:"center",marginBottom:22}}>COMO FUNCIONA</div>
           <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:400,margin:"0 auto"}}>
             {[
               {n:"1",text:"Crias o teu jogo em menos de 2 minutos"},
               {n:"2",text:"Partilha o código, QR Code ou link com o grupo"},
               {n:"3",text:"Todos confirmam presença, pagam e acompanham as stats"},
             ].map((s,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:14,background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"13px 15px"}}>
+              <div key={i} style={{display:"flex",alignItems:"center",gap:14,background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"13px 15px"}}>
                 <div style={{width:28,height:28,flexShrink:0,background:"rgba(212,175,55,0.14)",border:"1px solid rgba(212,175,55,0.35)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',cursive",fontSize:15,color:"#d4af37"}}>{s.n}</div>
-                <p style={{margin:0,fontSize:12.5,color:"#8a9080",lineHeight:1.4}}>{s.text}</p>
+                <p style={{margin:0,fontSize:12.5,color:"#aab3a3",lineHeight:1.4}}>{s.text}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* CTA final */}
-        <div style={{textAlign:"center",padding:"38px 24px 48px",borderTop:"1px solid #23271b"}}>
+        <div style={{textAlign:"center",padding:"38px 24px 48px",borderTop:"1px solid #2a362c"}}>
           <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:"white",margin:"0 0 6px"}}>Pronto para o próximo jogo?</h2>
-          <p style={{color:"#8a9080",fontSize:13,margin:"0 0 22px"}}>Grátis, sem publicidade, sem complicações.</p>
-          <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer"}}>
+          <p style={{color:"#aab3a3",fontSize:13,margin:"0 0 22px"}}>Grátis, sem publicidade, sem complicações.</p>
+          <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{padding:"14px 32px",maxWidth:280,background:"#d4af37",border:"none",borderRadius:14,color:"#0d1410",fontWeight:800,fontSize:14,cursor:"pointer"}}>
             ⚽ Criar o meu jogo grátis
           </button>
           {/* A seguir a este botão pedimos o nome e o telemóvel a um
               desconhecido. É o momento exato em que faz falta poder ver quem
               está do outro lado e o que acontece aos dados. */}
-          <div style={{marginTop:26,fontSize:11.5,color:"#7d8472"}}>
-            <a href="/guias/" style={{color:"#8a9080",textDecoration:"underline"}}>Guias</a>
+          <div style={{marginTop:26,fontSize:11.5,color:"#98a290"}}>
+            <a href="/guias/" style={{color:"#aab3a3",textDecoration:"underline"}}>Guias</a>
             <span style={{margin:"0 8px"}}>·</span>
-            <a href="/guias/sortear-equipas/" style={{color:"#8a9080",textDecoration:"underline"}}>Sortear equipas</a>
+            <a href="/guias/sortear-equipas/" style={{color:"#aab3a3",textDecoration:"underline"}}>Sortear equipas</a>
             <span style={{margin:"0 8px"}}>·</span>
-            <a href="/privacidade" style={{color:"#8a9080",textDecoration:"underline"}}>Política de Privacidade</a>
+            <a href="/privacidade" style={{color:"#aab3a3",textDecoration:"underline"}}>Política de Privacidade</a>
             <span style={{margin:"0 8px"}}>·</span>
             Sem publicidade. Não vendemos os teus dados.
           </div>
         </div>
       </div>
       {mostrarBarra&&(
-        <div style={{position:"fixed",left:0,right:0,bottom:0,zIndex:50,background:"rgba(10,11,8,0.96)",borderTop:"1px solid #23271b",padding:"10px 16px calc(10px + env(safe-area-inset-bottom))",display:"flex",gap:8,justifyContent:"center"}}>
-          <button onClick={()=>{marcarPasso("clicou_barra");marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{flex:"1.4 1 0",maxWidth:230,padding:"13px 10px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:13,whiteSpace:"nowrap",cursor:"pointer"}}>⚽ Criar o meu jogo grátis</button>
-          <button onClick={()=>setView("demo")} style={{flex:"1 1 0",maxWidth:160,padding:"13px 10px",background:"#14160f",border:"1px solid #2e3324",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>Vê como funciona</button>
+        <div style={{position:"fixed",left:0,right:0,bottom:0,zIndex:50,background:"rgba(10,11,8,0.96)",borderTop:"1px solid #2a362c",padding:"10px 16px calc(10px + env(safe-area-inset-bottom))",display:"flex",gap:8,justifyContent:"center"}}>
+          <button onClick={()=>{marcarPasso("clicou_barra");marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{flex:"1.4 1 0",maxWidth:230,padding:"13px 10px",background:"#d4af37",border:"none",borderRadius:12,color:"#0d1410",fontWeight:800,fontSize:13,whiteSpace:"nowrap",cursor:"pointer"}}>⚽ Criar o meu jogo grátis</button>
+          <button onClick={()=>setView("demo")} style={{flex:"1 1 0",maxWidth:160,padding:"13px 10px",background:"#18211a",border:"1px solid #2e3324",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>Vê como funciona</button>
         </div>
       )}
     </div>
@@ -3236,24 +3236,24 @@ function LoginView({onLogin, showToast, setView}) {
   };
 
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",position:"relative",overflow:"hidden"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:-160,left:"50%",transform:"translateX(-50%)",width:760,height:760,border:"2px solid rgba(212,175,55,0.28)",borderRadius:"50%",opacity:0.3,pointerEvents:"none"}}/>
-      <div style={{position:"absolute",bottom:-260,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"1px solid #23271b",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-260,left:"50%",transform:"translateX(-50%)",width:900,height:900,border:"1px solid #2a362c",borderRadius:"50%",opacity:0.5,pointerEvents:"none"}}/>
       <div style={{textAlign:"center",marginBottom:28,position:"relative"}}>
         <div style={{fontSize:20,fontWeight:500,color:"white",letterSpacing:1}}>HOJE HÁ</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:3,lineHeight:1}}>JOGO</div>
       </div>
-      <div style={{width:"100%",maxWidth:360,background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"24px",display:"flex",flexDirection:"column",gap:14,position:"relative"}}>
+      <div style={{width:"100%",maxWidth:360,background:"#18211a",border:"1px solid #2a362c",borderRadius:16,padding:"24px",display:"flex",flexDirection:"column",gap:14,position:"relative"}}>
         <div style={{fontSize:14,fontWeight:700,color:"white",textAlign:"center",marginBottom:4}}>Iniciar sessão</div>
         <div>
-          <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>UTILIZADOR OU TELEMÓVEL</label>
+          <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>UTILIZADOR OU TELEMÓVEL</label>
           <input className="text-input" placeholder="O teu utilizador..." value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
         </div>
         <div>
-          <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>PASSWORD</label>
+          <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>PASSWORD</label>
           <div style={{position:"relative",display:"flex",alignItems:"center"}}>
             <input className="text-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={{paddingRight:44}}/>
-            <button type="button" onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:12,background:"transparent",border:"none",color:"#8a9080",cursor:"pointer",display:"flex",alignItems:"center"}}>
+            <button type="button" onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:12,background:"transparent",border:"none",color:"#aab3a3",cursor:"pointer",display:"flex",alignItems:"center"}}>
               <Icon name={showPw?"eyeoff":"eye"} size={16}/>
             </button>
           </div>
@@ -3263,7 +3263,7 @@ function LoginView({onLogin, showToast, setView}) {
         </button>
 
         {!showReset ? (
-          <button type="button" onClick={()=>{setShowReset(true);setResetUsername(username);}} style={{background:"transparent",border:"none",color:"#8a9080",fontSize:12,cursor:"pointer",textDecoration:"underline",margin:"-2px auto 0"}}>
+          <button type="button" onClick={()=>{setShowReset(true);setResetUsername(username);}} style={{background:"transparent",border:"none",color:"#aab3a3",fontSize:12,cursor:"pointer",textDecoration:"underline",margin:"-2px auto 0"}}>
             Esqueceste-te da password?
           </button>
         ) : resetDone ? (
@@ -3284,8 +3284,8 @@ function LoginView({onLogin, showToast, setView}) {
             </div>
           )
         ) : (
-          <div style={{display:"flex",flexDirection:"column",gap:8,background:"#0f100b",border:"1px solid #23271b",borderRadius:12,padding:12}}>
-            <label style={{color:"#8a9080",fontSize:11,fontWeight:700,letterSpacing:0.5}}>O TEU UTILIZADOR</label>
+          <div style={{display:"flex",flexDirection:"column",gap:8,background:"#111a14",border:"1px solid #2a362c",borderRadius:12,padding:12}}>
+            <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,letterSpacing:0.5}}>O TEU UTILIZADOR</label>
             <input className="text-input" placeholder="O teu utilizador..." value={resetUsername} onChange={e=>setResetUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleRequestReset()} autoCapitalize="none"/>
             <div style={{display:"flex",gap:8}}>
               <button type="button" className="btn-primary" style={{flex:1,justifyContent:"center"}} onClick={handleRequestReset} disabled={resetLoading}>
@@ -3297,16 +3297,16 @@ function LoginView({onLogin, showToast, setView}) {
         )}
 
         <div style={{display:"flex",alignItems:"center",gap:10,margin:"2px 0"}}>
-          <div style={{flex:1,height:1,background:"#23271b"}}/>
-          <span style={{color:"#7d8472",fontSize:11}}>ou</span>
-          <div style={{flex:1,height:1,background:"#23271b"}}/>
+          <div style={{flex:1,height:1,background:"#2a362c"}}/>
+          <span style={{color:"#98a290",fontSize:11}}>ou</span>
+          <div style={{flex:1,height:1,background:"#2a362c"}}/>
         </div>
         <button type="button" onClick={handleGoogle} disabled={googleLoading} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#1b1e14",border:"1px solid #2e3322",borderRadius:12,padding:"13px",color:"#f4f2e8",fontWeight:700,fontSize:14,cursor:"pointer"}}>
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
           {googleLoading?"A ligar...":"Continuar com Google"}
         </button>
       </div>
-      <button onClick={()=>setView("landing")} style={{marginTop:20,background:"transparent",border:"none",color:"#7d8472",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,position:"relative"}}>
+      <button onClick={()=>setView("landing")} style={{marginTop:20,background:"transparent",border:"none",color:"#98a290",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,position:"relative"}}>
         <Icon name="left" size={14}/> Voltar
       </button>
     </div>
@@ -3336,7 +3336,7 @@ function ReporPasswordView({token, setView, showToast}) {
   };
 
   const shell = (children) => (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
       <div style={{width:"100%",maxWidth:340}}>{children}</div>
     </div>
   );
@@ -3344,7 +3344,7 @@ function ReporPasswordView({token, setView, showToast}) {
   if(done) return shell(<>
     <div style={{fontSize:56,marginBottom:16}}>✅</div>
     <div style={{color:"white",fontSize:20,fontWeight:800,marginBottom:10}}>Password alterada!</div>
-    <p style={{color:"#8a9080",fontSize:13,lineHeight:1.6,marginBottom:24}}>
+    <p style={{color:"#aab3a3",fontSize:13,lineHeight:1.6,marginBottom:24}}>
       {done.username?<>Já podes entrar com <strong style={{color:"#d4af37"}}>{done.username}</strong> e a password nova.</>:"Já podes entrar com a password nova."}
     </p>
     <button className="btn-big" style={{background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f"}} onClick={()=>setView("login")}>ENTRAR →</button>
@@ -3353,17 +3353,17 @@ function ReporPasswordView({token, setView, showToast}) {
   return shell(<>
     <div style={{fontSize:48,marginBottom:12}}>🔑</div>
     <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"white",letterSpacing:1,marginBottom:8}}>NOVA PASSWORD</div>
-    <p style={{color:"#8a9080",fontSize:13,lineHeight:1.6,marginBottom:20}}>Escolhe a password que vais passar a usar para entrar.</p>
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:20,textAlign:"left"}}>
-      <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>NOVA PASSWORD</label>
+    <p style={{color:"#aab3a3",fontSize:13,lineHeight:1.6,marginBottom:20}}>Escolhe a password que vais passar a usar para entrar.</p>
+    <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:16,padding:20,textAlign:"left"}}>
+      <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>NOVA PASSWORD</label>
       <input className="text-input" type="password" value={pw1} onChange={e=>setPw1(e.target.value)} placeholder="••••••" style={{marginBottom:14}} autoFocus/>
-      <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>REPETIR</label>
+      <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>REPETIR</label>
       <input className="text-input" type="password" value={pw2} onChange={e=>setPw2(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="••••••" style={{marginBottom:18}}/>
       <button className="btn-big" style={{marginBottom:0,background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f"}} onClick={submit} disabled={loading}>
         {loading?"A guardar...":"GUARDAR PASSWORD"}
       </button>
     </div>
-    <button onClick={()=>setView("landing")} style={{marginTop:18,background:"transparent",border:"none",color:"#7d8472",fontSize:13,cursor:"pointer"}}>Cancelar</button>
+    <button onClick={()=>setView("landing")} style={{marginTop:18,background:"transparent",border:"none",color:"#98a290",fontSize:13,cursor:"pointer"}}>Cancelar</button>
   </>);
 }
 
@@ -3426,45 +3426,45 @@ function DemoView({setView, showToast}) {
     ...(euVou==="nao" ? [{nome:"Tu",ini:"TU",cor:"#d4af37",estado:"nao",euSou:true}] : []),
     ...OUTROS.filter(p=>p.estado==="nao"),
   ];
-  const corEstado = {vai:"#4ade80", sem:"#fbbf24", nao:"#7d8472"};
+  const corEstado = {vai:"#4ade80", sem:"#fbbf24", nao:"#98a290"};
   const textoEstado = {vai:"✓ vai", sem:"sem resposta", nao:"não vai"};
 
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",paddingBottom:40}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",paddingBottom:40}}>
       {/* Dizer sempre o que isto é. Uma demonstração que se faz passar pela app
           a sério engana, e quem descobre depois deixa de confiar. */}
-      <div style={{position:"sticky",top:0,zIndex:5,background:"#14160f",borderBottom:"1px solid #23271b",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-        <div style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:0.3}}>
+      <div style={{position:"sticky",top:0,zIndex:5,background:"#18211a",borderBottom:"1px solid #2a362c",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+        <div style={{fontSize:11,color:"#aab3a3",fontWeight:700,letterSpacing:0.3}}>
           Grupo de exemplo — nada do que fizeres aqui é guardado
         </div>
-        <button onClick={()=>setView("landing")} style={{background:"transparent",border:"none",color:"#8a9080",fontSize:20,lineHeight:1,cursor:"pointer",padding:"0 2px",flexShrink:0}} aria-label="Sair da demonstração">×</button>
+        <button onClick={()=>setView("landing")} style={{background:"transparent",border:"none",color:"#aab3a3",fontSize:20,lineHeight:1,cursor:"pointer",padding:"0 2px",flexShrink:0}} aria-label="Sair da demonstração">×</button>
       </div>
 
       <div style={{maxWidth:460,margin:"0 auto",padding:"18px 16px 0"}}>
-        <div style={{fontSize:10,letterSpacing:2,color:"#7d8472",fontWeight:700}}>GRUPO</div>
+        <div style={{fontSize:10,letterSpacing:2,color:"#98a290",fontWeight:700}}>GRUPO</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:0.5,color:"white",margin:"2px 0 14px"}}>Futebolada de Quarta-Feira</div>
 
         {/* O marcador: a forma de assinatura da app. */}
-        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginBottom:12}}>
+        <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:14,marginBottom:12}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
             <div>
-              <div style={{fontSize:10,letterSpacing:2,color:"#7d8472",fontWeight:700}}>PRÓXIMO JOGO</div>
+              <div style={{fontSize:10,letterSpacing:2,color:"#98a290",fontWeight:700}}>PRÓXIMO JOGO</div>
               <div style={{fontSize:14,fontWeight:700,color:"white",marginTop:4}}>{`Quarta-feira, ${jogoDemo.getDate()} de ${MESES_PT[jogoDemo.getMonth()]}`}</div>
-              <div style={{fontSize:11,color:"#8a9080",marginTop:3}}>23:30 · Pavilhão Municipal</div>
+              <div style={{fontSize:11,color:"#aab3a3",marginTop:3}}>23:30 · Pavilhão Municipal</div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:10,letterSpacing:2,color:"#7d8472",fontWeight:700}}>FALTAM</div>
+              <div style={{fontSize:10,letterSpacing:2,color:"#98a290",fontWeight:700}}>FALTAM</div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,lineHeight:1,color:"#d4af37",whiteSpace:"nowrap"}}>{faltaPara(jogoDemo)}</div>
             </div>
           </div>
         </div>
 
-        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginBottom:12}}>
+        <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:14,marginBottom:12}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-            <div style={{fontSize:10,letterSpacing:2,color:"#7d8472",fontWeight:700}}>CONFIRMADOS</div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,lineHeight:1,color:"#4ade80"}}>{confirmados}<span style={{color:"#7d8472"}}>/{MAX}</span></div>
+            <div style={{fontSize:10,letterSpacing:2,color:"#98a290",fontWeight:700}}>CONFIRMADOS</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,lineHeight:1,color:"#4ade80"}}>{confirmados}<span style={{color:"#98a290"}}>/{MAX}</span></div>
           </div>
-          <div style={{height:5,borderRadius:99,background:"#23271b",marginTop:8,overflow:"hidden"}}>
+          <div style={{height:5,borderRadius:99,background:"#2a362c",marginTop:8,overflow:"hidden"}}>
             <div style={{width:"100%",height:"100%",background:"#1ea851",borderRadius:99,transform:`scaleX(${Math.min(100,(confirmados/MAX)*100)/100})`,transformOrigin:"left",transition:"transform 0.35s ease"}}/>
           </div>
           <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
@@ -3480,11 +3480,11 @@ function DemoView({setView, showToast}) {
         </div>
 
         {/* A pergunta, feita a esta pessoa. É isto que se veio cá experimentar. */}
-        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:22,flexShrink:0}}>⚽</span>
           <div>
             <div style={{fontSize:14,fontWeight:800,color:"white"}}>Também vais jogar?</div>
-            <div style={{fontSize:11.5,color:"#8a9080",marginTop:2}}>Toca e vê a lista mexer-se</div>
+            <div style={{fontSize:11.5,color:"#aab3a3",marginTop:2}}>Toca e vê a lista mexer-se</div>
           </div>
         </div>
 
@@ -3507,11 +3507,11 @@ function DemoView({setView, showToast}) {
           </div>
         )}
 
-        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,overflow:"hidden",marginBottom:14}}>
+        <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,overflow:"hidden",marginBottom:14}}>
           {lista.map((p,i)=>(
-            <div key={p.nome} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderTop:i===0?"none":"1px solid #23271b",background:p.euSou?"rgba(212,175,55,0.06)":"transparent"}}>
-              <div style={{width:26,height:26,borderRadius:"50%",background:p.cor,color:p.euSou?"#0a0b08":"white",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:p.estado==="sem"?0.55:1}}>{p.ini}</div>
-              <div style={{fontSize:13,color:p.estado==="sem"?"#8a9080":"#d8dbd2",flex:1,fontWeight:p.euSou?800:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
+            <div key={p.nome} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderTop:i===0?"none":"1px solid #2a362c",background:p.euSou?"rgba(212,175,55,0.06)":"transparent"}}>
+              <div style={{width:26,height:26,borderRadius:"50%",background:p.cor,color:p.euSou?"#0d1410":"white",fontSize:9.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:p.estado==="sem"?0.55:1}}>{p.ini}</div>
+              <div style={{fontSize:13,color:p.estado==="sem"?"#aab3a3":"#d8dbd2",flex:1,fontWeight:p.euSou?800:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
               <div style={{fontSize:11,fontWeight:800,color:corEstado[p.estado],whiteSpace:"nowrap"}}>{textoEstado[p.estado]}</div>
             </div>
           ))}
@@ -3525,13 +3525,13 @@ function DemoView({setView, showToast}) {
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:0.5,lineHeight:1.1}}>
               É assim <span style={{color:"#d4af37"}}>no teu grupo.</span>
             </div>
-            <div style={{fontSize:12.5,color:"#8a9080",margin:"8px 0 14px",lineHeight:1.55}}>
+            <div style={{fontSize:12.5,color:"#aab3a3",margin:"8px 0 14px",lineHeight:1.55}}>
               Cada um responde no telemóvel, a lista faz-se sozinha e, a quem se esquece, é a app que pergunta. Tu deixas de andar atrás de ninguém.
             </div>
-            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:15,background:"#d4af37",border:"none",borderRadius:14,color:"#0a0b08",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:8}}>
+            <button onClick={()=>{marcarPasso("quer_criar_grupo");setView("criar-grupo");}} style={{width:"100%",padding:15,background:"#d4af37",border:"none",borderRadius:14,color:"#0d1410",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:8}}>
               ⚽ Criar o meu grupo grátis
             </button>
-            <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{width:"100%",padding:13,background:"transparent",border:"1px solid #23271b",borderRadius:14,color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+            <button onClick={()=>{marcarPasso("quer_entrar_codigo");setView("entrar-convite");}} style={{width:"100%",padding:13,background:"transparent",border:"1px solid #2a362c",borderRadius:14,color:"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer"}}>
               Já tenho um código de convite
             </button>
           </div>
@@ -3693,28 +3693,28 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
   // acabou de criar o grupo: sozinho, um grupo não serve para nada, e quanto
   // mais passos houver entre criar e convidar, mais gente fica pelo caminho.
   if(step===3) return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
       <div style={{fontSize:56,marginBottom:14}}>🎉</div>
       <div style={{color:"white",fontSize:22,fontWeight:800,marginBottom:6}}>Grupo criado!</div>
-      <div style={{color:"#8a9080",fontSize:14,lineHeight:1.6,maxWidth:320,marginBottom:24}}>
+      <div style={{color:"#aab3a3",fontSize:14,lineHeight:1.6,maxWidth:320,marginBottom:24}}>
         Falta o mais importante: <strong style={{color:"#d4af37"}}>chamar a malta</strong>.
       </div>
 
-      <div style={{width:"100%",maxWidth:340,background:"#14160f",border:"2px solid #d4af37",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:2,marginBottom:6}}>CÓDIGO DO GRUPO</div>
+      <div style={{width:"100%",maxWidth:340,background:"#18211a",border:"2px solid #d4af37",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#aab3a3",letterSpacing:2,marginBottom:6}}>CÓDIGO DO GRUPO</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,color:"#d4af37",letterSpacing:8,marginBottom:14}}>{inviteCode}</div>
         <BotaoWhatsApp code={inviteCode} groupName={groupName} style={{marginBottom:8}}/>
-        <button onClick={()=>{navigator.clipboard.writeText(inviteMessage(inviteCode,groupName)).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);showToast("Convite copiado ✓");});}} style={{width:"100%",padding:"12px",background:"transparent",border:"1px solid #23271b",borderRadius:12,color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+        <button onClick={()=>{navigator.clipboard.writeText(inviteMessage(inviteCode,groupName)).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);showToast("Convite copiado ✓");});}} style={{width:"100%",padding:"12px",background:"transparent",border:"1px solid #2a362c",borderRadius:12,color:"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer"}}>
           {copied?"Copiado ✓":"Copiar convite"}
         </button>
       </div>
 
       {/* Discreto de propósito: o verde forte fica reservado ao convite, senão
           os dois botões competem e o olho não sabe qual é o principal. */}
-      <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:340,padding:"15px",background:"transparent",border:"1px solid #23271b",borderRadius:12,color:"#8a9080",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+      <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",maxWidth:340,padding:"15px",background:"transparent",border:"1px solid #2a362c",borderRadius:12,color:"#aab3a3",fontWeight:700,fontSize:14,cursor:"pointer"}}>
         {loading?"A entrar...":"Entrar na app →"}
       </button>
-      <div style={{color:"#7d8472",fontSize:11.5,marginTop:12,maxWidth:300,lineHeight:1.5}}>
+      <div style={{color:"#98a290",fontSize:11.5,marginTop:12,maxWidth:300,lineHeight:1.5}}>
         O código fica sempre disponível dentro da app.
       </div>
     </div>
@@ -3725,14 +3725,14 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
     marcarPasso("criar_passo2");
     setStep(2);
   };
-  const fieldLabel={color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3};
+  const fieldLabel={color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3};
   const greenBtn={background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",border:"none"};
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
-      <div style={{background:"#14160f",padding:"16px 20px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
+    <div style={{background:"#0d1410",minHeight:"100vh"}}>
+      <div style={{background:"#18211a",padding:"16px 20px",borderBottom:"1px solid #2a362c",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
         <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar o meu jogo</span>
-        <span style={{color:"#7d8472",fontSize:12,marginLeft:"auto"}}>Passo {step}/2</span>
+        <span style={{color:"#98a290",fontSize:12,marginLeft:"auto"}}>Passo {step}/2</span>
       </div>
       <div style={{padding:"24px 20px",maxWidth:440,margin:"0 auto"}}>
         {/* Passo 1 com uma só pergunta (08/11). Tinha cinco campos — nome,
@@ -3745,21 +3745,21 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
           <input id="nome-jogo" className="text-input" autoFocus value={groupName} onChange={e=>{if(!escreveuNome.current&&e.target.value){escreveuNome.current=true;marcarPasso("escreveu_nome");}setGroupName(e.target.value);}} onKeyDown={e=>{if(e.key==="Enter")continuarPasso1();}} placeholder="Ex: Futebolada de quarta" enterKeyHint="next" style={{marginBottom:12}}/>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}}>
             {["Futebolada de quarta","Futsal dos amigos","Jogo de sexta"].map(ex=>(
-              <button key={ex} type="button" onClick={()=>{if(!escreveuNome.current){escreveuNome.current=true;marcarPasso("escreveu_nome");}setGroupName(ex);}} style={{padding:"8px 12px",borderRadius:20,border:"1px solid #2e3324",background:"#14160f",color:"#a3a897",fontSize:13,cursor:"pointer"}}>{ex}</button>
+              <button key={ex} type="button" onClick={()=>{if(!escreveuNome.current){escreveuNome.current=true;marcarPasso("escreveu_nome");}setGroupName(ex);}} style={{padding:"8px 12px",borderRadius:20,border:"1px solid #2e3324",background:"#18211a",color:"#a3a897",fontSize:13,cursor:"pointer"}}>{ex}</button>
             ))}
           </div>
           <button className="btn-big" style={greenBtn} onClick={continuarPasso1}>Continuar →</button>
-          <p style={{color:"#7d8472",fontSize:12.5,lineHeight:1.5,marginTop:14,textAlign:"center"}}>O dia, a hora, o local e o preço acertas depois, dentro da app.</p>
+          <p style={{color:"#98a290",fontSize:12.5,lineHeight:1.5,marginTop:14,textAlign:"center"}}>O dia, a hora, o local e o preço acertas depois, dentro da app.</p>
         </>}
         {step===2&&<>
-          <p style={{color:"#8a9080",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
+          <p style={{color:"#aab3a3",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
           <label style={fieldLabel}>O TEU NOME *</label>
           {/* O utilizador é sugerido a partir do nome enquanto a pessoa não
               lhe mexer: metade de quem chegava aqui desistia neste campo. */}
           <input className="text-input" value={adminName} onChange={e=>{const v=e.target.value; if(adminUsername===normalizeUsername(adminName)) setAdminUsername(normalizeUsername(v)); setAdminName(v);}} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
           <label style={fieldLabel}>UTILIZADOR *</label>
           <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(normalizeUsername(e.target.value))} placeholder="Ex: joaosilva" autoCapitalize="none" style={{marginBottom:4}}/>
-          <p style={{color:"#7d8472",fontSize:12,margin:"0 0 14px"}}>É com este nome que entras na app.</p>
+          <p style={{color:"#98a290",fontSize:12,margin:"0 0 14px"}}>É com este nome que entras na app.</p>
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           {/* Telemóvel e email são opcionais: ficam fechados para o ecrã
@@ -3771,9 +3771,9 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
             <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
             <label style={fieldLabel}>EMAIL (opcional)</label>
             <input className="text-input" type="email" value={adminEmail} onChange={e=>setAdminEmail(e.target.value)} placeholder="o.teu@email.pt" autoCapitalize="none" autoCorrect="off" style={{marginBottom:6}}/>
-            <p style={{color:"#7d8472",fontSize:11,marginBottom:14,lineHeight:1.4}}>Só para te podermos ajudar se perderes o acesso. Não enviamos publicidade.</p>
+            <p style={{color:"#98a290",fontSize:11,marginBottom:14,lineHeight:1.4}}>Só para te podermos ajudar se perderes o acesso. Não enviamos publicidade.</p>
           </>}
-          <p style={{color:"#7d8472",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
+          <p style={{color:"#98a290",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
           <button className="btn-big" style={greenBtn} onClick={handleCreate} disabled={loading}>{loading?"A criar o teu jogo...":"🚀 Criar o meu jogo"}</button>
         </>}
       </div>
@@ -3785,24 +3785,24 @@ function CriarGrupoView({setView, showToast, onLogin, reloadAll, onCriado}) {
 function PedidoPendenteView({groupName=null, status="pending", onTryAnother, onLogout}) {
   const isRejected = status==="rejected";
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
       <div style={{fontSize:64,marginBottom:20}}>{isRejected?"🚫":"⏳"}</div>
       <div style={{color:"white",fontSize:22,fontWeight:800,marginBottom:10}}>{isRejected?"Pedido não aceite":"Pedido enviado"}</div>
-      <div style={{color:"#8a9080",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:32}}>
+      <div style={{color:"#aab3a3",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:32}}>
         {isRejected
           ? <>O teu pedido para entrar {groupName?<>em <strong style={{color:"#d4af37"}}>{groupName}</strong></>:"no grupo"} não foi aceite pelo admin.</>
           : <>Estás à espera que o admin {groupName?<>de <strong style={{color:"#d4af37"}}>{groupName}</strong></>:""} aprove a tua entrada. Assim que for aceite, avisamos-te.</>}
       </div>
       {!isRejected&&<>
         <div style={{color:"#c9cdbd",fontSize:13,lineHeight:1.6,maxWidth:300,margin:"-14px 0 18px"}}>Para ser mais rápido, avisa o admin no vosso grupo de WhatsApp.</div>
-        <button onClick={()=>window.location.reload()} style={{width:"100%",maxWidth:300,padding:"14px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0b08",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:10}}>
+        <button onClick={()=>window.location.reload()} style={{width:"100%",maxWidth:300,padding:"14px",background:"#d4af37",border:"none",borderRadius:12,color:"#0d1410",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:10}}>
           Já fui aceite? Ver agora
         </button>
       </>}
-      <button onClick={onTryAnother} style={{width:"100%",maxWidth:300,padding:"14px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>
+      <button onClick={onTryAnother} style={{width:"100%",maxWidth:300,padding:"14px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>
         Tentar outro código
       </button>
-      <button onClick={onLogout} style={{width:"100%",maxWidth:300,padding:"14px",background:"transparent",border:"none",color:"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+      <button onClick={onLogout} style={{width:"100%",maxWidth:300,padding:"14px",background:"transparent",border:"none",color:"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer"}}>
         Sair
       </button>
     </div>
@@ -3840,57 +3840,57 @@ function EntrarVagaView({code, setView}) {
   };
 
   const shell = (children) => (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",textAlign:"center"}}>
       {children}
     </div>
   );
 
-  if(phase==="loading") return shell(<div style={{color:"#8a9080",fontSize:14}}>A verificar o link...</div>);
+  if(phase==="loading") return shell(<div style={{color:"#aab3a3",fontSize:14}}>A verificar o link...</div>);
 
   if(phase==="error") return shell(<>
     <div style={{fontSize:56,marginBottom:16}}>😕</div>
     <div style={{color:"white",fontSize:18,fontWeight:800,marginBottom:8}}>Não foi possível continuar</div>
-    <div style={{color:"#8a9080",fontSize:13,lineHeight:1.6,maxWidth:300,marginBottom:24}}>{errorMsg}</div>
-    <button onClick={()=>setView("landing")} style={{padding:"12px 24px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>Ir para a Hoje Há Jogo</button>
+    <div style={{color:"#aab3a3",fontSize:13,lineHeight:1.6,maxWidth:300,marginBottom:24}}>{errorMsg}</div>
+    <button onClick={()=>setView("landing")} style={{padding:"12px 24px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>Ir para a Hoje Há Jogo</button>
   </>);
 
   if(phase==="success") return shell(<>
     <div style={{fontSize:64,marginBottom:16}}>{resultStatus==="in"?"✅":"⏳"}</div>
     <div style={{color:"white",fontSize:20,fontWeight:800,marginBottom:8}}>{resultStatus==="in"?"Estás dentro!":"Ficaste na lista de espera"}</div>
-    <div style={{color:"#8a9080",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:8}}>
+    <div style={{color:"#aab3a3",fontSize:14,lineHeight:1.7,maxWidth:300,marginBottom:8}}>
       {resultStatus==="in"
         ? <>Aparece em <strong style={{color:"#d4af37"}}>{info.location}</strong> no dia marcado. Boa sorte!</>
         : <>O jogo já está cheio, mas ficaste em lista de espera — se alguém desistir, entras automaticamente.</>}
     </div>
-    <div style={{color:"#7d8472",fontSize:12,marginBottom:28}}>{new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
+    <div style={{color:"#98a290",fontSize:12,marginBottom:28}}>{new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
     <a href="https://hojehajogo.pt" style={{padding:"12px 24px",background:"linear-gradient(180deg,#2fd66b,#1ea851)",borderRadius:12,color:"#04240f",fontWeight:800,fontSize:13,textDecoration:"none"}}>Conhecer a Hoje Há Jogo →</a>
   </>);
 
   // phase === "form"
   const cfg = sportConfig(info.sport_type);
   return shell(<div style={{width:"100%",maxWidth:340}}>
-    <div style={{fontSize:11,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:6}}>VAGA ABERTA</div>
+    <div style={{fontSize:11,fontWeight:700,color:"#98a290",letterSpacing:2,marginBottom:6}}>VAGA ABERTA</div>
     <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#d4af37",letterSpacing:1,marginBottom:16}}>{info.group_name}</div>
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"16px",marginBottom:20,textAlign:"left"}}>
+    <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:"16px",marginBottom:20,textAlign:"left"}}>
       <div style={{fontSize:13,color:"white",fontWeight:700,marginBottom:4}}>📅 {new Date(info.date).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"})} às {info.time}</div>
-      {info.location&&<div style={{fontSize:12,color:"#8a9080",marginBottom:4}}>📍 {info.location}</div>}
-      <div style={{fontSize:12,color:"#8a9080",marginBottom:4}}>💰 {info.cost_per_player}€ por jogador</div>
+      {info.location&&<div style={{fontSize:12,color:"#aab3a3",marginBottom:4}}>📍 {info.location}</div>}
+      <div style={{fontSize:12,color:"#aab3a3",marginBottom:4}}>💰 {info.cost_per_player}€ por jogador</div>
       <div style={{fontSize:12,color:info.spots_left>0?"#4ade80":"#f87171",fontWeight:700}}>{info.spots_left>0?`${info.spots_left} vagas livres`:"Sem vagas — entras em lista de espera"}</div>
     </div>
-    <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>O TEU NOME *</label>
+    <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>O TEU NOME *</label>
     <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
-    <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>TELEMÓVEL (opcional)</label>
+    <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>TELEMÓVEL (opcional)</label>
     <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
-    <label style={{color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>POSIÇÃO</label>
+    <label style={{color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3}}>POSIÇÃO</label>
     <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
       {cfg.positions.map(pos=>(
-        <button key={pos} type="button" onClick={()=>setPosition(pos)} style={{flex:"1 1 auto",minWidth:100,padding:"8px",borderRadius:10,border:`2px solid ${position===pos?"#1ea851":"#23271b"}`,background:position===pos?"rgba(30,168,81,0.15)":"#14160f",color:position===pos?"#4ade80":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>{pos}</button>
+        <button key={pos} type="button" onClick={()=>setPosition(pos)} style={{flex:"1 1 auto",minWidth:100,padding:"8px",borderRadius:10,border:`2px solid ${position===pos?"#1ea851":"#2a362c"}`,background:position===pos?"rgba(30,168,81,0.15)":"#18211a",color:position===pos?"#4ade80":"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>{pos}</button>
       ))}
     </div>
-    <button onClick={handleJoin} disabled={!name.trim()} style={{width:"100%",padding:"16px",background:name.trim()?"linear-gradient(180deg,#2fd66b,#1ea851)":"#23271b",border:"none",borderRadius:12,color:name.trim()?"#04240f":"#7d8472",fontWeight:800,fontSize:15,cursor:name.trim()?"pointer":"default"}}>
+    <button onClick={handleJoin} disabled={!name.trim()} style={{width:"100%",padding:"16px",background:name.trim()?"linear-gradient(180deg,#2fd66b,#1ea851)":"#2a362c",border:"none",borderRadius:12,color:name.trim()?"#04240f":"#98a290",fontWeight:800,fontSize:15,cursor:name.trim()?"pointer":"default"}}>
       {phase==="submitting"?"A entrar...":"⚽ Quero jogar"}
     </button>
-    <p style={{color:"#7d8472",fontSize:10.5,lineHeight:1.5,marginTop:14}}>Não precisas de criar conta. Só te vêem quem vai jogar contigo, nunca dados privados do grupo.</p>
+    <p style={{color:"#98a290",fontSize:10.5,lineHeight:1.5,marginTop:14}}>Não precisas de criar conta. Só te vêem quem vai jogar contigo, nunca dados privados do grupo.</p>
   </div>);
 }
 
@@ -3989,11 +3989,11 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
     window.location.reload();
   };
 
-  const fieldLabel={color:"#8a9080",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3};
+  const fieldLabel={color:"#aab3a3",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.3};
   const greenBtn={background:"linear-gradient(180deg,#2fd66b,#1ea851)",color:"#04240f",border:"none"};
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh"}}>
-      <div style={{background:"#14160f",padding:"16px 20px",borderBottom:"1px solid #23271b",display:"flex",alignItems:"center",gap:10}}>
+    <div style={{background:"#0d1410",minHeight:"100vh"}}>
+      <div style={{background:"#18211a",padding:"16px 20px",borderBottom:"1px solid #2a362c",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>step===1?(onBack?onBack():setView("landing")):setStep(step===4||step===3?2:1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
         <span style={{color:"white",fontWeight:700,fontSize:16}}>Entrar com convite</span>
       </div>
@@ -4001,7 +4001,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 
         {/* PASSO 1 — código */}
         {step===1&&<>
-          <p style={{color:"#8a9080",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
+          <p style={{color:"#aab3a3",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
           <label style={fieldLabel}>CÓDIGO DE CONVITE</label>
           <input className="text-input" value={code} onChange={e=>{
             const clean=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
@@ -4012,12 +4012,12 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
               código nenhum para pôr — pode ser quem quer montar o seu próprio
               grupo. Sem esta saída, o ecrã era um beco: um campo que a pessoa
               não tem como preencher e mais nada. */}
-          <div style={{marginTop:28,paddingTop:22,borderTop:"1px solid #23271b",textAlign:"center"}}>
-            <p style={{color:"#8a9080",fontSize:13,marginBottom:12}}>{currentUser?"Não tens código? És tu que vais organizar?":"Não tens código? Pede ao organizador o link do grupo — ou vê primeiro como funciona."}</p>
-            {!currentUser&&<button onClick={()=>setView("demo")} style={{width:"100%",padding:"15px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:8}}>
+          <div style={{marginTop:28,paddingTop:22,borderTop:"1px solid #2a362c",textAlign:"center"}}>
+            <p style={{color:"#aab3a3",fontSize:13,marginBottom:12}}>{currentUser?"Não tens código? És tu que vais organizar?":"Não tens código? Pede ao organizador o link do grupo — ou vê primeiro como funciona."}</p>
+            {!currentUser&&<button onClick={()=>setView("demo")} style={{width:"100%",padding:"15px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:8}}>
               👀 Ver um grupo a funcionar
             </button>}
-            <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"15px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+            <button onClick={()=>setView("criar-grupo")} style={{width:"100%",padding:"15px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontWeight:700,fontSize:14,cursor:"pointer"}}>
               ⚽ Criar o meu grupo
             </button>
           </div>
@@ -4028,7 +4028,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
           <div style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:12,padding:"14px",marginBottom:28,textAlign:"center"}}>
             <div style={{color:"#d4af37",fontSize:12,marginBottom:4}}>GRUPO ENCONTRADO</div>
             <div style={{color:"white",fontSize:18,fontWeight:700}}>{group.name}</div>
-            {group.location&&<div style={{color:"#8a9080",fontSize:12,marginTop:4}}>📍 {group.location}</div>}
+            {group.location&&<div style={{color:"#aab3a3",fontSize:12,marginTop:4}}>📍 {group.location}</div>}
           </div>
           {currentUser ? (
             /* Já autenticado — só adicionar grupo */
@@ -4071,13 +4071,13 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
                   <div style={{color:"rgba(4,36,15,0.7)",fontSize:12}}>Entrar com utilizador e password</div>
                 </div>
               </button>
-              <button onClick={()=>setStep(4)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+              <button onClick={()=>setStep(4)} style={{width:"100%",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
                 <div style={{width:40,height:40,background:"rgba(212,175,55,0.1)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <Icon name="plus" size={20}/>
                 </div>
                 <div>
                   <div style={{color:"white",fontSize:14,fontWeight:700}}>Criar conta</div>
-                  <div style={{color:"#7d8472",fontSize:12}}>Primeira vez neste grupo</div>
+                  <div style={{color:"#98a290",fontSize:12}}>Primeira vez neste grupo</div>
                 </div>
               </button>
             </div>
@@ -4086,7 +4086,7 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 
         {/* PASSO 3 — login */}
         {step===3&&group&&<>
-          <p style={{color:"#8a9080",fontSize:13,marginBottom:20}}>Entra com a tua conta do grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
+          <p style={{color:"#aab3a3",fontSize:13,marginBottom:20}}>Entra com a tua conta do grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
           <label style={fieldLabel}>USERNAME</label>
           <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="O teu username..." autoCapitalize="none" style={{marginBottom:14}}/>
           <label style={fieldLabel}>PASSWORD</label>
@@ -4096,20 +4096,20 @@ function EntrarConviteView({setView, showToast, currentUser=null, onGrupoAdicion
 
         {/* PASSO 4 — registo */}
         {step===4&&group&&<>
-          <p style={{color:"#8a9080",fontSize:13,marginBottom:20}}>Criar conta no grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
+          <p style={{color:"#aab3a3",fontSize:13,marginBottom:20}}>Criar conta no grupo <strong style={{color:"#d4af37"}}>{group.name}</strong></p>
           <label style={fieldLabel}>O TEU NOME *</label>
           <input className="text-input" value={name} onChange={e=>{const v=e.target.value; if(username===normalizeUsername(name)) setUsername(normalizeUsername(v)); setName(v);}} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
           <label style={fieldLabel}>UTILIZADOR *</label>
           <input className="text-input" value={username} onChange={e=>setUsername(normalizeUsername(e.target.value))} placeholder="Ex: pedrosantos" autoCapitalize="none" style={{marginBottom:4}}/>
-          <p style={{color:"#7d8472",fontSize:12,margin:"0 0 14px"}}>É com este nome que entras na app.</p>
+          <p style={{color:"#98a290",fontSize:12,margin:"0 0 14px"}}>É com este nome que entras na app.</p>
           <label style={fieldLabel}>PASSWORD *</label>
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={fieldLabel}>TELEMÓVEL (opcional)</label>
           <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:14}}/>
           <label style={fieldLabel}>EMAIL (opcional)</label>
           <input className="text-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="o.teu@email.pt" autoCapitalize="none" autoCorrect="off" style={{marginBottom:6}}/>
-          <p style={{color:"#7d8472",fontSize:11,marginBottom:14,lineHeight:1.4}}>Só para te podermos ajudar se perderes o acesso. Não enviamos publicidade.</p>
-          <p style={{color:"#7d8472",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
+          <p style={{color:"#98a290",fontSize:11,marginBottom:14,lineHeight:1.4}}>Só para te podermos ajudar se perderes o acesso. Não enviamos publicidade.</p>
+          <p style={{color:"#98a290",fontSize:10.5,lineHeight:1.5,marginBottom:14}}>🔒 Os teus dados só são visíveis dentro do teu grupo e servem apenas para organizar os jogos.</p>
           <button className="btn-big" style={greenBtn} onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
         </>}
 
@@ -4124,7 +4124,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=fal
     ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}]
     : [{key:"player",icon:"⚽",label:"Jogo"},{key:"financas",icon:"💸",label:"Finanças"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}];
   return (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0b08",borderTop:"1px solid #23271b",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)",boxShadow:"0 -8px 24px rgba(0,0,0,0.6)"}}>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0d1410",borderTop:"1px solid #2a362c",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)",boxShadow:"0 -8px 24px rgba(0,0,0,0.6)"}}>
       {items.map(item=>{
         const isActive=view===item.key;
         return (
@@ -4133,7 +4133,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=fal
             setView(item.key);
           }} style={{flex:1,padding:"8px 4px 10px",background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
             <span style={{fontSize:20}}>{item.icon}</span>
-            <span style={{fontSize:11,fontWeight:700,color:isActive?"#d4af37":"#8a9080",letterSpacing:0.3}}>{item.label}</span>
+            <span style={{fontSize:11,fontWeight:700,color:isActive?"#d4af37":"#aab3a3",letterSpacing:0.3}}>{item.label}</span>
             {isActive&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:"#d4af37",borderRadius:99}}/>}
             {item.key==="financas"&&hasDebts&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
             {item.key==="chat"&&unreadChat&&<div style={{position:"absolute",top:6,right:"25%",width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
@@ -4149,7 +4149,7 @@ function BottomNav({view, setView, isAdmin, hasDebts, unreadChat, adminAlert=fal
 function ExpandableCard({title, children, defaultOpen=false}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,marginBottom:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
+    <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,marginBottom:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
       <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:"transparent",border:"none",cursor:"pointer",color:"white",fontFamily:"'DM Sans',sans-serif"}}>
         <span style={{fontSize:12,fontWeight:800,letterSpacing:1,color:"#8ba593"}}>{title}</span>
         <span style={{fontSize:14,color:"#4ade80",transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
@@ -4213,9 +4213,9 @@ function TeamsReveal({confirmed, players=[], onReassign, sportType="futsal", isA
     onReassign(players.length?players:confirmed,{forcado:false});
   },[phase,isAdmin,assinatura]);
 
-  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #ffffff",background:"#23271b",color:"#ffffff",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
+  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #ffffff",background:"#2a362c",color:"#ffffff",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
   if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"1px solid #1ea851"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(30,168,81,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #1ea851"}}>{name}</span>)}</div></div>;
-  return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
+  return <div><AutoTeamsDisplay confirmed={confirmed} players={players} sportType={sportType} isAdmin={isAdmin} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #2a362c",background:"transparent",color:"#aab3a3",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
 }
 
 // ── AUTO TEAMS DISPLAY ───────────────────────────────────────────────────────
@@ -4227,11 +4227,11 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
   const activeTeams=["A","B","C"].filter(t=>groups[t]?.length>0);
   const subs=groups["SUB"]||[];
   const teamOptions=["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType));
-  if(activeTeams.length===0) return <div style={{background:"#14160f",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#8a9080"}}>As equipas formam-se automaticamente quando os jogadores confirmam presença.</div>;
+  if(activeTeams.length===0) return <div style={{background:"#18211a",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#aab3a3"}}>As equipas formam-se automaticamente quando os jogadores confirmam presença.</div>;
   const movePicker=(p,currentTeam)=>isAdmin&&movingId===p.id&&(
     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:3}}>
       {[...teamOptions,"SUB"].filter(t=>t!==currentTeam).map(t=>(
-        <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:12,padding:"8px 12px",borderRadius:8,border:"1px solid #23271b",background:"#0a1a0a",color:"#8a9080",fontWeight:700,cursor:"pointer"}}>
+        <button key={t} onClick={()=>{onMovePlayer(p.id,t);setMovingId(null);}} style={{fontSize:12,padding:"8px 12px",borderRadius:8,border:"1px solid #2a362c",background:"#0a1a0a",color:"#aab3a3",fontWeight:700,cursor:"pointer"}}>
           → {t==="SUB"?"Suplente":teamLabel(teamConfig,t)}
         </button>
       ))}
@@ -4243,8 +4243,8 @@ function AutoTeamsDisplay({confirmed, players=[], sportType="futsal", isAdmin=fa
         const color=teamStyle(teamConfig,teamName,ti),team=groups[teamName]||[];
         return <div key={teamName} style={{background:color.bg,border:`1px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>{color.label.toUpperCase()}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=>{const isGk=["GR","Guarda-Redes"].includes(p.position);return <div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:isGk?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${isGk?"#60a5fa":color.border}`,cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{isGk&&<span style={{fontSize:11}}>🧤</span>}</div>{movePicker(p,teamName)}</div>;})}</div></div>;
       })}
-      {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #7d8472",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#8a9080",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#8a9080",border:"1px solid #2a332a",cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>{movePicker(p,"SUB")}</div>)}</div></div>}
-      {isAdmin&&<p style={{fontSize:10,color:"#7d8472",marginTop:2}}>Toca num jogador para o mover de equipa.</p>}
+      {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #98a290",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#aab3a3",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",flexDirection:"column"}}><div onClick={isAdmin?()=>setMovingId(movingId===p.id?null:p.id):undefined} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#aab3a3",border:"1px solid #2a332a",cursor:isAdmin?"pointer":"default"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>{movePicker(p,"SUB")}</div>)}</div></div>}
+      {isAdmin&&<p style={{fontSize:10,color:"#98a290",marginTop:2}}>Toca num jogador para o mover de equipa.</p>}
     </div>
   );
 }
@@ -4293,7 +4293,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
           <p className="section-label" style={{margin:0}}><Icon name="star" size={12}/> MVP DA SEMANA PASSADA</p>
           <MvpCountdownBadge deadline={prazoFinal}/>
         </div>
-        <p style={{fontSize:12,color:"#8a9080",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo assim que a contagem chegar a zero.</p>
+        <p style={{fontSize:12,color:"#aab3a3",textAlign:"center",padding:"10px 0",margin:0}}>O teu voto já foi registado anteriormente. O resultado fica definitivo assim que a contagem chegar a zero.</p>
       </div>
     );
   }
@@ -4306,7 +4306,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
         <p className="section-label" style={{margin:0}}><Icon name="star" size={12}/> {isPastGame?"MVP DA SEMANA PASSADA":"MVP DA SEMANA"}</p>
         {isPastGame&&<MvpCountdownBadge deadline={prazoFinal}/>}
       </div>
-      <p style={{fontSize:11,color:"#7d8472",margin:"0 0 8px"}}>🔒 O teu voto é secreto — só tu sabes em quem votaste.</p>
+      <p style={{fontSize:11,color:"#98a290",margin:"0 0 8px"}}>🔒 O teu voto é secreto — só tu sabes em quem votaste.</p>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {/* A própria pessoa aparece na lista, mas a linha dela não é um botão.
             Antes era retirada da lista de vez, e o efeito era este: não podia
@@ -4314,29 +4314,29 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote,onRemov
             votado nela (mal) — ficava sem saber o resultado que mais lhe
             interessa. Continua a não poder votar em si própria; só passa a ver
             a contagem, como vê a dos outros. */}
-        {!confirmed.some(p=>!p.is_guest&&p.id!==currentUserId)&&<p style={{fontSize:12,color:"#8a9080",margin:"2px 0 4px"}}>Não há em quem votar — os convidados não entram na votação.</p>}
+        {!confirmed.some(p=>!p.is_guest&&p.id!==currentUserId)&&<p style={{fontSize:12,color:"#aab3a3",margin:"2px 0 4px"}}>Não há em quem votar — os convidados não entram na votação.</p>}
         {[...confirmed].filter(p=>!p.is_guest).sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)||a.name.localeCompare(b.name,"pt")).map(p=>{
           const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
           const souEu=p.id===currentUserId;
           const linha={display:"flex",alignItems:"center",gap:10,borderRadius:10,padding:"8px 12px",textAlign:"left",width:"100%"};
           const conteudo=(<>
             <Avatar player={p} size={28}/>
-            <span style={{flex:1,fontSize:13,fontWeight:700,color:souEu?"#8a9080":"white"}}>{p.name}{souEu&&" (tu)"}</span>
+            <span style={{flex:1,fontSize:13,fontWeight:700,color:souEu?"#aab3a3":"white"}}>{p.name}{souEu&&" (tu)"}</span>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <div style={{width:60,height:6,background:"#14160f",borderRadius:99,overflow:"hidden"}}><div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/></div>
+              <div style={{width:60,height:6,background:"#18211a",borderRadius:99,overflow:"hidden"}}><div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/></div>
               <span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>
               {isVoted&&<span style={{fontSize:12}}>⭐</span>}
             </div>
           </>);
-          if(souEu) return <div key={p.id} style={{...linha,background:"#101208",border:"2px dashed #23271b"}}>{conteudo}</div>;
-          return <button key={p.id} onClick={()=>onVote(p.id)} style={{...linha,background:isVoted?"rgba(217,119,6,0.15)":"#14160f",border:`2px solid ${isVoted?"#d97706":"#23271b"}`,cursor:"pointer"}}>{conteudo}</button>;
+          if(souEu) return <div key={p.id} style={{...linha,background:"#101208",border:"2px dashed #2a362c"}}>{conteudo}</div>;
+          return <button key={p.id} onClick={()=>onVote(p.id)} style={{...linha,background:isVoted?"rgba(217,119,6,0.15)":"#18211a",border:`2px solid ${isVoted?"#d97706":"#2a362c"}`,cursor:"pointer"}}>{conteudo}</button>;
         })}
       </div>
       {myVote&&(
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:8,flexWrap:"wrap"}}>
-          <p style={{fontSize:11,color:"#8a9080",margin:0}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>
+          <p style={{fontSize:11,color:"#aab3a3",margin:0}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>
           {onRemoveVote&&(
-            <button onClick={()=>onRemoveVote(currentUserId)} style={{background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"10px 14px",color:"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+            <button onClick={()=>onRemoveVote(currentUserId)} style={{background:"transparent",border:"1px solid #2a362c",borderRadius:8,padding:"10px 14px",color:"#aab3a3",fontSize:11,fontWeight:700,cursor:"pointer"}}>
               Retirar voto
             </button>
           )}
@@ -4354,31 +4354,31 @@ function PiggyBankCard({piggybank,history,cost=3,groupId=null,isAdmin=false,show
   const expenses=history.filter(g=>Number(g.collected)<0);
   return (
     <div style={{marginTop:16}}>
-      {showHero&&<div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"18px",marginBottom:8,color:"white",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:"#8a9080",marginBottom:6}}>SALDO ATUAL</div>
+      {showHero&&<div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:16,padding:"18px",marginBottom:8,color:"white",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
+        <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:"#aab3a3",marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"#4ade80":"#f87171"}}>{piggybank>0?"+":""}{piggybank}€</div>
-        <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid #23271b"}}>
-          <div><div style={{fontSize:10,color:"#8a9080"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
-          <div><div style={{fontSize:10,color:"#8a9080"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
-          {totalExpenses<0&&<div><div style={{fontSize:10,color:"#8a9080"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
-          <div><div style={{fontSize:10,color:"#8a9080"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
+        <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid #2a362c"}}>
+          <div><div style={{fontSize:10,color:"#aab3a3"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
+          <div><div style={{fontSize:10,color:"#aab3a3"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
+          {totalExpenses<0&&<div><div style={{fontSize:10,color:"#aab3a3"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
+          <div><div style={{fontSize:10,color:"#aab3a3"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
         </div>
       </div>}
       {!showHero&&<div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
-        <div><div style={{fontSize:10,color:"#8a9080"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
-        <div><div style={{fontSize:10,color:"#8a9080"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
-        {totalExpenses<0&&<div><div style={{fontSize:10,color:"#8a9080"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
-        <div><div style={{fontSize:10,color:"#8a9080"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
+        <div><div style={{fontSize:10,color:"#aab3a3"}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80"}}>+{totalReceived}€</div></div>
+        <div><div style={{fontSize:10,color:"#aab3a3"}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>-{gamesPlayed*rent}€</div></div>
+        {totalExpenses<0&&<div><div style={{fontSize:10,color:"#aab3a3"}}>DESPESAS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{totalExpenses}€</div></div>}
+        <div><div style={{fontSize:10,color:"#aab3a3"}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
       </div>}
-      <div style={{fontSize:11,color:"#8a9080",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {rent}€ do aluguer · {cost}€ por jogador</div>
+      <div style={{fontSize:11,color:"#aab3a3",textAlign:"center",marginBottom:expenses.length>0?12:0}}>Cada jogo desconta {rent}€ do aluguer · {cost}€ por jogador</div>
       <TreasurerBalances groupId={groupId} isAdmin={isAdmin}/>
       {expenses.length>0&&<>
-        <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
+        <div style={{fontSize:10,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:6}}>🧾 DESPESAS</div>
         {expenses.map((e,i)=>(
           <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
-              <div style={{fontSize:12,color:"#8a9080"}}>{e.description||"Despesa"}</div>
-              <div style={{fontSize:10,color:"#7d8472",marginTop:2}}>{new Date(e.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}</div>
+              <div style={{fontSize:12,color:"#aab3a3"}}>{e.description||"Despesa"}</div>
+              <div style={{fontSize:10,color:"#98a290",marginTop:2}}>{new Date(e.date).toLocaleDateString("pt-PT",{day:"numeric",month:"short",year:"numeric"})}</div>
             </div>
             <span style={{fontSize:13,fontWeight:700,color:"#f87171"}}>{e.collected}€</span>
           </div>
@@ -4432,7 +4432,7 @@ function PaymentsLedger({payments=[]}) {
   const chaves=Object.keys(grupos).sort((a,b)=>a===semJogo?1:b===semJogo?-1:b.localeCompare(a));
   return (
     <div style={{marginTop:14}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>✓ RECEBIMENTOS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:6}}>✓ RECEBIMENTOS</div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {chaves.map(k=>{
           const linhas=grupos[k].slice().sort((a,b)=>(a.payer_name||"").localeCompare(b.payer_name||""));
@@ -4440,7 +4440,7 @@ function PaymentsLedger({payments=[]}) {
           return (
             <div key={k}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4,padding:"0 2px"}}>
-                <span style={{fontSize:11,fontWeight:800,color:"#8a9080",letterSpacing:0.5}}>{k===semJogo?"AVULSO":`JOGO DE ${new Date(k+"T00:00").toLocaleDateString("pt-PT",{day:"numeric",month:"short"}).toUpperCase()}`}</span>
+                <span style={{fontSize:11,fontWeight:800,color:"#aab3a3",letterSpacing:0.5}}>{k===semJogo?"AVULSO":`JOGO DE ${new Date(k+"T00:00").toLocaleDateString("pt-PT",{day:"numeric",month:"short"}).toUpperCase()}`}</span>
                 <span style={{fontSize:11,fontWeight:700,color:"#4ade80"}}>+{subtotal}€</span>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -4448,7 +4448,7 @@ function PaymentsLedger({payments=[]}) {
                   <div key={p.id} style={{background:"rgba(30,168,81,0.08)",border:"1px solid rgba(30,168,81,0.2)",borderRadius:10,padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
                     <div style={{minWidth:0}}>
                       <div style={{fontSize:12,fontWeight:700,color:"white"}}>{p.payer_name||"Jogador"}</div>
-                      <div style={{fontSize:10,color:"#7d8472",marginTop:1}}>pago a {new Date(p.created_at).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
+                      <div style={{fontSize:10,color:"#98a290",marginTop:1}}>pago a {new Date(p.created_at).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
                     </div>
                     <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:"#4ade80",flexShrink:0}}>+{p.amount}€</span>
                   </div>
@@ -4494,7 +4494,7 @@ function GestaoDividas({debts=[],members=[],players=[],currentUserId,onPayDebt,o
             </div>
           ))}
           <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
-          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+          <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
             <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)}>
               <option value="">Seleciona jogador...</option>
               {members.filter(m=>!m.is_admin).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
@@ -4513,7 +4513,7 @@ function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber=
   const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:eur(debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0))})).filter(m=>m.total>0);
   return (
     <div className="screen">
-      <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
+      <div style={{background:"#18211a",padding:"16px 16px 20px",borderBottom:"1px solid #2a362c"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>💸 FINANÇAS</span>
@@ -4541,7 +4541,7 @@ function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber=
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span>
               </div>
               {myDebts.map(d=><div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:12,color:"#8a9080"}}>{descDivida(d.description)}</span>
+                <span style={{fontSize:12,color:"#aab3a3"}}>{descDivida(d.description)}</span>
                 <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
               </div>)}
               {myDebts.some(d=>convidadoDaDivida(d.description))&&<div style={{display:"flex",flexWrap:"wrap",gap:8}}>
@@ -4558,7 +4558,7 @@ function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber=
           :othersDebts.length>0&&<>
           <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
           <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
-            {othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px"}}>
+            {othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#18211a",border:"1px solid #2a362c",borderRadius:10,padding:"10px 14px"}}>
               <Avatar player={m} size={28}/>
               <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span>
               <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span>
@@ -4573,7 +4573,7 @@ function FinancasView({debts=[],members=[],players=[],player,onBack,mbwayNumber=
           <RegistarDespesaButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
           <ReiniciarMealheiroButton groupId={groupId} showToast={showToast} reloadAll={()=>window.location.reload()}/>
         </ExpandableSection>}
-        {!isAdmin&&othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#8a9080",fontSize:13}}>🎉 O grupo está quite!</div>}
+        {!isAdmin&&othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:10,color:"#aab3a3",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>
     </div>
   );
@@ -4599,11 +4599,11 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
   const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#4ade80"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#ffffff"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"},{icon:"✅",label:"Vitórias",value:myWin.wins,color:"#16a34a"},{icon:"🎯",label:"% Vitórias",value:myWin.played>0?`${myWinPct}%`:"—",color:"#d4af37"}];
   return (
     <div className="screen">
-      <div style={{background:"#14160f",padding:"16px 16px 14px",borderBottom:"1px solid #23271b"}}>
+      <div style={{background:"#18211a",padding:"16px 16px 14px",borderBottom:"1px solid #2a362c"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
           <button className="field-nav-btn" onClick={onBack} aria-label="Voltar"><Icon name="left" size={14}/></button>
           <Avatar player={player} size={36}/>
-          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:11,color:"#8a9080"}}>{player.is_admin?"Admin ★":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
+          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:11,color:"#aab3a3"}}>{player.is_admin?"Admin ★":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div className="tabs" style={{marginBottom:0}}>
           {[["pessoal","⚽ Pessoal"],["grupo","🏆 Grupo"],["epocas","🏁 Épocas"]].map(([k,l])=>(
@@ -4615,7 +4615,7 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack,pig
         {tab==="pessoal"&&<>
           {/* Stats grid sempre visível */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-            {stats.map((s,i)=><div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
+            {stats.map((s,i)=><div key={i} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:10.5,color:"#aab3a3",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}
           </div>
           {/* Conquistas sempre visível */}
           <BadgesCard player={player} history={history} attendance={attendance}/>
@@ -4684,7 +4684,7 @@ function HistoricoPessoalCard({player, attendance=[], history=[]}) {
     .sort((a,b)=>new Date(b.game_date)-new Date(a.game_date));
 
   if(myGames.length===0) return (
-    <div style={{textAlign:"center",padding:"24px 0",color:"#7d8472",fontSize:13}}>
+    <div style={{textAlign:"center",padding:"24px 0",color:"#98a290",fontSize:13}}>
       <div style={{fontSize:32,marginBottom:8}}>📋</div>
       Ainda não há jogos registados
     </div>
@@ -4693,7 +4693,7 @@ function HistoricoPessoalCard({player, attendance=[], history=[]}) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       {myGames.map((g,i)=>(
-        <div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div key={i} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{fontSize:13,fontWeight:700,color:"white"}}>
               {new Date(g.game_date).toLocaleDateString("pt-PT",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
@@ -4701,7 +4701,7 @@ function HistoricoPessoalCard({player, attendance=[], history=[]}) {
             {g.gameInfo?.winner_team&&<div style={{fontSize:11,color:"#93c5fd",marginTop:2}}>🏆 Equipa {g.gameInfo.winner_team} venceu</div>}
           </div>
           <div style={{textAlign:"right"}}>
-            {g.gameInfo?.players_count&&<div style={{fontSize:11,color:"#7d8472"}}>{g.gameInfo.players_count} jogadores</div>}
+            {g.gameInfo?.players_count&&<div style={{fontSize:11,color:"#98a290"}}>{g.gameInfo.players_count} jogadores</div>}
             <div style={{fontSize:11,color:"#4ade80",fontWeight:700,marginTop:2}}>✓ Presente</div>
           </div>
         </div>
@@ -4728,13 +4728,13 @@ function TreasurerBalances({groupId, isAdmin=false}) {
 
   return (
     <div style={{marginBottom:12}}>
-      <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>💰 SALDOS PENDENTES DOS TESOUREIROS</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:6}}>💰 SALDOS PENDENTES DOS TESOUREIROS</div>
       {balances.map((b,i)=>(
         <div key={i} style={{background:"rgba(212,175,55,0.08)",border:"1px solid rgba(212,175,55,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:6}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:"#d4af37"}}>{b.treasurer_name}</div>
-              <div style={{fontSize:10,color:"#8a9080"}}>Jogo de {new Date(b.game_date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
+              <div style={{fontSize:10,color:"#aab3a3"}}>Jogo de {new Date(b.game_date).toLocaleDateString("pt-PT",{day:"numeric",month:"short"})}</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37"}}>{b.amount}€</div>
@@ -4800,17 +4800,17 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
         <span style={{fontSize:20}}>💰</span>
         <div>
           <div style={{fontSize:13,fontWeight:800,color:"#d4af37"}}>És o Tesoureiro deste jogo</div>
-          <div style={{fontSize:11,color:"#8a9080"}}>Recolhido até agora: {myCollected}€</div>
+          <div style={{fontSize:11,color:"#aab3a3"}}>Recolhido até agora: {myCollected}€</div>
         </div>
       </div>
       {/* Lista de pagamentos */}
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
+        <div style={{fontSize:10,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:6}}>PAGAMENTOS</div>
         {confirmed.map(p=>(
-          <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #23271b"}}>
+          <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #2a362c"}}>
             <Avatar player={p} size={24}/>
             <span style={{flex:1,fontSize:12,color:"white"}}>{p.name}</span>
-            <button onClick={()=>handleTogglePaid(p.id)} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${p.paid?"#1ea851":"#23271b"}`,background:p.paid?"rgba(30,168,81,0.15)":"#14160f",color:p.paid?"#4ade80":"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+            <button onClick={()=>handleTogglePaid(p.id)} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${p.paid?"#1ea851":"#2a362c"}`,background:p.paid?"rgba(30,168,81,0.15)":"#18211a",color:p.paid?"#4ade80":"#aab3a3",fontSize:11,fontWeight:700,cursor:"pointer"}}>
               {p.paid?"✓ Pago":"Não pagou"}
             </button>
           </div>
@@ -4818,17 +4818,17 @@ function TreasurerPanel({confirmed, players, gameInfo, debts, piggybank, effecti
       </div>
       {/* Transferir para admin */}
       {(!showTransfer
-        ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+        ?<button onClick={()=>setShowTransfer(true)} style={{width:"100%",padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0d1410",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           💸 Registar transferência para o admin
         </button>
         :<div>
-          <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>Valor transferido (€)</div>
+          <div style={{fontSize:11,color:"#aab3a3",marginBottom:4}}>Valor transferido (€)</div>
           <div style={{display:"flex",gap:6}}>
             <input className="text-input" type="number" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} placeholder={String(myCollected)} style={{flex:1,marginBottom:0}}/>
-            <button onClick={handleTransfer} disabled={loading} style={{padding:"8px 14px",background:"#d4af37",border:"none",borderRadius:8,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>
+            <button onClick={handleTransfer} disabled={loading} style={{padding:"8px 14px",background:"#d4af37",border:"none",borderRadius:8,color:"#0d1410",fontWeight:800,fontSize:12,cursor:"pointer"}}>
               {loading?"...":"✓"}
             </button>
-            <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#23271b",border:"none",borderRadius:8,color:"#8a9080",fontSize:12,cursor:"pointer"}}>✕</button>
+            <button onClick={()=>setShowTransfer(false)} style={{padding:"8px 12px",background:"#2a362c",border:"none",borderRadius:8,color:"#aab3a3",fontSize:12,cursor:"pointer"}}>✕</button>
           </div>
         </div>
       )}
@@ -4858,9 +4858,9 @@ function BadgesCard({player, history=[], attendance=[]}) {
 
   return (
     <div style={{marginBottom:14}}>
-      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:8}}>🏅 CONQUISTAS</div>
       {earned.length===0
-        ?<div style={{fontSize:12,color:"#7d8472",padding:"6px 0"}}>Ainda sem conquistas — a primeira sai já no teu primeiro jogo.</div>
+        ?<div style={{fontSize:12,color:"#98a290",padding:"6px 0"}}>Ainda sem conquistas — a primeira sai já no teu primeiro jogo.</div>
         :<div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:locked.length>0?8:0}}>
           {earned.map(b=>(
             <div key={b.id} title={b.desc} style={{background:"rgba(74,222,128,0.15)",border:"1px solid rgba(74,222,128,0.4)",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
@@ -4872,9 +4872,9 @@ function BadgesCard({player, history=[], attendance=[]}) {
       }
       {locked.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
         {locked.map(b=>(
-          <div key={b.id} title={b.desc} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6,opacity:0.4}}>
+          <div key={b.id} title={b.desc} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:10,padding:"6px 10px",display:"flex",alignItems:"center",gap:6,opacity:0.4}}>
             <span style={{fontSize:16,filter:"grayscale(1)"}}>{b.icon}</span>
-            <span style={{fontSize:11,fontWeight:700,color:"#7d8472"}}>{b.label}</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#98a290"}}>{b.label}</span>
           </div>
         ))}
       </div>}
@@ -4885,7 +4885,7 @@ function BadgesCard({player, history=[], attendance=[]}) {
 // ── GRÁFICO MEALHEIRO ─────────────────────────────────────────────────────────
 function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
   const jogos = history.filter(h=>h.players_count>0);
-  if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#7d8472",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
+  if(jogos.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#98a290",fontSize:12}}>Precisa de pelo menos 2 jogos para mostrar o gráfico</div>;
 
   // Agrupado pela data real em que o dinheiro entrou (closed_at), não pela
   // data do jogo a que um pagamento avulso diz respeito — um pré-pagamento
@@ -4913,18 +4913,18 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
   // há dados suficientes para uma linha fazer sentido.
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:8}}>EVOLUÇÃO DO SALDO (€)</div>
       {data.length<5 ? (
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {data.map((d,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#14160f",border:"1px solid #23271b",borderRadius:10,padding:"8px 12px"}}>
-              <span style={{fontSize:12,color:"#8a9080"}}>{d.date}</span>
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#18211a",border:"1px solid #2a362c",borderRadius:10,padding:"8px 12px"}}>
+              <span style={{fontSize:12,color:"#aab3a3"}}>{d.date}</span>
               <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:d.saldo>=0?"#4ade80":"#f87171"}}>{d.saldo>0?"+":""}{d.saldo}€</span>
             </div>
           ))}
         </div>
       ) : (
-        <Grafico data={data} altura={160} eixoX="date" valor="saldo" cor="#1ea851" corEixo="#7d8472" rotulo="Saldo" sufixo="€"/>
+        <Grafico data={data} altura={160} eixoX="date" valor="saldo" cor="#1ea851" corEixo="#98a290" rotulo="Saldo" sufixo="€"/>
       )}
     </div>
   );
@@ -4933,7 +4933,7 @@ function GraficoMealheiro({history=[], rent=DEFAULT_RENT}) {
 // ── GRÁFICO PRESENÇAS PESSOAIS ────────────────────────────────────────────────
 function GraficoPresencas({player, attendance=[]}) {
   const myGames = attendance.filter(a=>a.player_id===player.id);
-  if(myGames.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#7d8472",fontSize:12}}>Ainda não há jogos suficientes</div>;
+  if(myGames.length<2) return <div style={{textAlign:"center",padding:"20px 0",color:"#98a290",fontSize:12}}>Ainda não há jogos suficientes</div>;
 
   const byMonth = {};
   myGames.forEach(a=>{
@@ -4947,7 +4947,7 @@ function GraficoPresencas({player, attendance=[]}) {
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:8}}>PRESENÇAS POR MÊS</div>
       <Grafico data={data} altura={140} eixoX="label" valor="jogos" cor="#4ade80" rotulo="Jogos" inteiros/>
     </div>
   );
@@ -4960,11 +4960,11 @@ function GraficoRanking({members=[], currentPlayer}) {
     .slice(0,8)
     .map(p=>({name:p.name.split(" ")[0],jogos:p.total_games||0,isMe:p.id===currentPlayer?.id}));
 
-  if(data.length===0) return <div style={{textAlign:"center",padding:"20px 0",color:"#7d8472",fontSize:12}}>Ainda não há jogos registados</div>;
+  if(data.length===0) return <div style={{textAlign:"center",padding:"20px 0",color:"#98a290",fontSize:12}}>Ainda não há jogos registados</div>;
 
   return (
     <div style={{marginTop:8}}>
-      <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:8}}>JOGOS POR JOGADOR</div>
       <Grafico data={data} altura={160} eixoX="name" valor="jogos" cor="#4ade80" rotulo="Jogos" inteiros destacarMeu/>
     </div>
   );
@@ -4995,15 +4995,15 @@ function SeasonStatsCard({player, groupId}) {
   if(seasons.length===0) return (
     <div style={{textAlign:"center",padding:"32px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
       <span style={{fontSize:28}}>🏁</span>
-      <span style={{color:"#8a9080",fontSize:13,fontWeight:600}}>Ainda não fechaste nenhuma época</span>
-      <span style={{color:"#7d8472",fontSize:11}}>Quando uma época terminar, fica aqui o resumo</span>
+      <span style={{color:"#aab3a3",fontSize:13,fontWeight:600}}>Ainda não fechaste nenhuma época</span>
+      <span style={{color:"#98a290",fontSize:11}}>Quando uma época terminar, fica aqui o resumo</span>
     </div>
   );
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       {seasons.map((s,i)=>(
-        <div key={i} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px"}}>
+        <div key={i} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:"14px 16px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>🏁 {s.season}</div>
             {s.mvp_count>0&&<span style={{background:"rgba(74,222,128,0.15)",color:"#4ade80",fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ {s.mvp_count}x MVP</span>}
@@ -5014,10 +5014,10 @@ function SeasonStatsCard({player, groupId}) {
               {icon:"🔥",value:s.best_streak,label:"Melhor Série"},
               {icon:"💰",value:s.total_paid+"€",label:"Total Pago"},
             ].map((stat,j)=>(
-              <div key={j} style={{background:"#0a0b08",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
+              <div key={j} style={{background:"#0d1410",borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
                 <div style={{fontSize:18,marginBottom:4}}>{stat.icon}</div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"white"}}>{stat.value}</div>
-                <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
+                <div style={{fontSize:10.5,color:"#aab3a3",fontWeight:700,letterSpacing:1}}>{stat.label}</div>
               </div>
             ))}
           </div>
@@ -5095,7 +5095,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
 
   return (
     <div className="screen">
-      <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
+      <div style={{background:"#18211a",padding:"16px 16px 20px",borderBottom:"1px solid #2a362c"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>🌍 ZONA</span>
@@ -5113,11 +5113,11 @@ function ZonaView({player, players=[], onBack, showToast}) {
 
         {/* A minha disponibilidade */}
         <p className="section-label">A MINHA DISPONIBILIDADE</p>
-        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:14,marginBottom:14}}>
+        <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:14,marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:"white"}}>Estou disponível para jogar</div>
-              <div style={{fontSize:11,color:"#7d8472"}}>Aparece na lista de disponíveis da tua zona</div>
+              <div style={{fontSize:11,color:"#98a290"}}>Aparece na lista de disponíveis da tua zona</div>
             </div>
             <button onClick={()=>handleToggleAvailable(!available)} style={{width:48,height:26,borderRadius:13,border:"none",background:available?"#1ea851":"#374151",cursor:"pointer",position:"relative",transition:"background 0.2s"}}>
               <div style={{width:20,height:20,borderRadius:10,background:"white",position:"absolute",top:3,left:available?24:4,transition:"left 0.2s"}}/>
@@ -5125,10 +5125,10 @@ function ZonaView({player, players=[], onBack, showToast}) {
           </div>
           {/* Dias disponíveis */}
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:"#8a9080",marginBottom:6}}>DIAS HABITUAIS</div>
+            <div style={{fontSize:11,color:"#aab3a3",marginBottom:6}}>DIAS HABITUAIS</div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               {DAYS.map(([label,day])=>(
-                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#1ea851":"#23271b"}`,background:availDays.includes(day)?"rgba(30,168,81,0.15)":"#0f0f0f",color:availDays.includes(day)?"#4ade80":"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+                <button key={day} onClick={()=>toggleDay(day)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${availDays.includes(day)?"#1ea851":"#2a362c"}`,background:availDays.includes(day)?"rgba(30,168,81,0.15)":"#0f0f0f",color:availDays.includes(day)?"#4ade80":"#aab3a3",fontWeight:700,fontSize:11,cursor:"pointer"}}>
                   {label}
                 </button>
               ))}
@@ -5136,28 +5136,28 @@ function ZonaView({player, players=[], onBack, showToast}) {
           </div>
           {/* Contacto */}
           <div style={{marginBottom:10}}>
-            <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>CONTACTO WHATSAPP</div>
+            <div style={{fontSize:11,color:"#aab3a3",marginBottom:4}}>CONTACTO WHATSAPP</div>
             <input className="text-input" value={zoneContact} onChange={e=>setZoneContact(e.target.value)} placeholder="Ex: 9XX XXX XXX" style={{marginBottom:0}} type="tel"/>
           </div>
           {/* Notas */}
           <div>
-            <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>NOTA (opcional)</div>
+            <div style={{fontSize:11,color:"#aab3a3",marginBottom:4}}>NOTA (opcional)</div>
             <input className="text-input" value={availNotes} onChange={e=>setAvailNotes(e.target.value)} placeholder="Ex: disponível após as 21h..." style={{marginBottom:8}}/>
             {/* Grava o contacto E a nota. Estava colado só à nota e com ar de
                 desativado — quem escrevia o número e saía perdia-o. */}
-            <button onClick={saveNotes} style={{width:"100%",padding:"11px 12px",background:"#14160f",border:"1px solid #2e3324",borderRadius:10,color:"#ffffff",fontSize:13,cursor:"pointer",fontWeight:700}}>Guardar contacto e nota</button>
+            <button onClick={saveNotes} style={{width:"100%",padding:"11px 12px",background:"#18211a",border:"1px solid #2e3324",borderRadius:10,color:"#ffffff",fontSize:13,cursor:"pointer",fontWeight:700}}>Guardar contacto e nota</button>
           </div>
           <div>
-            <div style={{fontSize:11,color:"#8a9080",marginBottom:6}}>A MINHA ZONA</div>
-            <button onClick={()=>{setShowPicker(v=>!v);setZoneSearch("");}} style={{width:"100%",background:"#0f0f0f",border:"1px solid #23271b",borderRadius:10,padding:"10px 14px",color:zone?"white":"#7d8472",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+            <div style={{fontSize:11,color:"#aab3a3",marginBottom:6}}>A MINHA ZONA</div>
+            <button onClick={()=>{setShowPicker(v=>!v);setZoneSearch("");}} style={{width:"100%",background:"#0f0f0f",border:"1px solid #2a362c",borderRadius:10,padding:"10px 14px",color:zone?"white":"#98a290",fontSize:13,fontWeight:zone?700:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
               {zone||"Seleciona o teu concelho..."}<span>▼</span>
             </button>
             {showPicker&&(
-              <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:10,marginTop:4}}>
+              <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:10,marginTop:4}}>
                 <input className="text-input" autoFocus value={zoneSearch} onChange={e=>setZoneSearch(e.target.value)} placeholder="Pesquisar concelho..." style={{margin:8,width:"calc(100% - 16px)"}}/>
                 <div style={{maxHeight:200,overflowY:"auto"}}>
                   {[...CONCELHOS_PT].sort((a,b)=>a.localeCompare(b,"pt")).filter(c=>c.toLowerCase().includes(zoneSearch.toLowerCase())).map(c=>(
-                    <button key={c} onClick={()=>handleZone(c)} style={{width:"100%",padding:"10px 14px",background:zone===c?"#14160f":"transparent",border:"none",color:zone===c?"#4ade80":"white",fontSize:13,cursor:"pointer",textAlign:"left",borderBottom:"1px solid #23271b"}}>
+                    <button key={c} onClick={()=>handleZone(c)} style={{width:"100%",padding:"10px 14px",background:zone===c?"#18211a":"transparent",border:"none",color:zone===c?"#4ade80":"white",fontSize:13,cursor:"pointer",textAlign:"left",borderBottom:"1px solid #2a362c"}}>
                       {c}
                     </button>
                   ))}
@@ -5171,15 +5171,15 @@ function ZonaView({player, players=[], onBack, showToast}) {
         {zone&&<>
           <p className="section-label">📍 DISPONÍVEIS EM {zone.toUpperCase()}</p>
           {myZonePlayers.length===0
-            ?<div style={{textAlign:"center",padding:"20px 0",color:"#7d8472",fontSize:13}}>Nenhum jogador disponível na tua zona</div>
+            ?<div style={{textAlign:"center",padding:"20px 0",color:"#98a290",fontSize:13}}>Nenhum jogador disponível na tua zona</div>
             :<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
               {myZonePlayers.map(p=>(
-                <div key={p.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px"}}>
+                <div key={p.id} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:p.phone?8:0}}>
                     <Avatar player={p} size={36}/>
                     <div style={{flex:1}}>
                       <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
-                      <div style={{fontSize:11,color:"#7d8472"}}>📍 {p.zone}</div>
+                      <div style={{fontSize:11,color:"#98a290"}}>📍 {p.zone}</div>
                     </div>
                   </div>
                   {p.zone_contact&&<a href={`https://wa.me/351${p.zone_contact.replace(/\s+/g,"").replace(/^\+351/,"").replace(/^351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
@@ -5196,12 +5196,12 @@ function ZonaView({player, players=[], onBack, showToast}) {
           <p className="section-label">🌍 DISPONÍVEIS NOUTRAS ZONAS</p>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {otherPlayers.map(p=>(
-              <div key={p.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px"}}>
+              <div key={p.id} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:p.phone?8:0}}>
                   <Avatar player={p} size={36}/>
                   <div style={{flex:1}}>
                     <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}</div>
-                    <div style={{fontSize:11,color:"#7d8472"}}>📍 {p.zone||"Zona não definida"}</div>
+                    <div style={{fontSize:11,color:"#98a290"}}>📍 {p.zone||"Zona não definida"}</div>
                   </div>
                 </div>
                 {p.zone_contact&&<a href={`https://wa.me/351${p.zone_contact.replace(/\s+/g,"").replace(/^\+351/,"").replace(/^351/,"")}`} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px",background:"rgba(37,211,102,0.15)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,color:"#25d366",fontSize:12,fontWeight:700,textDecoration:"none",marginTop:4}}>
@@ -5213,7 +5213,7 @@ function ZonaView({player, players=[], onBack, showToast}) {
         </>}
 
         {availablePlayers.length===0&&!zone&&(
-          <div style={{textAlign:"center",padding:"30px 0",color:"#7d8472",fontSize:13}}>
+          <div style={{textAlign:"center",padding:"30px 0",color:"#98a290",fontSize:13}}>
             <div style={{fontSize:32,marginBottom:8}}>🌍</div>
             <div>Define a tua zona e marca disponibilidade</div>
             <div style={{fontSize:11,marginTop:4}}>para encontrares jogadores perto de ti</div>
@@ -5250,13 +5250,13 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
   useEffect(()=>{ marcarChatVisto(gameInfo?.group_id, player.id); },[gameInfo?.group_id, player.id, messages.length]);
   return (
     <div className="screen" style={{height:"100vh",display:"flex",flexDirection:"column"}}>
-      <div style={{background:"#14160f",padding:"14px 16px",borderBottom:"1px solid #23271b",flexShrink:0}}>
+      <div style={{background:"#18211a",padding:"14px 16px",borderBottom:"1px solid #2a362c",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>CHAT DO GRUPO</span>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",background:"#0a0b08",display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",background:"#0d1410",display:"flex",flexDirection:"column",gap:8}}>
         {messages.length===0&&<p className="empty-msg">Sem mensagens ainda. Diz algo! 💬</p>}
         {messages.map(msg=>{
           const isMe=msg.player_id===player.id;
@@ -5265,11 +5265,11 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
             <div key={msg.id} style={{display:"flex",gap:8,flexDirection:isMe?"row-reverse":"row",alignItems:"flex-end"}}>
               {!isMe&&<Avatar player={pl} size={28}/>}
               <div style={{maxWidth:"75%"}}>
-                {!isMe&&<div style={{fontSize:10,color:"#8a9080",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
-                <div style={{background:isMe?"#1ea851":"#14160f",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23271b",wordBreak:"break-word",overflowWrap:"break-word"}}>{msg.message}</div>
+                {!isMe&&<div style={{fontSize:10,color:"#aab3a3",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
+                <div style={{background:isMe?"#1ea851":"#18211a",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #2a362c",wordBreak:"break-word",overflowWrap:"break-word"}}>{msg.message}</div>
                 <div style={{display:"flex",gap:6,justifyContent:isMe?"flex-end":"flex-start",alignItems:"center",marginTop:2}}>
-                  <span style={{fontSize:10,color:"#8a9080"}}>{formatTime(new Date(msg.created_at).getTime())}</span>
-                  {(isMe||player.is_admin)&&onDeleteMessage&&<button onClick={async()=>{ if(await askConfirm(isMe?"Apagar esta mensagem?":`Apagar a mensagem de ${msg.player_name}?`,{danger:true,confirmLabel:"Apagar"})) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#7d8472",fontSize:10,cursor:"pointer",padding:0}}>Apagar</button>}
+                  <span style={{fontSize:10,color:"#aab3a3"}}>{formatTime(new Date(msg.created_at).getTime())}</span>
+                  {(isMe||player.is_admin)&&onDeleteMessage&&<button onClick={async()=>{ if(await askConfirm(isMe?"Apagar esta mensagem?":`Apagar a mensagem de ${msg.player_name}?`,{danger:true,confirmLabel:"Apagar"})) onDeleteMessage(msg.id); }} style={{background:"transparent",border:"none",color:"#98a290",fontSize:10,cursor:"pointer",padding:0}}>Apagar</button>}
                 </div>
               </div>
             </div>
@@ -5277,7 +5277,7 @@ function ChatView({messages=[],players=[],player,gameInfo,onSendMessage,onDelete
         })}
         <div ref={bottomRef}/>
       </div>
-      <div style={{padding:"10px 16px",background:"#14160f",borderTop:"1px solid #23271b",display:"flex",gap:8,flexShrink:0}}>
+      <div style={{padding:"10px 16px",background:"#18211a",borderTop:"1px solid #2a362c",display:"flex",gap:8,flexShrink:0}}>
         <input className="text-input" style={{flex:1}} placeholder="Escreve uma mensagem..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onSendMessage(text),setText(""))}/>
         <button className="btn-add" disabled={!text.trim()} onClick={()=>{onSendMessage(text);setText("");}} style={{opacity:text.trim()?1:0.4,cursor:text.trim()?"pointer":"default"}}><Icon name="send" size={16}/></button>
       </div>
@@ -5310,7 +5310,7 @@ function NovidadesView({player, onBack}) {
   useEffect(()=>{ marcarNovidadesVistas(player.id); },[player.id]);
   return (
     <div className="screen">
-      <div style={{background:"#14160f",padding:"16px 16px 20px",borderBottom:"1px solid #23271b"}}>
+      <div style={{background:"#18211a",padding:"16px 16px 20px",borderBottom:"1px solid #2a362c"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>NOVIDADES</span>
@@ -5318,10 +5318,10 @@ function NovidadesView({player, onBack}) {
       </div>
       <div style={{padding:16}}>
         {NOVIDADES.map(n=>(
-          <div key={n.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-            <div style={{fontSize:10,color:"#8a9080",marginBottom:4,fontWeight:700,letterSpacing:0.5}}>{n.date}</div>
+          <div key={n.id} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+            <div style={{fontSize:10,color:"#aab3a3",marginBottom:4,fontWeight:700,letterSpacing:0.5}}>{n.date}</div>
             <div style={{fontSize:15,fontWeight:800,color:"white",marginBottom:4}}>{n.title}</div>
-            <div style={{fontSize:13,color:"#8a9080",lineHeight:1.5}}>{n.desc}</div>
+            <div style={{fontSize:13,color:"#aab3a3",lineHeight:1.5}}>{n.desc}</div>
           </div>
         ))}
       </div>
@@ -5364,7 +5364,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 
   return (
     <div className="screen">
-      <div style={{background:"#14160f",padding:"14px 16px",borderBottom:"1px solid #23271b"}}>
+      <div style={{background:"#18211a",padding:"14px 16px",borderBottom:"1px solid #2a362c"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack} aria-label="Voltar"><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>PERFIL</span>
@@ -5372,10 +5372,10 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
       </div>
       <div className="body">
         {/* Avatar + nome + stats rápidas */}
-        <div style={{textAlign:"center",padding:"24px 0 20px",borderBottom:"1px solid #23271b",marginBottom:16}}>
+        <div style={{textAlign:"center",padding:"24px 0 20px",borderBottom:"1px solid #2a362c",marginBottom:16}}>
           <div style={{position:"relative",display:"inline-block",marginBottom:12}}>
             <Avatar player={{...player,avatar_color:color}} size={88}/>
-            <label aria-label="Mudar foto de perfil" style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#14160f",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:avatarSaving?"wait":"pointer",fontSize:13,border:"2px solid #0a0b08",opacity:avatarSaving?0.6:1}}>
+            <label aria-label="Mudar foto de perfil" style={{position:"absolute",bottom:2,right:2,width:26,height:26,background:"#18211a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",cursor:avatarSaving?"wait":"pointer",fontSize:13,border:"2px solid #0d1410",opacity:avatarSaving?0.6:1}}>
               {avatarSaving?"⏳":"📷"}
               <input type="file" accept="image/*" disabled={avatarSaving} style={{display:"none"}} onChange={async(e)=>{
                 const file=e.target.files[0];
@@ -5389,30 +5389,30 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
             </label>
           </div>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"white",letterSpacing:1,marginBottom:2}}>{player.name}</div>
-          <div style={{fontSize:11,color:"#8a9080",marginBottom:16}}>{player.is_admin?"⚡ Admin":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}</div>
+          <div style={{fontSize:11,color:"#aab3a3",marginBottom:16}}>{player.is_admin?"⚡ Admin":`${["GR","Guarda-Redes"].includes(player.position)?"🧤":"⚽"} ${player.position||"Polivalente"}`}</div>
           {/* Stats rápidas */}
           <div style={{display:"flex",justifyContent:"center",gap:24}}>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",lineHeight:1}}>{player.total_games||0}</div>
-              <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>JOGOS</div>
+              <div style={{fontSize:10.5,color:"#aab3a3",fontWeight:700,letterSpacing:1}}>JOGOS</div>
             </div>
-            <div style={{width:1,background:"#23271b"}}/>
+            <div style={{width:1,background:"#2a362c"}}/>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",lineHeight:1}}>{player.current_streak||0}</div>
-              <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
+              <div style={{fontSize:10.5,color:"#aab3a3",fontWeight:700,letterSpacing:1}}>SÉRIE</div>
             </div>
-            <div style={{width:1,background:"#23271b"}}/>
+            <div style={{width:1,background:"#2a362c"}}/>
             <div style={{textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",lineHeight:1}}>{player.best_streak||0}</div>
-              <div style={{fontSize:10.5,color:"#8a9080",fontWeight:700,letterSpacing:1}}>RECORDE</div>
+              <div style={{fontSize:10.5,color:"#aab3a3",fontWeight:700,letterSpacing:1}}>RECORDE</div>
             </div>
           </div>
         </div>
 
         {/* Cor do avatar */}
-        <div style={{fontSize:10.5,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:8}}>CONTA</div>
+        <div style={{fontSize:10.5,fontWeight:700,color:"#98a290",letterSpacing:2,marginBottom:8}}>CONTA</div>
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:10.5,fontWeight:700,color:"#8a9080",letterSpacing:1,marginBottom:8}}>Cor do avatar</div>
+          <div style={{fontSize:10.5,fontWeight:700,color:"#aab3a3",letterSpacing:1,marginBottom:8}}>Cor do avatar</div>
           <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
             {AVATAR_COLORS.map((c,i)=><button key={c} aria-label={`Cor de avatar ${i+1}`} onClick={()=>{setColor(c);onUpdateProfile(null,null,c,undefined);}} style={{width:38,height:38,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
@@ -5420,11 +5420,11 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
 
         {/* Editar perfil expansível */}
         <div style={{marginBottom:12}}>
-          <button onClick={()=>setEditOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <button onClick={()=>setEditOpen(v=>!v)} style={{width:"100%",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700,color:"white"}}>✏️ Editar perfil</span>
-            <span style={{fontSize:12,color:"#7d8472"}}>{editOpen?"▲":"▼"}</span>
+            <span style={{fontSize:12,color:"#98a290"}}>{editOpen?"▲":"▼"}</span>
           </button>
-          {editOpen&&<div style={{background:"#14160f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+          {editOpen&&<div style={{background:"#18211a",border:"1px solid #2a362c",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
             <label className="field-label">Nome</label>
             <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
             {player.is_admin&&<>
@@ -5448,20 +5448,20 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
               if(newPw) setTimeout(()=>onLogout(),800);
               else setEditOpen(false);
             }}><Icon name="check" size={15}/> {newPw?"GUARDAR E SAIR":"GUARDAR"}</button>
-            {newPw&&<p style={{fontSize:11,color:"#8a9080",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>}
+            {newPw&&<p style={{fontSize:11,color:"#aab3a3",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>}
           </div>}
         </div>
 
         {/* Código do grupo */}
-        <div style={{fontSize:10.5,fontWeight:700,color:"#7d8472",letterSpacing:2,marginTop:16,marginBottom:8}}>GRUPO</div>
+        <div style={{fontSize:10.5,fontWeight:700,color:"#98a290",letterSpacing:2,marginTop:16,marginBottom:8}}>GRUPO</div>
         <GroupCodeCard groupId={activeGroupId||player.group_id} isAdmin={!!player.is_admin} showToast={showToast}/>
 
         {/* Ações */}
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
-          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#ffffff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={onMudarGrupo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #2a362c",background:"#18211a",color:"#ffffff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="people" size={14}/> Os meus grupos
           </button>
-          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #23271b",background:"#14160f",color:"#ffffff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={onEntrarCodigo} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid #2a362c",background:"#18211a",color:"#ffffff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <Icon name="key" size={14}/> Entrar noutro grupo
           </button>
           <button onClick={async()=>{ if(await askConfirm("Trocar de conta? Vais ter de entrar outra vez.",{danger:true,confirmLabel:"Trocar"})) onSwitchAccount(); }} style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#f87171",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -5470,19 +5470,19 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         </div>
 
         {/* Reportar problema */}
-        <div style={{fontSize:10.5,fontWeight:700,color:"#7d8472",letterSpacing:2,marginTop:16,marginBottom:8}}>SUPORTE</div>
+        <div style={{fontSize:10.5,fontWeight:700,color:"#98a290",letterSpacing:2,marginTop:16,marginBottom:8}}>SUPORTE</div>
         <div style={{marginTop:14}}>
-          <button onClick={()=>setBugOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <button onClick={()=>setBugOpen(v=>!v)} style={{width:"100%",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:13,fontWeight:700,color:"white"}}>🐛 Reportar problema ou sugestão</span>
-            <span style={{fontSize:12,color:"#7d8472"}}>{bugOpen?"▲":"▼"}</span>
+            <span style={{fontSize:12,color:"#98a290"}}>{bugOpen?"▲":"▼"}</span>
           </button>
-          {bugOpen&&<div style={{background:"#14160f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+          {bugOpen&&<div style={{background:"#18211a",border:"1px solid #2a362c",borderTop:"none",borderRadius:"0 0 12px 12px",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
             {bugSent?(
               <p style={{fontSize:13,color:"#4ade80",textAlign:"center",fontWeight:700}}>✓ Enviado, obrigado!</p>
             ):(<>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>setBugTipo("problema")} style={{flex:1,padding:"9px",borderRadius:8,border:bugTipo==="problema"?"2px solid #ef4444":"1px solid #23271b",background:bugTipo==="problema"?"rgba(239,68,68,0.12)":"transparent",color:bugTipo==="problema"?"#f87171":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>🐛 Problema</button>
-                <button onClick={()=>setBugTipo("sugestao")} style={{flex:1,padding:"9px",borderRadius:8,border:bugTipo==="sugestao"?"2px solid #d4af37":"1px solid #23271b",background:bugTipo==="sugestao"?"rgba(212,175,55,0.12)":"transparent",color:bugTipo==="sugestao"?"#d4af37":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>💡 Sugestão</button>
+                <button onClick={()=>setBugTipo("problema")} style={{flex:1,padding:"9px",borderRadius:8,border:bugTipo==="problema"?"2px solid #ef4444":"1px solid #2a362c",background:bugTipo==="problema"?"rgba(239,68,68,0.12)":"transparent",color:bugTipo==="problema"?"#f87171":"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>🐛 Problema</button>
+                <button onClick={()=>setBugTipo("sugestao")} style={{flex:1,padding:"9px",borderRadius:8,border:bugTipo==="sugestao"?"2px solid #d4af37":"1px solid #2a362c",background:bugTipo==="sugestao"?"rgba(212,175,55,0.12)":"transparent",color:bugTipo==="sugestao"?"#d4af37":"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>💡 Sugestão</button>
               </div>
               <label className="field-label">{bugTipo==="sugestao"?"O que gostavas que mudasse?":"O que aconteceu?"}</label>
               <textarea className="text-input" rows={4} value={bugMsg} onChange={e=>setBugMsg(e.target.value)} placeholder={bugTipo==="sugestao"?"Descreve a tua ideia...":"Descreve o que viste, o mais detalhado possível..."} style={{resize:"vertical",fontFamily:"inherit"}}/>
@@ -5498,7 +5498,7 @@ function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount,onM
         <SegueNos/>
 
         <div style={{marginTop:18,textAlign:"center"}}>
-          <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{fontSize:11.5,color:"#7d8472",textDecoration:"underline"}}>
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{fontSize:11.5,color:"#98a290",textDecoration:"underline"}}>
             Política de Privacidade
           </a>
         </div>
@@ -5553,7 +5553,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             <button className="btn-big btn-green" onClick={()=>handleToggle("in")} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
               {confirming?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
             </button>
-            {!player.absence_reason&&<button onClick={()=>handleToggle("nao_vou","lesionado")} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,textDecoration:"underline",padding:"4px 0 14px",cursor:"pointer",width:"100%",textAlign:"center"}}>🤕 Foi lesão? Marcar</button>}
+            {!player.absence_reason&&<button onClick={()=>handleToggle("nao_vou","lesionado")} style={{background:"none",border:"none",color:"#aab3a3",fontSize:13,textDecoration:"underline",padding:"4px 0 14px",cursor:"pointer",width:"100%",textAlign:"center"}}>🤕 Foi lesão? Marcar</button>}
           </>
         ):(
           <div style={{display:"flex",gap:8,marginBottom:14}}>
@@ -5565,7 +5565,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             </button>
           </div>
         )}
-          {!isIn&&!isWait&&!isNao&&<p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 14px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>}
+          {!isIn&&!isWait&&!isNao&&<p style={{fontSize:12,color:"#aab3a3",margin:"-4px 0 14px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>}
         {/* Só convidados confirmados ("in") entram na conta — um convidado
             que ficou em espera não vai jogar, não gera dívida nenhuma, e
             cobrá-lo já no valor do MBWay estava a inflar o que a pessoa via
@@ -5579,14 +5579,14 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers} maxItems={1}/>
         {/* Botões rápidos */}
         <div style={{display:"flex",gap:8,marginBottom:14}}>
-          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
             💬 Chat
             {temMensagemNaoLida(messages,gameInfo.group_id,player.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
-          <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona
           </button>
-          <button onClick={()=>setView("novidades")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+          <button onClick={()=>setView("novidades")} style={{flex:1,padding:"10px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
             📣 Novidades
             {temNovidadeNaoLida(player.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
@@ -5596,7 +5596,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
             {cfg.positions.map(pos=>{
               const active=(player.position||cfg.positions[0])===pos;
               const isGk=pos===cfg.gkPosition;
-              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#2a362c"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#18211a",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#aab3a3"}}>{isGk?"🧤":"⚽"} {pos}</button>;
             })}
           </div>
         </ExpandableCard>
@@ -5610,12 +5610,12 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           if(!ctx) return null;
           const myVote = mvpVotes.find(v=>v.voter_id===player.id&&v.game_date===ctx.gameDate);
           return (
-            <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:14,marginBottom:8}}>
+            <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:14,marginBottom:8}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                 <span style={{fontSize:22}}>⭐</span>
                 <div>
                   <div style={{fontSize:14,fontWeight:800,color:"white"}}>{ctx.isPastGame?"MVP da semana passada":(myVote?"Já votaste!":"Vota no MVP do jogo!")}</div>
-                  <div style={{fontSize:11,color:"#8a9080"}}>{ctx.isPastGame?"Última oportunidade de votar no jogo anterior":(myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?")}</div>
+                  <div style={{fontSize:11,color:"#aab3a3"}}>{ctx.isPastGame?"Última oportunidade de votar no jogo anterior":(myVote?"Obrigado pelo teu voto":"Quem foi o melhor jogador hoje?")}</div>
                 </div>
               </div>
               <MvpVote confirmed={ctx.confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={ctx.gameDate} onVote={vid=>onVoteMvp(vid,ctx.gameDate)} onRemoveVote={()=>onRemoveMvpVote(ctx.gameDate)} isPastGame={ctx.isPastGame} closedAt={ctx.closedAt}/>
@@ -5628,7 +5628,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
           {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><NotaEsperaConvidados waiting={waiting} gameInfo={gameInfo}/><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><div className="list-info" style={{marginLeft:4}}><span className="list-name">{p.name}</span><EsperaAte p={p} gameInfo={gameInfo}/></div></div>)}</div></>}
           {/* Quem ainda não respondeu e quem não vai: os nomes, não só a
               contagem — a malta vê quem falta responder. O admin já via. */}
-          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
+          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#aab3a3"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span></div>)}</div></ExpandableListSection>}
         </ExpandableCard>
         <ExpandableCard title="👤 CONVIDADOS">
@@ -5648,7 +5648,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,sp
                 {cfg.positions.map(pos=>{
                   const active=guestPosition===pos;
                   const isGk=pos===cfg.gkPosition;
-                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#2a362c"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#18211a",color:active?(isGk?"#93c5fd":"#4ade80"):"#aab3a3",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
                 })}
               </div>
             </div>
@@ -5689,11 +5689,11 @@ function MBWayButton({number, amount, treasurerName=""}) {
         <span>PAGAR {amount}€ VIA MBWAY{treasurerName?" a "+treasurerName:""}</span>
       </button>
       {showNumber&&(
-        <div style={{background:"#14160f",border:"1px solid #7c3aed",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{background:"#18211a",border:"1px solid #7c3aed",borderRadius:12,padding:"12px 14px",marginTop:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
-            <div style={{fontSize:10,color:"#7d8472",marginBottom:2}}>NÚMERO MBWAY</div>
+            <div style={{fontSize:10,color:"#98a290",marginBottom:2}}>NÚMERO MBWAY</div>
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#c4b5fd",letterSpacing:2}}>{number}</div>
-            <div style={{fontSize:10,color:"#7d8472",marginTop:2}}>Valor: {amount}€</div>
+            <div style={{fontSize:10,color:"#98a290",marginTop:2}}>Valor: {amount}€</div>
           </div>
           <button onClick={handleCopy} style={{background:"rgba(124,58,237,0.15)",border:"1px solid #7c3aed",borderRadius:8,padding:"8px 12px",color:copied?"#4ade80":"#c4b5fd",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             {copied?"✓ Copiado!":"Copiar"}
@@ -5709,9 +5709,9 @@ function ExpandableListSection({label, color="#4ade80", children}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:8,marginTop:8}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:`rgba(255,255,255,0.03)`,border:`1px solid #23271b`,borderRadius:12,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:`rgba(255,255,255,0.03)`,border:`1px solid #2a362c`,borderRadius:12,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <span style={{fontSize:13,fontWeight:700,color}}>{label}</span>
-        <span style={{fontSize:12,color:"#7d8472"}}>{open?"▲":"▼"}</span>
+        <span style={{fontSize:12,color:"#98a290"}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<div style={{marginTop:4}}>{children}</div>}
     </div>
@@ -5757,7 +5757,7 @@ function FecharJogoGuiado({confirmed=[],gameInfo,sportType,teamConfig={},winnerI
   const devedores=Object.values(porPessoa).sort((a,b)=>(b.proprio+b.convidados)-(a.proprio+a.convidados));
   const porCobrar=eur(devedores.reduce((s,d)=>s+(d.proprio+d.convidados)*custo,0));
   const aindaNaoAconteceu=gameInfo.date&&new Date(`${gameInfo.date}T${gameInfo.time||"00:00"}`)>new Date();
-  const caixa={background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:14,marginTop:14};
+  const caixa={background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:14,marginTop:14};
   const botao={flex:1,justifyContent:"center"};
   const primeiroPasso=houveEquipas?1:2;
   if(passo===0) return <button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setPasso(primeiroPasso)}>🏁 Apito final — fechar o jogo</button>;
@@ -5767,7 +5767,7 @@ function FecharJogoGuiado({confirmed=[],gameInfo,sportType,teamConfig={},winnerI
   </>;
   if(passo===1) return (
     <div style={caixa}>
-      <p style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>PASSO 1 DE 2</p>
+      <p style={{fontSize:11,color:"#aab3a3",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>PASSO 1 DE 2</p>
       <p style={{fontSize:15,fontWeight:800,color:"#fff",margin:"0 0 10px"}}>Quem ganhou?</p>
       <div style={{display:"flex",gap:8,marginBottom:10}}>
         {equipas.map(t=>(
@@ -5776,33 +5776,33 @@ function FecharJogoGuiado({confirmed=[],gameInfo,sportType,teamConfig={},winnerI
           </button>
         ))}
       </div>
-      <p style={{fontSize:12,color:"#8a9080",margin:"0 0 12px"}}>Podes deixar em branco e registar mais tarde no Histórico.</p>
+      <p style={{fontSize:12,color:"#aab3a3",margin:"0 0 12px"}}>Podes deixar em branco e registar mais tarde no Histórico.</p>
       <div style={{display:"flex",gap:8}}>
-        <button className="btn-primary" style={{...botao,background:"#23271b",boxShadow:"none"}} onClick={()=>setPasso(0)}>Cancelar</button>
+        <button className="btn-primary" style={{...botao,background:"#2a362c",boxShadow:"none"}} onClick={()=>setPasso(0)}>Cancelar</button>
         <button className="btn-primary" style={botao} onClick={()=>setPasso(2)}>Seguinte →</button>
       </div>
     </div>
   );
   return (
     <div style={caixa}>
-      <p style={{fontSize:11,color:"#8a9080",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>{houveEquipas?"PASSO 2 DE 2":"ÚLTIMO PASSO"}</p>
+      <p style={{fontSize:11,color:"#aab3a3",fontWeight:700,letterSpacing:1,margin:"0 0 4px"}}>{houveEquipas?"PASSO 2 DE 2":"ÚLTIMO PASSO"}</p>
       <p style={{fontSize:15,fontWeight:800,color:"#fff",margin:"0 0 10px"}}>Contas do jogo</p>
       {avisos}
       <div style={{display:"flex",gap:20,marginBottom:10}}>
-        <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#4ade80",lineHeight:1}}>{eur(pagos.length*custo)}€</div><div style={{fontSize:11,color:"#8a9080"}}>já recebido ({pagos.length})</div></div>
-        <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:porCobrar>0?"#f87171":"#fff",lineHeight:1}}>{porCobrar}€</div><div style={{fontSize:11,color:"#8a9080"}}>fica por cobrar</div></div>
+        <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#4ade80",lineHeight:1}}>{eur(pagos.length*custo)}€</div><div style={{fontSize:11,color:"#aab3a3"}}>já recebido ({pagos.length})</div></div>
+        <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:porCobrar>0?"#f87171":"#fff",lineHeight:1}}>{porCobrar}€</div><div style={{fontSize:11,color:"#aab3a3"}}>fica por cobrar</div></div>
       </div>
       {devedores.length>0&&<div style={{marginBottom:12}}>
         {devedores.map(d=>(
-          <div key={d.nome} style={{display:"flex",justifyContent:"space-between",gap:8,fontSize:13,padding:"6px 0",borderTop:"1px solid #23271b"}}>
+          <div key={d.nome} style={{display:"flex",justifyContent:"space-between",gap:8,fontSize:13,padding:"6px 0",borderTop:"1px solid #2a362c"}}>
             <span style={{color:"#fff",fontWeight:700}}>{d.nome}</span>
             <span style={{color:"#a3a897",textAlign:"right"}}>{[d.proprio>0&&"ele próprio",d.convidados>0&&`${d.convidados} ${d.convidados===1?"convidado":"convidados"}`].filter(Boolean).join(" + ")} · <strong style={{color:"#f87171"}}>{eur((d.proprio+d.convidados)*custo)}€</strong></span>
           </div>
         ))}
       </div>}
-      <p style={{fontSize:11,color:"#8a9080",margin:"0 0 12px"}}>Vai guardar no histórico, registar estas dívidas e limpar as presenças.{vencedor?` Vencedor: ${teamLabel(teamConfig,vencedor)}.`:""}</p>
+      <p style={{fontSize:11,color:"#aab3a3",margin:"0 0 12px"}}>Vai guardar no histórico, registar estas dívidas e limpar as presenças.{vencedor?` Vencedor: ${teamLabel(teamConfig,vencedor)}.`:""}</p>
       <div style={{display:"flex",gap:8}}>
-        <button className="btn-primary" style={{...botao,background:"#23271b",boxShadow:"none"}} onClick={()=>houveEquipas?setPasso(1):setPasso(0)}>{houveEquipas?"← Voltar":"Cancelar"}</button>
+        <button className="btn-primary" style={{...botao,background:"#2a362c",boxShadow:"none"}} onClick={()=>houveEquipas?setPasso(1):setPasso(0)}>{houveEquipas?"← Voltar":"Cancelar"}</button>
         <button className="btn-primary" style={{...botao,background:"transparent",border:"1px solid #dc2626",color:"#f87171",boxShadow:"none"}} onClick={()=>{onFechar(vencedor);setPasso(0);}}>🏁 Fechar jogo</button>
       </div>
     </div>
@@ -5951,12 +5951,12 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {adminTab!=="gerir"&&<PendingRequestsPanel groupId={gid} showToast={showToast}/>}
         {/* Banner código novo grupo — aparece só quando se cria um grupo */}
         {mostrarConvite&&(
-          <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:2,marginBottom:8}}>
+          <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:16,padding:"20px",marginBottom:14,textAlign:"center"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#aab3a3",letterSpacing:2,marginBottom:8}}>
               {grupoVazio?"ESTÁS SOZINHO NESTE GRUPO":"O CÓDIGO DO TEU GRUPO É"}
             </div>
             <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"white",letterSpacing:8,marginBottom:4}}>{codigoParaConvidar}</div>
-            <div style={{fontSize:12,color:"#8a9080",marginBottom:14}}>
+            <div style={{fontSize:12,color:"#aab3a3",marginBottom:14}}>
               {grupoVazio?"Chama a malta — sem jogadores não há jogo":"Partilha com os teus jogadores para entrarem"}
             </div>
             <BotaoWhatsApp code={codigoParaConvidar} groupName={gameInfo?.app_name} style={{marginBottom:8}}/>
@@ -5964,13 +5964,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <button onClick={()=>{navigator.clipboard.writeText(inviteMessage(codigoParaConvidar,gameInfo?.app_name));showToast("Convite copiado ✓");}} style={{flex:1,padding:"10px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 <Icon name="copy" size={14}/> Copiar
               </button>
-              <button onClick={()=>{const t=inviteMessage(codigoParaConvidar,gameInfo?.app_name);if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:t}).catch(()=>{});}else{navigator.clipboard.writeText(t);showToast("Convite copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <button onClick={()=>{const t=inviteMessage(codigoParaConvidar,gameInfo?.app_name);if(navigator.share){navigator.share({title:"Hoje Há Jogo",text:t}).catch(()=>{});}else{navigator.clipboard.writeText(t);showToast("Convite copiado ✓");}}} style={{flex:1,padding:"10px",background:"#d4af37",border:"none",borderRadius:10,color:"#0d1410",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 <Icon name="share" size={14}/> Outras apps
               </button>
             </div>
             {/* Só deixamos fechar quando já há gente no grupo. Com o grupo
                 vazio, este cartão é a coisa mais útil do ecrã. */}
-            {!grupoVazio&&<button onClick={()=>{setNewGroupCode(null);setConviteFechado(true);}} style={{background:"transparent",border:"none",color:"#7d8472",fontSize:11,cursor:"pointer"}}>Fechar</button>}
+            {!grupoVazio&&<button onClick={()=>{setNewGroupCode(null);setConviteFechado(true);}} style={{background:"transparent",border:"none",color:"#98a290",fontSize:11,cursor:"pointer"}}>Fechar</button>}
           </div>
         )}
 
@@ -5982,14 +5982,14 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
         {/* Botões rápidos Chat e Zona */}
         <div style={{display:"flex",gap:8,marginBottom:8}}>
-          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+          <button onClick={()=>setView("chat")} style={{flex:1,padding:"10px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
             💬 Chat
             {temMensagemNaoLida(messages,gameInfo?.group_id,currentUser.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
-          <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <button onClick={()=>setView("zona")} style={{flex:1,padding:"10px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             🌍 Zona
           </button>
-          <button onClick={()=>setView("novidades")} style={{flex:1,padding:"10px",background:"#14160f",border:"1px solid #23271b",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+          <button onClick={()=>setView("novidades")} style={{flex:1,padding:"10px",background:"#18211a",border:"1px solid #2a362c",borderRadius:12,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
             📣 Novidades
             {temNovidadeNaoLida(currentUser.id)&&<span style={{position:"absolute",top:4,right:8,width:7,height:7,background:"#dc2626",borderRadius:"50%"}}/>}
           </button>
@@ -6042,7 +6042,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <button className="btn-big btn-green" style={{marginBottom:12,opacity:confirmingSelf?0.7:1}} onClick={()=>handleSelfToggle("in")}>
                 {confirmingSelf?"⏳ A processar...":<><Icon name="check" size={18}/> VOU</>}
               </button>
-              {!myself.absence_reason&&<button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{background:"none",border:"none",color:"#8a9080",fontSize:13,textDecoration:"underline",padding:"4px 0 14px",cursor:"pointer",width:"100%",textAlign:"center"}}>🤕 Foi lesão? Marcar</button>}
+              {!myself.absence_reason&&<button onClick={()=>handleSelfToggle("nao_vou","lesionado")} style={{background:"none",border:"none",color:"#aab3a3",fontSize:13,textDecoration:"underline",padding:"4px 0 14px",cursor:"pointer",width:"100%",textAlign:"center"}}>🤕 Foi lesão? Marcar</button>}
             </>
           ):(
             <div style={{display:"flex",gap:8,marginBottom:14}}>
@@ -6054,13 +6054,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               </button>
             </div>
           )}
-          {!isAdminIn&&!isAdminWait&&!isAdminNao&&<p style={{fontSize:12,color:"#8a9080",margin:"-4px 0 10px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>}
+          {!isAdminIn&&!isAdminWait&&!isAdminNao&&<p style={{fontSize:12,color:"#aab3a3",margin:"-4px 0 10px",textAlign:"center",lineHeight:1.5}}>Se não vais, diz que <strong style={{color:"#f0f0f0"}}>não vais</strong> — o grupo conta contigo para saber quantos somos.</p>}
           <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
-            <span style={{fontSize:11,fontWeight:700,color:"#8a9080",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#aab3a3",letterSpacing:1,width:"100%"}}>A TUA POSIÇÃO:</span>
             {cfg.positions.map(pos=>{
               const active=(myself.position||cfg.positions[0])===pos;
               const isGk=pos===cfg.gkPosition;
-              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#8a9080"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+              return <button key={pos} onClick={()=>onUpdatePosition(pos)} style={{flex:"1 1 auto",minWidth:110,padding:"8px",borderRadius:10,border:`2px solid ${active?(isGk?"#2563eb":"#1ea851"):"#2a362c"}`,background:active?(isGk?"rgba(37,99,235,0.2)":"rgba(30,168,81,0.2)"):"#18211a",fontWeight:800,fontSize:13,cursor:"pointer",color:active?(isGk?"#60a5fa":"#4ade80"):"#aab3a3"}}>{isGk?"🧤":"⚽"} {pos}</button>;
             })}
           </div>
           </ExpandableCard>
@@ -6076,16 +6076,16 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 <button onClick={async()=>{
                   await supabase.from("game_info").update({treasurer_id:null,treasurer_name:null}).eq("group_id",groupId);
                   showToast("Tesoureiro removido");
-                }} style={{background:"transparent",border:"none",color:"#7d8472",fontSize:11,cursor:"pointer"}}>✕ Remover</button>
+                }} style={{background:"transparent",border:"none",color:"#98a290",fontSize:11,cursor:"pointer"}}>✕ Remover</button>
               </div>
               :<div>
-                <div style={{fontSize:11,color:"#7d8472",marginBottom:8}}>Nomeia um tesoureiro para este jogo</div>
+                <div style={{fontSize:11,color:"#98a290",marginBottom:8}}>Nomeia um tesoureiro para este jogo</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {members.filter(m=>!m.is_guest).map(m=>(
                     <button key={m.id} onClick={async()=>{
                       await supabase.from("game_info").update({treasurer_id:m.id,treasurer_name:m.name}).eq("group_id",groupId);
                       showToast(`${m.name} nomeado tesoureiro ✓`);
-                    }} style={{padding:"6px 12px",borderRadius:20,border:"1px solid #23271b",background:"#0f0f0f",color:"white",fontSize:12,cursor:"pointer",fontWeight:600}}>
+                    }} style={{padding:"6px 12px",borderRadius:20,border:"1px solid #2a362c",background:"#0f0f0f",color:"white",fontSize:12,cursor:"pointer",fontWeight:600}}>
                       {m.name}
                     </button>
                   ))}
@@ -6094,7 +6094,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             }
           </ExpandableSection>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><NotaEsperaConvidados waiting={waiting} gameInfo={gameInfo}/><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><div className="list-info" style={{marginLeft:4}}><span className="list-name">{p.name}</span><EsperaAte p={p} gameInfo={gameInfo}/></div></div>)}</div></>}
-          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#8a9080"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
+          {notYet.length>0&&<ExpandableListSection label={`❓ ${notYet.length} sem resposta`} color="#aab3a3"><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></ExpandableListSection>}
           {naoVao.length>0&&<ExpandableListSection label={`❌ ${naoVao.length} não ${naoVao.length===1?"vai":"vão"}`} color="#d6a1a1"><div className="player-list">{naoVao.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}{p.absence_reason==="lesionado"&&" 🤕"}</span>{p.paid&&<span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:"#fbbf24"}}>já pagou {gameInfo.cost_per_player||COST}€</span>}</div>)}</div></ExpandableListSection>}
           {/* Os convidados já aparecem nos confirmados e na espera. A lista
               à parte mostrava cada um segunda vez. */}
@@ -6111,7 +6111,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                 {cfg.positions.map(pos=>{
                   const active=guestPosition===pos;
                   const isGk=pos===cfg.gkPosition;
-                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#23271b"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#14160f",color:active?(isGk?"#93c5fd":"#4ade80"):"#8a9080",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
+                  return <button key={pos} onClick={()=>setGuestPosition(pos)} style={{flex:"1 1 auto",minWidth:90,padding:"6px",borderRadius:8,border:`1px solid ${active?(isGk?"#2563eb":"#1ea851"):"#2a362c"}`,background:active?(isGk?"rgba(37,99,235,0.15)":"rgba(30,168,81,0.15)"):"#18211a",color:active?(isGk?"#93c5fd":"#4ade80"):"#aab3a3",fontSize:11,fontWeight:700,cursor:"pointer"}}>{isGk?"🧤":"⚽"} {pos}</button>;
                 })}
               </div>
             </div>
@@ -6131,13 +6131,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           {confirmed.length<MIN_PLAYERS
             ?<div className="guest-locked">⚠️ Precisas de {MIN_PLAYERS} confirmados. ({confirmed.length}/{MIN_PLAYERS})</div>
             :<>
-              <div style={{background:"#14160f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{numTeamsFor(confirmed.length,sportType)===3?`🏆 3 equipas de ${cfg.teamSize}`:`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
+              <div style={{background:"#18211a",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{numTeamsFor(confirmed.length,sportType)===3?`🏆 3 equipas de ${cfg.teamSize}`:`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
               <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams} sportType={sportType} isAdmin={true} onMovePlayer={onMovePlayer} teamConfig={teamConfig}/>
               {confirmed.some(p=>p.team&&p.team!=="SUB")&&<BotaoAcaoWhatsApp emoji="🎽" texto="Partilhar as equipas" mensagem={mensagemEquipas(confirmed,sportType,teamConfig,gameInfo)}/>}
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
                 {["A","B","C"].slice(0,numTeamsFor(confirmed.length,sportType)).map(t=>(
-                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"12px 10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#23271b"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#14160f",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#8a9080"}}>
+                  <button key={t} onClick={()=>setWinnerTeam(winnerTeam===t?null:t)} style={{flex:1,padding:"12px 10px",borderRadius:10,border:`2px solid ${winnerTeam===t?"#d97706":"#2a362c"}`,background:winnerTeam===t?"rgba(217,119,6,0.15)":"#18211a",fontWeight:800,fontSize:13,cursor:"pointer",color:winnerTeam===t?"#fbbf24":"#aab3a3"}}>
                     {winnerTeam===t?"🏆":""} {teamLabel(teamConfig,t)}
                   </button>
                 ))}
@@ -6149,7 +6149,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
         {adminTab==="historico"&&<>
           <p className="section-label"><Icon name="cal" size={12}/> JOGOS ANTERIORES</p>
           {history.filter(h=>h.players_count>0).length===0
-            ?<div style={{textAlign:"center",padding:"24px 0",color:"#7d8472",fontSize:13}}>Nenhum jogo no histórico</div>
+            ?<div style={{textAlign:"center",padding:"24px 0",color:"#98a290",fontSize:13}}>Nenhum jogo no histórico</div>
             :history.filter(h=>h.players_count>0).map((h,i)=><HistoricoCard key={i} h={h} groupId={groupId} sportType={sportType} showToast={showToast} reloadAll={()=>window.location.reload()} gameInfo={gameInfo} piggybank={piggybank} isAdmin={!!currentUser?.is_admin} teamConfig={teamConfig}/>)
           }
         </>}
@@ -6205,10 +6205,10 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                           password e o admin nunca lhe toca. */}
                       <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
                         <BotaoEnviarLink playerId={p.id} nome={p.name} showToast={showToast}/>
-                        <span style={{fontSize:11,color:"#8a9080"}}>ele escolhe a dele</span>
+                        <span style={{fontSize:11,color:"#aab3a3"}}>ele escolhe a dele</span>
                         <button className="icon-ghost" style={{marginLeft:"auto"}} onClick={()=>setEditPassId(null)} aria-label="Cancelar"><Icon name="x" size={13}/></button>
                       </div>
-                      <div style={{fontSize:10.5,color:"#7d8472",marginBottom:6}}>ou escreve tu uma:</div>
+                      <div style={{fontSize:10.5,color:"#98a290",marginBottom:6}}>ou escreve tu uma:</div>
                       <div style={{display:"flex",gap:6}}>
                         <input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)}/>
                         <button className="btn-primary" style={{padding:"7px 10px"}} onClick={async()=>{const guardada=await onChangePassword(p.id,editPassVal); if(guardada){ setPassDefinida({nome:p.name,valor:guardada}); setEditPassId(null); setEditPassVal(""); }}} aria-label="Guardar password"><Icon name="check" size={13}/></button>
@@ -6234,7 +6234,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             </div>
             <div style={{marginBottom:4}}>
               <label className="field-label">📅 Dias habituais</label>
-              <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
+              <p style={{fontSize:11,color:"#aab3a3",marginBottom:8}}>Quando o jogo fechar, a data avança para o próximo dia selecionado.</p>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["Dom",0],["Seg",1],["Ter",2],["Qua",3],["Qui",4],["Sex",5],["Sáb",6]].map(([label,day])=>{
                   const active=(editGameDays||[3]).includes(day);
@@ -6244,7 +6244,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                       const next=active?curr.filter(d=>d!==day):[...curr,day].sort((a,b)=>a-b);
                       if(next.length===0) return;
                       setEditGameDays(next); setEditedNome(true);
-                    }} style={{padding:"10px 14px",borderRadius:20,border:`1px solid ${active?"#ffffff":"#23271b"}`,background:active?"#23271b":"#14160f",color:active?"#ffffff":"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                    }} style={{padding:"10px 14px",borderRadius:20,border:`1px solid ${active?"#ffffff":"#2a362c"}`,background:active?"#2a362c":"#18211a",color:active?"#ffffff":"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>
                       {label}
                     </button>
                   );
@@ -6272,7 +6272,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <label className="field-label" style={{marginTop:8}}>💰 Valor por jogador (€)</label>
               <input className="text-input" type="number" step="0.5" min="0" value={editCost} onChange={e=>{setEditCost(e.target.value);setEditedJogo(true);}} style={{marginBottom:8}}/>
               <label className="field-label" style={{marginTop:8}}>🏟️ Custo do aluguer por jogo (€)</label>
-              <p style={{fontSize:11,color:"#8a9080",marginBottom:6}}>Quanto o grupo paga pelo campo em cada jogo. É isto que o mealheiro desconta.</p>
+              <p style={{fontSize:11,color:"#aab3a3",marginBottom:6}}>Quanto o grupo paga pelo campo em cada jogo. É isto que o mealheiro desconta.</p>
               <input className="text-input" type="number" step="0.5" min="0" value={editRent} onChange={e=>{setEditRent(e.target.value);setEditedJogo(true);}} style={{marginBottom:8}}/>
             </div>
             <button className={`btn-save ${editedJogo?"btn-save-active":""}`} disabled={!editedJogo} onClick={async()=>{
@@ -6289,37 +6289,37 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
             <label className="field-label">⚽ Tipo de jogo</label>
             <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
               {Object.entries(SPORT_CONFIG).map(([key,c])=>(
-                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEditedFormato(true);}} style={{flex:"1 1 40%",padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#23271b"}`,background:editSportType===key?"#23271b":"#14160f",color:editSportType===key?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
+                <button key={key} onClick={()=>{setEditSportType(key);setEditMaxPlayers(c.defaultMaxPlayers);setEditedFormato(true);}} style={{flex:"1 1 40%",padding:"10px",borderRadius:10,border:`2px solid ${editSportType===key?"#ffffff":"#2a362c"}`,background:editSportType===key?"#2a362c":"#18211a",color:editSportType===key?"#ffffff":"#aab3a3",fontWeight:800,fontSize:13,cursor:"pointer"}}>{c.label}</button>
               ))}
             </div>
             <label className="field-label">👥 Máximo de jogadores</label>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
               {(({futsal:[10,11,12,13,14,15],futebol5:[8,9,10,11,12],futebol7:[12,13,14,15,16,18,20]})[editSportType]||[16,18,20,22,24,26,28,30,32]).map(n=>(
-                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#ffffff":"#23271b"}`,background:(editMaxPlayers||12)===n?"#23271b":"#14160f",color:(editMaxPlayers||12)===n?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                <button key={n} onClick={()=>{setEditMaxPlayers(n);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${(editMaxPlayers||12)===n?"#ffffff":"#2a362c"}`,background:(editMaxPlayers||12)===n?"#2a362c":"#18211a",color:(editMaxPlayers||12)===n?"#ffffff":"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
             </div>
             <label className="field-label">⏳ Convidados em lista de espera até…</label>
-            <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Os convidados ficam em espera até X horas antes do jogo. Nessa altura entram, por ordem de chegada, nas vagas que os jogadores do grupo não ocuparam. Os jogadores têm sempre prioridade.</p>
+            <p style={{fontSize:11,color:"#aab3a3",marginBottom:8}}>Os convidados ficam em espera até X horas antes do jogo. Nessa altura entram, por ordem de chegada, nas vagas que os jogadores do grupo não ocuparam. Os jogadores têm sempre prioridade.</p>
             <div style={{display:"flex",gap:8,marginBottom:6,flexWrap:"wrap"}}>
               {[{h:6,l:"6h"},{h:12,l:"12h"},{h:24,l:"24h"},{h:48,l:"48h"},{h:1000,l:"Sem espera"}].map(({h,l})=>(
-                <button key={l} onClick={()=>{setEditGuestHours(h);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${Number(editGuestHours)===h?"#ffffff":"#23271b"}`,background:Number(editGuestHours)===h?"#23271b":"#14160f",color:Number(editGuestHours)===h?"#ffffff":"#8a9080",fontWeight:700,fontSize:13,cursor:"pointer"}}>{l}</button>
+                <button key={l} onClick={()=>{setEditGuestHours(h);setEditedFormato(true);}} style={{flex:"1 1 auto",minWidth:44,padding:"11px 8px",borderRadius:10,border:`1px solid ${Number(editGuestHours)===h?"#ffffff":"#2a362c"}`,background:Number(editGuestHours)===h?"#2a362c":"#18211a",color:Number(editGuestHours)===h?"#ffffff":"#aab3a3",fontWeight:700,fontSize:13,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
               <input className="text-input" type="number" min="0" max="1000" step="0.5" style={{maxWidth:110}} value={editGuestHours} onChange={e=>{setEditGuestHours(e.target.value);setEditedFormato(true);}}/>
-              <span style={{fontSize:12,color:"#8a9080"}}>{Number(editGuestHours)>=500?"horas · convidados entram logo se houver vaga":"horas antes do jogo"}</span>
+              <span style={{fontSize:12,color:"#aab3a3"}}>{Number(editGuestHours)>=500?"horas · convidados entram logo se houver vaga":"horas antes do jogo"}</span>
             </div>
             <label className="field-label">🎲 Recolocação automática de equipas</label>
-            <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
+            <p style={{fontSize:11,color:"#aab3a3",marginBottom:8}}>Quando ligado, as equipas reorganizam-se sozinhas sempre que alguém confirma/cancela presença. Desliga se preferires ajustar as equipas só à mão.</p>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
-                <button key={l} onClick={()=>{setEditAutoReassign(v);setEditedFormato(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#ffffff":"#23271b"}`,background:editAutoReassign===v?"#23271b":"#14160f",color:editAutoReassign===v?"#ffffff":"#8a9080",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
+                <button key={l} onClick={()=>{setEditAutoReassign(v);setEditedFormato(true);}} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${editAutoReassign===v?"#ffffff":"#2a362c"}`,background:editAutoReassign===v?"#2a362c":"#18211a",color:editAutoReassign===v?"#ffffff":"#aab3a3",fontWeight:800,fontSize:13,cursor:"pointer"}}>{l}</button>
               ))}
             </div>
             <label className="field-label">🎨 Nomes e cores das equipas</label>
-            <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Para não ficar sempre "Equipa A/B/C" — o nome e a cor ficam fixos neste grupo, mesmo que os jogadores mudem de jogo para jogo.</p>
+            <p style={{fontSize:11,color:"#aab3a3",marginBottom:8}}>Para não ficar sempre "Equipa A/B/C" — o nome e a cor ficam fixos neste grupo, mesmo que os jogadores mudem de jogo para jogo.</p>
             {["A","B","C"].map((letter,i)=>{
               const cfg=editTeamConfig[letter]||{};
               const currentColor=cfg.color||TEAM_COLOR_PRESETS[i].hex;
@@ -6329,7 +6329,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
                   <input className="text-input" style={{marginBottom:6}} placeholder={`Equipa ${letter}`} value={cfg.name||""} onChange={e=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],name:e.target.value}}));setEditedFormato(true);}}/>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {TEAM_COLOR_PRESETS.map(preset=>(
-                      <button key={preset.hex} onClick={()=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],color:preset.hex}}));setEditedFormato(true);}} style={{width:28,height:28,padding:0,borderRadius:"50%",background:preset.hex,border:currentColor===preset.hex?"3px solid white":"1px solid #23271b",cursor:"pointer"}}/>
+                      <button key={preset.hex} onClick={()=>{setEditTeamConfig(prev=>({...prev,[letter]:{...prev[letter],color:preset.hex}}));setEditedFormato(true);}} style={{width:28,height:28,padding:0,borderRadius:"50%",background:preset.hex,border:currentColor===preset.hex?"3px solid white":"1px solid #2a362c",cursor:"pointer"}}/>
                     ))}
                   </div>
                 </div>
@@ -6361,7 +6361,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
               <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>
             </div>
-            <p style={{fontSize:11,color:"#8a9080",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
+            <p style={{fontSize:11,color:"#aab3a3",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
           </ExpandableSection>
           <ExpandableSection icon="🔔" title="Notificações" subtitle="Enviar notificações ao grupo">
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -6418,14 +6418,14 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCodigo, currentUser, onLeave, onDelete}) {
   const [loading, setLoading] = useState(null);
   return (
-    <div style={{background:"#0a0b08",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+    <div style={{background:"#0d1410",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
       {/* Header */}
-      <div style={{background:"#14160f",padding:"20px 20px 16px",borderBottom:"1px solid #23271b",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{background:"#18211a",padding:"20px 20px 16px",borderBottom:"1px solid #2a362c",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:4}}>BEM-VINDO DE VOLTA</div>
+          <div style={{fontSize:10,fontWeight:700,color:"#98a290",letterSpacing:2,marginBottom:4}}>BEM-VINDO DE VOLTA</div>
           <div style={{fontSize:20,fontWeight:800,color:"white"}}>{currentUser?.name}</div>
         </div>
-        <button onClick={onLogout} style={{background:"transparent",border:"none",color:"#8a9080",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600}}>
+        <button onClick={onLogout} style={{background:"transparent",border:"none",color:"#aab3a3",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600}}>
           <Icon name="logout" size={14}/> Sair
         </button>
       </div>
@@ -6448,22 +6448,22 @@ function MeusGruposView({groups=[], onSelect, onLogout, onCriarGrupo, onEntrarCo
 
         {/* Ações */}
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <button onClick={onEntrarCodigo} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+          <button onClick={onEntrarCodigo} style={{width:"100%",background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
             <div style={{width:36,height:36,background:"rgba(255,255,255,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <Icon name="key" size={18}/>
             </div>
             <div>
               <div style={{color:"white",fontSize:14,fontWeight:700}}>Entrar com código</div>
-              <div style={{color:"#7d8472",fontSize:12}}>Tens um código de convite</div>
+              <div style={{color:"#98a290",fontSize:12}}>Tens um código de convite</div>
             </div>
           </button>
-          <button onClick={onCriarGrupo} style={{width:"100%",background:"transparent",border:"1px dashed #23271b",borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+          <button onClick={onCriarGrupo} style={{width:"100%",background:"transparent",border:"1px dashed #2a362c",borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
             <div style={{width:36,height:36,background:"rgba(212,175,55,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <Icon name="plus" size={18}/>
             </div>
             <div>
-              <div style={{color:"#8a9080",fontSize:14,fontWeight:700}}>Criar grupo</div>
-              <div style={{color:"#7d8472",fontSize:12}}>Sou o organizador</div>
+              <div style={{color:"#aab3a3",fontSize:14,fontWeight:700}}>Criar grupo</div>
+              <div style={{color:"#98a290",fontSize:12}}>Sou o organizador</div>
             </div>
           </button>
         </div>
@@ -6488,7 +6488,7 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
   };
 
   return (
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,marginBottom:8,overflow:"hidden"}}>
+    <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,marginBottom:8,overflow:"hidden"}}>
       {/* Header */}
       <div style={{padding:"14px 16px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -6507,39 +6507,39 @@ function HistoricoCard({h, groupId, sportType="futsal", showToast, reloadAll, ga
         </div>}
         <div style={{display:"flex",gap:20,marginBottom:h.winner_team?0:10}}>
           <div>
-            <div style={{fontSize:10,color:"#7d8472",marginBottom:2}}>JOGADORES</div>
+            <div style={{fontSize:10,color:"#98a290",marginBottom:2}}>JOGADORES</div>
             <div style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>{h.players_count}</div>
           </div>
         </div>
         {h.winner_team&&isAdmin&&(
-          <button onClick={async()=>{ if(!(await askConfirm(`Retirar ${teamLabel(teamConfig,h.winner_team)} como vencedora deste jogo?`,{confirmLabel:"Retirar"}))) return; const{error}=await supabase.from("game_history").update({winner_team:null}).eq("id",h.id); if(error){ showToast("Não foi possível corrigir","err"); return; } reloadAll(); }} style={{background:"none",border:"none",padding:"6px 0",marginBottom:6,fontSize:11,color:"#7d8472",textDecoration:"underline",cursor:"pointer"}}>↩ Corrigir vencedor</button>
+          <button onClick={async()=>{ if(!(await askConfirm(`Retirar ${teamLabel(teamConfig,h.winner_team)} como vencedora deste jogo?`,{confirmLabel:"Retirar"}))) return; const{error}=await supabase.from("game_history").update({winner_team:null}).eq("id",h.id); if(error){ showToast("Não foi possível corrigir","err"); return; } reloadAll(); }} style={{background:"none",border:"none",padding:"6px 0",marginBottom:6,fontSize:11,color:"#98a290",textDecoration:"underline",cursor:"pointer"}}>↩ Corrigir vencedor</button>
         )}
         {/* Definir vencedor se não está definido */}
         {!h.winner_team&&h.players_count>=sportConfig(sportType).teamSize*2&&(
           <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
-            <span style={{fontSize:11,color:"#8a9080"}}>Vencedor:</span>
+            <span style={{fontSize:11,color:"#aab3a3"}}>Vencedor:</span>
             {["A","B","C"].slice(0,numTeamsFor(h.players_count,sportType)).map(t=>(
               <button key={t} onClick={async()=>{
                 await supabase.from("game_history").update({winner_team:t}).eq("id",h.id);
                 showToast(`${teamLabel(teamConfig,t)} registada ✓`,"ok",{label:"Anular",fn:async()=>{ await supabase.from("game_history").update({winner_team:null}).eq("id",h.id); reloadAll(); }});
                 reloadAll();
-              }} style={{padding:"8px 12px",minHeight:36,borderRadius:8,border:"1px solid #2e3324",background:"#14160f",color:"#ffffff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+              }} style={{padding:"8px 12px",minHeight:36,borderRadius:8,border:"1px solid #2e3324",background:"#18211a",color:"#ffffff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
                 {teamLabel(teamConfig,t)}
               </button>
             ))}
           </div>
         )}
         {/* Botão ver jogadores */}
-        {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#7d8472",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+        {h.players_count>0&&<button onClick={loadJogadores} style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid #2a362c",borderRadius:8,padding:"7px",cursor:"pointer",fontSize:11,color:"#98a290",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           {loadingJogadores?"A carregar...":open?"▲ Ocultar jogadores":`▼ Ver ${h.players_count} jogadores`}
         </button>}
         {h.players_count>0&&<PartilharResumoButton historyGame={h} gameInfo={gameInfo} effectiveDate={h.date} piggybank={piggybank} isAdmin={isAdmin} teamConfig={teamConfig}/>}
       </div>
       {/* Lista de jogadores */}
       {open&&jogadores.length>0&&(
-        <div style={{borderTop:"1px solid #23271b",padding:"10px 16px",display:"flex",flexWrap:"wrap",gap:6}}>
+        <div style={{borderTop:"1px solid #2a362c",padding:"10px 16px",display:"flex",flexWrap:"wrap",gap:6}}>
           {jogadores.map((j,i)=>(
-            <span key={i} style={{background:"#1a2e1a",border:"1px solid #23271b",borderRadius:20,padding:"4px 10px",fontSize:12,color:"#4ade80",fontWeight:600}}>{j.player_name}</span>
+            <span key={i} style={{background:"#1a2e1a",border:"1px solid #2a362c",borderRadius:20,padding:"4px 10px",fontSize:12,color:"#4ade80",fontWeight:600}}>{j.player_name}</span>
           ))}
         </div>
       )}
@@ -6552,15 +6552,15 @@ function ExpandableSection({icon, title, subtitle, children}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:8}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:"#14160f",border:"1px solid #23271b",borderRadius:open?"14px 14px 0 0":14,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",background:"#18211a",border:"1px solid #2a362c",borderRadius:open?"14px 14px 0 0":14,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left",boxShadow:"0 2px 8px rgba(0,0,0,0.45)"}}>
         <div style={{width:36,height:36,background:"rgba(255,255,255,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>{icon}</div>
         <div style={{flex:1}}>
           <div style={{color:"white",fontSize:13,fontWeight:700}}>{title}</div>
-          <div style={{color:"#7d8472",fontSize:11}}>{subtitle}</div>
+          <div style={{color:"#98a290",fontSize:11}}>{subtitle}</div>
         </div>
-        <span style={{color:"#7d8472",fontSize:12}}>{open?"▲":"▼"}</span>
+        <span style={{color:"#98a290",fontSize:12}}>{open?"▲":"▼"}</span>
       </button>
-      {open&&<div style={{background:"#0f0f0f",border:"1px solid #23271b",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>{children}</div>}
+      {open&&<div style={{background:"#0f0f0f",border:"1px solid #2a362c",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>{children}</div>}
     </div>
   );
 }
@@ -6605,21 +6605,21 @@ function PendingRequestsPanel({groupId, showToast}) {
   if(requests.length===0) return null;
 
   return (
-    <div style={{background:"#14160f",border:"2px solid #23271b",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+    <div style={{background:"#18211a",border:"2px solid #2a362c",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
       <div style={{color:"white",fontWeight:800,fontSize:13,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>🔔 {requests.length} pedido{requests.length>1?"s":""} de entrada</div>
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {requests.map(r=>(
-          <div key={r.player_id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
+          <div key={r.player_id} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
             <Avatar player={r.players} size={34}/>
             <div style={{flex:1,minWidth:0}}>
               <div style={{color:"white",fontWeight:700,fontSize:13}}>{r.players?.name}</div>
-              <div style={{color:"#8a9080",fontSize:10.5}}>@{r.players?.username}{r.players?.phone?` · ${r.players.phone}`:""}</div>
+              <div style={{color:"#aab3a3",fontSize:10.5}}>@{r.players?.username}{r.players?.phone?` · ${r.players.phone}`:""}</div>
             </div>
             {confirmRejectId===r.player_id ? (
               <>
                 <span style={{color:"#f87171",fontSize:10.5,fontWeight:700}}>Recusar?</span>
                 <button onClick={()=>respond(r.player_id,false)} disabled={busyId===r.player_id} style={{background:"#dc2626",border:"1px solid #dc2626",borderRadius:8,padding:"7px 10px",color:"white",fontWeight:700,fontSize:11,cursor:"pointer"}}>Sim</button>
-                <button onClick={()=>setConfirmRejectId(null)} disabled={busyId===r.player_id} style={{background:"transparent",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>Não</button>
+                <button onClick={()=>setConfirmRejectId(null)} disabled={busyId===r.player_id} style={{background:"transparent",border:"1px solid #2a362c",borderRadius:8,padding:"7px 10px",color:"#aab3a3",fontWeight:700,fontSize:11,cursor:"pointer"}}>Não</button>
               </>
             ) : (
               <>
@@ -6675,12 +6675,12 @@ function PasswordResetRequestsPanel({adminId, showToast}) {
   if(requests.length===0 && !definida) return null;
 
   return (
-    <div style={{background:"#14160f",border:"2px solid #23271b",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+    <div style={{background:"#18211a",border:"2px solid #2a362c",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
       {definida && <PasswordDefinida nome={definida.nome} valor={definida.valor} onFechar={()=>setDefinida(null)} showToast={showToast}/>}
       {requests.length>0 && <div style={{color:"white",fontWeight:800,fontSize:13,margin:definida?"12px 0 10px":"0 0 10px",display:"flex",alignItems:"center",gap:6}}>🔑 {requests.length} pedido{requests.length>1?"s":""} de nova password</div>}
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {requests.map(r=>(
-          <div key={r.id} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"10px 12px"}}>
+          <div key={r.id} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"10px 12px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <div style={{flex:1,minWidth:100,color:"white",fontWeight:700,fontSize:13}}>{r.player_name}</div>
               {openId!==r.id && <>
@@ -6688,7 +6688,7 @@ function PasswordResetRequestsPanel({adminId, showToast}) {
                     nunca a escreves nem a vês. Escrever à mão fica como
                     alternativa, para quem não tem WhatsApp. */}
                 <BotaoEnviarLink playerId={r.player_id} nome={r.player_name} showToast={showToast}/>
-                <button onClick={()=>{setOpenId(r.id);setNewPass("");}} style={{background:"transparent",border:"1px solid #3a4030",borderRadius:9,padding:"9px 12px",color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>Escrever eu</button>
+                <button onClick={()=>{setOpenId(r.id);setNewPass("");}} style={{background:"transparent",border:"1px solid #3a4030",borderRadius:9,padding:"9px 12px",color:"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>Escrever eu</button>
               </>}
             </div>
             {openId===r.id && (
@@ -6742,7 +6742,7 @@ function RegistarDespesaButton({groupId, showToast, reloadAll}) {
       <span style={{fontSize:22}}>🧾</span>
       <div>
         <div style={{color:"#f87171",fontSize:13,fontWeight:800}}>Registar Despesa</div>
-        <div style={{color:"#8a9080",fontSize:11}}>Bola, coletes, campo, etc.</div>
+        <div style={{color:"#aab3a3",fontSize:11}}>Bola, coletes, campo, etc.</div>
       </div>
     </button>
   );
@@ -6758,7 +6758,7 @@ function RegistarDespesaButton({groupId, showToast, reloadAll}) {
         <button onClick={handleRegistar} disabled={loading} style={{flex:1,padding:"10px",background:"#dc2626",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           {loading?"A guardar...":"✓ Confirmar"}
         </button>
-        <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px",background:"#2a362c",border:"none",borderRadius:10,color:"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>
           Cancelar
         </button>
       </div>
@@ -6791,7 +6791,7 @@ function ReiniciarMealheiroButton({groupId, showToast, reloadAll}) {
       <span style={{fontSize:22}}>💰</span>
       <div>
         <div style={{color:"#22d3ee",fontSize:13,fontWeight:800}}>Reiniciar Mealheiro</div>
-        <div style={{color:"#8a9080",fontSize:11}}>Limpa dívidas e histórico financeiro</div>
+        <div style={{color:"#aab3a3",fontSize:11}}>Limpa dívidas e histórico financeiro</div>
       </div>
     </button>
   );
@@ -6799,14 +6799,14 @@ function ReiniciarMealheiroButton({groupId, showToast, reloadAll}) {
   return (
     <div style={{background:"rgba(8,145,178,0.1)",border:"2px solid #0891b2",borderRadius:12,padding:14,marginBottom:8}}>
       <div style={{fontSize:13,fontWeight:700,color:"#22d3ee",marginBottom:8}}>💰 Reiniciar Mealheiro</div>
-      <div style={{fontSize:11,color:"#8a9080",marginBottom:12}}>
+      <div style={{fontSize:11,color:"#aab3a3",marginBottom:12}}>
         Isto vai limpar todas as dívidas e o histórico financeiro. As stats dos jogadores e o histórico de jogos são mantidos.
       </div>
       <div style={{display:"flex",gap:8}}>
         <button onClick={handleReiniciar} disabled={loading} style={{flex:1,padding:"10px",background:"#0891b2",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           {loading?"A reiniciar...":"✓ Confirmar"}
         </button>
-        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#2a362c",border:"none",borderRadius:10,color:"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>
           Cancelar
         </button>
       </div>
@@ -6881,7 +6881,7 @@ function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupI
       <span style={{fontSize:22}}>🏁</span>
       <div>
         <div style={{color:"#c084fc",fontSize:13,fontWeight:800}}>Terminar Época</div>
-        <div style={{color:"#8a9080",fontSize:11}}>Guarda stats e limpa o histórico</div>
+        <div style={{color:"#aab3a3",fontSize:11}}>Guarda stats e limpa o histórico</div>
       </div>
     </button>
   );
@@ -6890,17 +6890,17 @@ function TerminarEpocaButton({players, history, debts, members, mvpVotes, groupI
     <div style={{background:"rgba(124,58,237,0.1)",border:"2px solid #7c3aed",borderRadius:12,padding:14}}>
       <div style={{fontSize:13,fontWeight:700,color:"#c084fc",marginBottom:10}}>🏁 Terminar Época</div>
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:11,color:"#8a9080",marginBottom:4}}>NOME DA ÉPOCA</div>
+        <div style={{fontSize:11,color:"#aab3a3",marginBottom:4}}>NOME DA ÉPOCA</div>
         <input className="text-input" value={seasonName} onChange={e=>setSeasonName(e.target.value)} placeholder="Ex: 2024-2025"/>
       </div>
-      <div style={{fontSize:11,color:"#8a9080",marginBottom:12}}>
+      <div style={{fontSize:11,color:"#aab3a3",marginBottom:12}}>
         Isto vai guardar as stats individuais, limpar o histórico, dívidas e presenças. Esta ação não pode ser revertida.
       </div>
       <div style={{display:"flex",gap:8}}>
         <button onClick={handleTerminar} disabled={loading} style={{flex:1,padding:"10px",background:"#7c3aed",border:"none",borderRadius:10,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>
           {loading?"A guardar...":"✓ Confirmar"}
         </button>
-        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#23271b",border:"none",borderRadius:10,color:"#8a9080",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        <button onClick={()=>setConfirm(false)} style={{flex:1,padding:"10px",background:"#2a362c",border:"none",borderRadius:10,color:"#aab3a3",fontWeight:700,fontSize:12,cursor:"pointer"}}>
           Cancelar
         </button>
       </div>
@@ -6964,18 +6964,18 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
   };
 
   return (
-    <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:14,overflow:"hidden"}}>
+    <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:14,overflow:"hidden"}}>
       <button onClick={async()=>{ setLoading(pg.group_id); await onSelect(pg.group_id); setLoading(null); }} style={{width:"100%",background:"transparent",border:"none",padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
         <div style={{width:44,height:44,background:"rgba(30,168,81,0.15)",border:"1px solid #1ea85133",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>
           ⚽
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:3}}>{group.name}</div>
-          <div style={{color:"#7d8472",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{color:"#98a290",fontSize:12,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
             {group.time&&<span>🕐 {group.time}</span>}
             {group.location&&<span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>📍 {group.location}</span>}
           </div>
-          {status&&<div style={{marginTop:4,fontSize:11,color:"#8a9080"}}>{status.msg} · {status.confirmed} confirmados</div>}
+          {status&&<div style={{marginTop:4,fontSize:11,color:"#aab3a3"}}>{status.msg} · {status.confirmed} confirmados</div>}
           {pg.is_admin&&<div style={{marginTop:4}}><span style={{background:"rgba(212,175,55,0.15)",color:"#d4af37",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>Admin</span></div>}
         </div>
         {loading===pg.group_id
@@ -6985,10 +6985,10 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       </button>
 
       {/* Opções de sair/apagar */}
-      <div style={{borderTop:"1px solid #23271b",padding:"8px 16px",display:"flex",gap:8}}>
+      <div style={{borderTop:"1px solid #2a362c",padding:"8px 16px",display:"flex",gap:8}}>
         {pg.is_admin
           ?<>
-            <button onClick={()=>setShowOptions(v=>!v)} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer",fontWeight:600}}>
+            <button onClick={()=>setShowOptions(v=>!v)} style={{flex:1,padding:"6px",borderRadius:8,border:"1px solid #2a362c",background:"transparent",color:"#aab3a3",fontSize:11,cursor:"pointer",fontWeight:600}}>
               ⚙️ Gerir grupo
             </button>
           </>
@@ -6999,7 +6999,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       </div>
 
       {/* Opções admin */}
-      {showOptions&&pg.is_admin&&<div style={{borderTop:"1px solid #23271b",padding:"10px 16px",display:"flex",flexDirection:"column",gap:6}}>
+      {showOptions&&pg.is_admin&&<div style={{borderTop:"1px solid #2a362c",padding:"10px 16px",display:"flex",flexDirection:"column",gap:6}}>
         <button onClick={handleLeaveAdmin} style={{width:"100%",padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontSize:12,cursor:"pointer",fontWeight:600}}>
           🚪 Sair e nomear novo admin
         </button>
@@ -7009,10 +7009,10 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
       </div>}
 
       {/* Nomear novo admin */}
-      {showNewAdmin&&<div style={{borderTop:"1px solid #23271b",padding:"12px 16px"}}>
+      {showNewAdmin&&<div style={{borderTop:"1px solid #2a362c",padding:"12px 16px"}}>
         <div style={{fontSize:12,fontWeight:700,color:"white",marginBottom:8}}>Escolhe o novo admin:</div>
         {members.length===0
-          ?<div style={{fontSize:12,color:"#8a9080"}}>Não há outros membros no grupo.</div>
+          ?<div style={{fontSize:12,color:"#aab3a3"}}>Não há outros membros no grupo.</div>
           :<div style={{display:"flex",flexDirection:"column",gap:6}}>
             {members.map(m=>(
               <button key={m.id} onClick={()=>handleNewAdmin(m.id)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #2563eb",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:12,cursor:"pointer",fontWeight:700,textAlign:"left"}}>
@@ -7021,7 +7021,7 @@ function GroupCard({pg, group, loading, onSelect, setLoading, onLeave, onDelete}
             ))}
           </div>
         }
-        <button onClick={()=>setShowNewAdmin(false)} style={{width:"100%",marginTop:8,padding:"6px",borderRadius:8,border:"1px solid #23271b",background:"transparent",color:"#8a9080",fontSize:11,cursor:"pointer"}}>Cancelar</button>
+        <button onClick={()=>setShowNewAdmin(false)} style={{width:"100%",marginTop:8,padding:"6px",borderRadius:8,border:"1px solid #2a362c",background:"transparent",color:"#aab3a3",fontSize:11,cursor:"pointer"}}>Cancelar</button>
       </div>}
     </div>
   );
@@ -7068,20 +7068,20 @@ function OpenSlotCard({gameInfo, groupId, showToast}) {
   return (
     <div style={{marginBottom:12}}>
       <label className="field-label">🌐 Vaga aberta para este jogo</label>
-      <p style={{fontSize:11,color:"#8a9080",marginBottom:8}}>Gera um link que qualquer pessoa pode usar para se juntar a este jogo, sem precisar de conta nem de aprovação — útil quando falta gente para completar.</p>
+      <p style={{fontSize:11,color:"#aab3a3",marginBottom:8}}>Gera um link que qualquer pessoa pode usar para se juntar a este jogo, sem precisar de conta nem de aprovação — útil quando falta gente para completar.</p>
       <div style={{display:"flex",gap:8,marginBottom:enabled?12:0}}>
         {[{v:true,l:"Ligado"},{v:false,l:"Desligado"}].map(({v,l})=>(
-          <button key={l} disabled={saving} onClick={()=>handleToggle(v)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${enabled===v?"#1ea851":"#23271b"}`,background:enabled===v?"rgba(30,168,81,0.15)":"#14160f",color:enabled===v?"#4ade80":"#8a9080",fontWeight:800,fontSize:13,cursor:saving?"default":"pointer"}}>{l}</button>
+          <button key={l} disabled={saving} onClick={()=>handleToggle(v)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${enabled===v?"#1ea851":"#2a362c"}`,background:enabled===v?"rgba(30,168,81,0.15)":"#18211a",color:enabled===v?"#4ade80":"#aab3a3",fontWeight:800,fontSize:13,cursor:saving?"default":"pointer"}}>{l}</button>
         ))}
       </div>
       {enabled&&code&&(
-        <div style={{background:"#14160f",border:"1px solid #23271b",borderRadius:12,padding:"12px 14px"}}>
+        <div style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:12,padding:"12px 14px"}}>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#d4af37",letterSpacing:3,marginBottom:8,wordBreak:"break-all"}}>{code}</div>
           <div style={{display:"flex",gap:8}}>
             <button onClick={()=>{navigator.clipboard.writeText(link);setCopied(true);setTimeout(()=>setCopied(false),2500);showToast("Link copiado ✓");}} style={{flex:1,padding:"9px",background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,color:copied?"#4ade80":"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer"}}>
               {copied?"Copiado!":"Copiar link"}
             </button>
-            <button onClick={handleShare} style={{flex:1,padding:"9px",background:"#d4af37",border:"none",borderRadius:10,color:"#0a0b08",fontWeight:800,fontSize:12,cursor:"pointer"}}>Partilhar</button>
+            <button onClick={handleShare} style={{flex:1,padding:"9px",background:"#d4af37",border:"none",borderRadius:10,color:"#0d1410",fontWeight:800,fontSize:12,cursor:"pointer"}}>Partilhar</button>
           </div>
         </div>
       )}
@@ -7140,29 +7140,29 @@ function GroupCodeCard({groupId, isAdmin=false, showToast=()=>{}}) {
   };
 
   return (
-    <div style={{marginTop:16,background:"#14160f",border:"1px solid #23271b",borderRadius:14,padding:"14px 16px"}}>
-      <div style={{fontSize:10.5,fontWeight:700,color:"#7d8472",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
+    <div style={{marginTop:16,background:"#18211a",border:"1px solid #2a362c",borderRadius:14,padding:"14px 16px"}}>
+      <div style={{fontSize:10.5,fontWeight:700,color:"#98a290",letterSpacing:2,marginBottom:8}}>CÓDIGO DO GRUPO</div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showQR?12:0,flexWrap:"wrap",gap:8}}>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#ffffff",letterSpacing:5}}>{code}</div>
         <div style={{display:"flex",gap:6}}>
-          {isAdmin&&<button onClick={handleRefreshCode} aria-label="Gerar novo código" title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #23271b",borderRadius:8,padding:"7px 10px",color:"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          {isAdmin&&<button onClick={handleRefreshCode} aria-label="Gerar novo código" title="Gerar novo código" style={{background:"rgba(255,255,255,0.03)",border:"1px solid #2a362c",borderRadius:8,padding:"7px 10px",color:"#aab3a3",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             🔄
           </button>}
-          <button onClick={()=>setShowQR(v=>!v)} aria-label="Mostrar código QR" style={{background:showQR?"rgba(74,222,128,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#4ade80":"#23271b"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#4ade80":"#8a9080",fontWeight:700,fontSize:11,cursor:"pointer"}}>
+          <button onClick={()=>setShowQR(v=>!v)} aria-label="Mostrar código QR" style={{background:showQR?"rgba(74,222,128,0.15)":"rgba(255,255,255,0.05)",border:`1px solid ${showQR?"#4ade80":"#2a362c"}`,borderRadius:8,padding:"7px 10px",color:showQR?"#4ade80":"#aab3a3",fontWeight:700,fontSize:11,cursor:"pointer"}}>
             QR
           </button>
-          <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"#14160f",border:"1px solid #23271b",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"white",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+          <button onClick={()=>{navigator.clipboard.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{background:"#18211a",border:"1px solid #2a362c",borderRadius:8,padding:"7px 12px",color:copied?"#4ade80":"white",fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
             <Icon name="copy" size={13}/>{copied?"Copiado!":"Copiar"}
           </button>
-          <button onClick={handleShare} style={{background:"#d4af37",border:"none",borderRadius:8,padding:"7px 12px",color:"#0a0b08",fontWeight:800,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+          <button onClick={handleShare} style={{background:"#d4af37",border:"none",borderRadius:8,padding:"7px 12px",color:"#0d1410",fontWeight:800,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
             <Icon name="share" size={13}/>Partilhar
           </button>
         </div>
       </div>
       {showQR&&(
         <div style={{textAlign:"center",padding:"12px 0 4px"}}>
-          <div ref={qrRef} style={{display:"inline-block",background:"#14160f",padding:8,borderRadius:8}}/>
-          <div style={{fontSize:11,color:"#7d8472",marginTop:8}}>Aponta a câmara para entrar no grupo</div>
+          <div ref={qrRef} style={{display:"inline-block",background:"#18211a",padding:8,borderRadius:8}}/>
+          <div style={{fontSize:11,color:"#98a290",marginTop:8}}>Aponta a câmara para entrar no grupo</div>
         </div>
       )}
     </div>
@@ -7187,7 +7187,7 @@ function getCss() {
    próprios elementos. */
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(212,175,55,0.6);}
 .text-input:focus-visible{box-shadow:0 0 0 2px rgba(212,175,55,0.6);}
-body{background:#0a0b08;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
+body{background:#0d1410;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
 /* Os botões e campos não herdam o tipo de letra por omissão: a barra de baixo,
    o Chat/Zona/Novidades e quase todos os botões apareciam em Arial. */
 button,input,textarea,select{font-family:inherit;}
@@ -7198,13 +7198,13 @@ input,textarea,select{font-size:16px !important;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
 
-.field-nav-btn{background:transparent;border:none;border-radius:8px;padding:6px;color:#8a9080;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.field-nav-btn{background:transparent;border:none;border-radius:8px;padding:6px;color:#aab3a3;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .field-nav-btn:hover{background:rgba(255,255,255,0.05);}
-.body{flex:1;background:#0a0b08;color:#f0f0f0;padding:16px 16px 48px;}
+.body{flex:1;background:#0d1410;color:#f0f0f0;padding:16px 16px 48px;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .topbar-name{font-size:14px;color:#4ade80;font-weight:700;}
-.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8a9080;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
-.av-guest{width:28px;height:28px;border-radius:50%;background:#1c2016;border:1px dashed #7d8472;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c9cdbf;flex-shrink:0;}
+.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#aab3a3;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.av-guest{width:28px;height:28px;border-radius:50%;background:#1c2016;border:1px dashed #98a290;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c9cdbf;flex-shrink:0;}
 .btn-primary{background:#1ea851;color:white;border:none;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-primary:hover{background:#178742;}
 .btn-big{width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;box-shadow:0 6px 16px rgba(0,0,0,0.25);}
@@ -7212,12 +7212,12 @@ input,textarea,select{font-size:16px !important;}
 .btn-green{background:linear-gradient(180deg,#2fd66b,#1ea851);color:#04240f;}.btn-red{background:rgba(239,68,68,0.08);border:1px solid rgba(248,113,113,0.45);color:#f87171;box-shadow:none;}
 /* O "não vou" é uma resposta legítima, não um cancelamento — por isso fica
    discreto ao lado do verde, em vez de gritar a vermelho como o "já não vou". */
-.btn-nao{background:#14160f;border:2px solid #3a2020;color:#d6a1a1;box-shadow:none;}
+.btn-nao{background:#18211a;border:2px solid #3a2020;color:#d6a1a1;box-shadow:none;}
 .btn-nao:hover{border-color:#5c2c2c;color:#f0b8b8;}
 .btn-add{background:#1ea851;color:white;border:none;border-radius:10px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
-.lembrar-sem-resposta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;min-height:44px;padding:10px 14px;border-radius:10px;background:#0a0b08;border:1px solid #2e3324;color:#e9eadf;font-size:13px;font-weight:700;text-decoration:none;transition:background .15s,transform .1s;}
+.lembrar-sem-resposta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;min-height:44px;padding:10px 14px;border-radius:10px;background:#0d1410;border:1px solid #2e3324;color:#e9eadf;font-size:13px;font-weight:700;text-decoration:none;transition:background .15s,transform .1s;}
 .lembrar-sem-resposta svg{color:#4ade80;}
-.lembrar-sem-resposta:active{transform:scale(.98);background:#14160f;}
+.lembrar-sem-resposta:active{transform:scale(.98);background:#18211a;}
 .lembrar-sem-resposta:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 .convidar-grupo{display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:7px 10px;border-radius:10px;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.45);color:#4ade80;text-decoration:none;text-align:left;transition:background .15s,transform .1s;}
 .convidar-grupo span{display:flex;flex-direction:column;line-height:1.05;}
@@ -7226,52 +7226,52 @@ input,textarea,select{font-size:16px !important;}
 .convidar-grupo:active{transform:scale(.97);background:rgba(37,211,102,0.2);}
 .convidar-grupo:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 .btn-danger-full{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;width:100%;text-align:center;}
-.icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;min-width:40px;min-height:40px;justify-content:center;color:#8a9080;cursor:pointer;display:flex;align-items:center;}
+.icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;min-width:40px;min-height:40px;justify-content:center;color:#aab3a3;cursor:pointer;display:flex;align-items:center;}
 .icon-ghost:hover{background:#1a2e1a;color:#f0f0f0;}
 .icon-danger{background:rgba(239,68,68,0.15);border:none;border-radius:8px;padding:7px;color:#f87171;cursor:pointer;display:flex;flex-shrink:0;}
 .status-banner{border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .sb-in{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);}
 .sb-wait{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);}
-.sb-out{background:#14160f;border:2px solid #23271b;}
+.sb-out{background:#18211a;border:2px solid #2a362c;}
 .sb-nao{background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.28);}
-.sb-icon{font-size:22px;}.sb-title{font-size:14px;font-weight:800;color:#f0f0f0;}.sb-sub{font-size:11px;color:#8a9080;margin-top:2px;}
+.sb-icon{font-size:22px;}.sb-title{font-size:14px;font-weight:800;color:#f0f0f0;}.sb-sub{font-size:11px;color:#aab3a3;margin-top:2px;}
 .player-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px;}
-.list-row{display:flex;align-items:center;gap:8px;background:#14160f;border-radius:10px;padding:9px 12px;border:1px solid #23271b;}
+.list-row{display:flex;align-items:center;gap:8px;background:#18211a;border-radius:10px;padding:9px 12px;border:1px solid #2a362c;}
 .row-guest{border-style:dashed;border-color:#3a3f2e;}
-.list-num{font-size:10px;color:#8a9080;width:14px;text-align:center;flex-shrink:0;}
+.list-num{font-size:10px;color:#aab3a3;width:14px;text-align:center;flex-shrink:0;}
 .list-info{display:flex;flex-direction:column;flex:1;min-width:0;}
 .list-name{font-size:13px;font-weight:700;color:#f0f0f0;}
-.guest-sub{font-size:11px;color:#8a9080;margin-top:1px;}
+.guest-sub{font-size:11px;color:#aab3a3;margin-top:1px;}
 .admin-chip{color:#d4af37;}
-.empty-msg{font-size:12px;color:#8a9080;text-align:center;padding:12px 0;}
+.empty-msg{font-size:12px;color:#aab3a3;text-align:center;padding:12px 0;}
 .paid-chip,.paid-btn{font-size:11px;font-weight:700;border-radius:8px;padding:4px 9px;flex-shrink:0;}.paid-btn{min-height:34px;padding:6px 11px;}
 .paid-chip{border:none;}.paid-btn{border:none;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;}
-.paid-yes{background:rgba(34,197,94,0.2);color:#4ade80;}.paid-no{background:rgba(239,68,68,0.2);color:#f87171;}.st-wait{background:rgba(217,119,6,0.18);color:#fbbf24;}.st-none{background:#23271b;color:#8a9080;}
-.tabs{display:flex;gap:2px;background:#14160f;border-radius:10px;padding:3px;margin-bottom:14px;border:1px solid #23271b;}
-.tab{flex:1;padding:9px 2px;min-height:40px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:#8a9080;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;transition:all .15s;}
-.tab-active{background:#23271b;color:#ffffff;}
-.guest-locked{background:#0f1c14;border:2px dashed #23271b;border-radius:10px;padding:14px;text-align:center;font-size:13px;color:#8a9080;}
+.paid-yes{background:rgba(34,197,94,0.2);color:#4ade80;}.paid-no{background:rgba(239,68,68,0.2);color:#f87171;}.st-wait{background:rgba(217,119,6,0.18);color:#fbbf24;}.st-none{background:#2a362c;color:#aab3a3;}
+.tabs{display:flex;gap:2px;background:#18211a;border-radius:10px;padding:3px;margin-bottom:14px;border:1px solid #2a362c;}
+.tab{flex:1;padding:9px 2px;min-height:40px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:#aab3a3;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.tab-active{background:#2a362c;color:#ffffff;}
+.guest-locked{background:#0f1c14;border:2px dashed #2a362c;border-radius:10px;padding:14px;text-align:center;font-size:13px;color:#aab3a3;}
 .guest-hint{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);border-radius:10px;padding:9px 12px;font-size:11px;color:#fbbf24;font-weight:600;margin-bottom:8px;}
 .add-guest-row{display:flex;gap:8px;margin-bottom:8px;}
-.guest-row{display:flex;align-items:center;gap:8px;background:#14160f;border-radius:10px;padding:8px 10px;margin-top:6px;border:1px dashed #3a3f2e;}
+.guest-row{display:flex;align-items:center;gap:8px;background:#18211a;border-radius:10px;padding:8px 10px;margin-top:6px;border:1px dashed #3a3f2e;}
 .guest-row-name{flex:1;font-size:13px;font-weight:700;color:#f0f0f0;}
 .tag-guest{font-size:10px;font-weight:700;background:rgba(168,85,247,0.2);color:#c084fc;border-radius:20px;padding:2px 8px;flex-shrink:0;}
-.text-input{background:#0f0f0f;border:2px solid #23271b;border-radius:10px;padding:10px 14px;color:#f0f0f0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;}
+.text-input{background:#0f0f0f;border:2px solid #2a362c;border-radius:10px;padding:10px 14px;color:#f0f0f0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;}
 .text-input:focus{border-color:#2fd66b;}
-.text-input::placeholder{color:#7d8472;}
+.text-input::placeholder{color:#98a290;}
 .text-input:-webkit-autofill,.text-input:-webkit-autofill:hover,.text-input:-webkit-autofill:focus{-webkit-text-fill-color:#f0f0f0;-webkit-box-shadow:0 0 0px 1000px #0f0f0f inset;box-shadow:0 0 0px 1000px #0f0f0f inset;transition:background-color 9999s ease-in-out 0s;}
 input[type="date"],input[type="time"]{color-scheme:dark;}
 select.text-input{appearance:none;}
-.game-info-card{background:#14160f;border:2px solid #23271b;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.game-info-card{background:#18211a;border:2px solid #2a362c;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
 .game-info-header{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:1px;color:#d4af37;text-transform:uppercase;}
-.field-label{font-size:11px;font-weight:700;color:#8a9080;display:flex;align-items:center;gap:4px;margin-bottom:4px;}
+.field-label{font-size:11px;font-weight:700;color:#aab3a3;display:flex;align-items:center;gap:4px;margin-bottom:4px;}
 .date-time-row{display:flex;gap:10px;}
-.btn-save{width:100%;padding:11px;border-radius:10px;border:2px solid #23271b;background:#0f1c14;color:#8a9080;font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
+.btn-save{width:100%;padding:11px;border-radius:10px;border:2px solid #2a362c;background:#0f1c14;color:#aab3a3;font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
 .btn-save-active{background:#1ea851;color:white;border-color:#1ea851;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.45);}
 .btn-save-active:hover{background:#15803d;}
 .hero-titulo{font-family:'Bebas Neue',cursive;font-weight:400;font-size:42px;color:#fff;letter-spacing:.5px;line-height:1.02;margin:0 0 8px;text-wrap:balance;}
 .hero-dor{font-family:'Bebas Neue',cursive;font-size:25px;color:#d4af37;letter-spacing:.5px;line-height:1.1;margin:0 auto 24px;max-width:330px;text-wrap:balance;}
-.hero-cta{display:block;width:100%;max-width:340px;margin:0 auto;padding:18px 16px;background:#d4af37;border:none;border-radius:14px;color:#0a0b08;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(212,175,55,.55);}
+.hero-cta{display:block;width:100%;max-width:340px;margin:0 auto;padding:18px 16px;background:#d4af37;border:none;border-radius:14px;color:#0d1410;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(212,175,55,.55);}
 .hero-cta:active{transform:scale(.98);}
 .hero-link{background:none;border:none;color:#d4af37;font-weight:700;font-size:14.5px;padding:6px 10px 6px;cursor:pointer;}
 .hero-entrar{display:block;margin:0 auto;background:none;border:none;color:#a3a897;font-size:13.5px;padding:12px 10px 4px;cursor:pointer;}
@@ -7284,7 +7284,7 @@ select.text-input{appearance:none;}
 .ecra-ativo{display:block;animation:ecraEntra .45s ease;}
 @keyframes ecraEntra{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 .ecra-moldura{background:#0d0f0a;border:2px solid #24291b;border-radius:28px;padding:7px;box-shadow:0 30px 70px -20px rgba(0,0,0,.8),0 0 0 1px rgba(212,175,55,.06);}
-.ecra-moldura img{display:block;width:100%;height:auto;aspect-ratio:390/740;object-fit:contain;object-position:top;background:#0a0b08;border-radius:21px;}
+.ecra-moldura img{display:block;width:100%;height:auto;aspect-ratio:390/740;object-fit:contain;object-position:top;background:#0d1410;border-radius:21px;}
 .ecra figcaption{font-size:13px;color:#a3a897;margin-top:12px;font-weight:600;}
 .ecras-pontos{display:flex;gap:2px;justify-content:center;margin-top:6px;}
 .ecras-pontos button{width:28px;height:28px;border:none;background:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}

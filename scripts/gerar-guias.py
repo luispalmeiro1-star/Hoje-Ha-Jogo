@@ -104,6 +104,7 @@ def pagina(slug, titulo, descricao, h1, entrada, corpo, faq=None, extra_head="",
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&display=swap">
 <link rel="stylesheet" href="/guias/estilo.css">
+<script defer src="/_vercel/insights/script.js"></script>
 {ld_html}{extra_head}</head>
 <body>
 <header class="topo"><div>

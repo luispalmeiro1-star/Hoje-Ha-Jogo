@@ -1648,7 +1648,10 @@ export default function App() {
   // como jogado. Não muda a data, não mexe em pagamentos, não regista nada e
   // não manda avisos. Os convidados saem, porque um convidado só existe na
   // lista como lugar pedido: não tem como ficar "sem resposta".
-  const reiniciarLista = async()=>{
+  // novaData: quando a lista recomeça porque a data mudou, os pagamentos de
+  // quem já tinha pago passam para o novo jogo, em vez de ficarem presos a um
+  // jogo que não se realizou.
+  const reiniciarLista = async(novaData=null)=>{
     const gid=activeGroupId||groupIdRef.current||null;
     if(!gid){ showToast("Erro: grupo não identificado","err"); return; }
     const{data:pgRows}=await supabase.from("player_groups").select("player_id").eq("group_id",gid);
@@ -1661,6 +1664,8 @@ export default function App() {
     }
     const{error}=await supabase.from("player_groups").update({status:"out",confirmed_at:null,team:null,absence_reason:null}).eq("group_id",gid);
     if(error){ showToast("Não foi possível reiniciar a lista","err"); return; }
+    if(novaData&&novaData!==gameInfo.date)
+      await supabase.from("payments").update({game_date:novaData}).eq("group_id",gid).eq("game_date",gameInfo.date).eq("status","pago");
     showToast("Lista reiniciada ✓ Todos sem resposta");
     await reloadAll(gid);
   };
@@ -6276,6 +6281,20 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
               <input className="text-input" type="number" step="0.5" min="0" value={editRent} onChange={e=>{setEditRent(e.target.value);setEditedJogo(true);}} style={{marginBottom:8}}/>
             </div>
             <button className={`btn-save ${editedJogo?"btn-save-active":""}`} disabled={!editedJogo} onClick={async()=>{
+              // Mudar a data com respostas já dadas: pergunta o que fazer com
+              // elas. Sem isto, os confirmados da semana sem jogo passavam
+              // para o jogo seguinte e o fecho automático contava-os, com
+              // dívida (25/11: 4 confirmados numa semana sem jogo).
+              const responderam=confirmed.length+waiting.length+naoVao.length;
+              if(editDate&&editDate!==gameInfo.date&&responderam>0){
+                const partes=[confirmed.length&&`${confirmed.length} ${confirmed.length===1?"confirmado":"confirmados"}`,waiting.length&&`${waiting.length} em espera`,naoVao.length&&`${naoVao.length} ${naoVao.length===1?"disse":"disseram"} que não ${naoVao.length===1?"vai":"vão"}`].filter(Boolean).join(", ");
+                const escolha=await askChoice(`Mudaste o jogo para ${formatDisplayDate(editDate)}. Já há ${partes}. O que fazemos às respostas?`,[
+                  {label:"🔄 Recomeçar a lista",value:"recomecar",neutral:true},
+                  {label:"Manter as respostas",value:"manter",neutral:true},
+                ]);
+                if(!escolha) return;
+                if(escolha==="recomecar") await onReiniciarLista(editDate);
+              }
               onUpdateGameInfo({location:editLoc,date:editDate,time:editTime,cost_per_player:Number(editCost)});
               if(groupId||currentUser?.group_id){
                 const{error}=await supabase.from("groups").update({rent_per_game:Number(editRent)||0}).eq("id",groupId||currentUser.group_id);

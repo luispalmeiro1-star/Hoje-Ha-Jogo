@@ -2860,7 +2860,7 @@ function PedirReforcos({spotsLeft, gameInfo, inviteCode}) {
   );
 }
 
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15}) {
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true,maxPlayers=15,isAdmin=false}) {
   const confirmadosAnimado=useCountUp(confirmed.length);
   const pct=Math.round((confirmed.length/maxPlayers)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
@@ -2981,7 +2981,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate
               {confirmed.length>0&&<ExpandableList confirmed={confirmed} waiting={waiting} gameInfo={gameInfo}/>}
             </div>
           )}
-          {isLoggedIn&&<LembrarSemResposta notYet={notYet} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers}/>}
+          {isLoggedIn&&isAdmin&&<LembrarSemResposta notYet={notYet} confirmed={confirmed} gameInfo={gameInfo} maxPlayers={maxPlayers}/>}
         </>
       )}
     </div>
@@ -5910,7 +5910,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers}
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,naoVao,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}} maxPlayers={maxPlayers} isAdmin
         
       />
       <div className="body">

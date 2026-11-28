@@ -2771,6 +2771,30 @@ function useCountUp(value, duration=500) {
 // fora (13–21/11) foram criados e nunca convidaram ninguém: o convite vivia
 // em "Gerir". Aqui fica à vista de todos, admin e jogadores — quem entra pelo
 // link continua a precisar da aprovação do admin.
+// Grupo ainda vazio: o admin criou o jogo mas não convidou ninguém.
+// Fica no topo até entrar a primeira pessoa.
+function GrupoVazio({groupId, groupName}) {
+  const [code,setCode]=useState(null);
+  useEffect(()=>{
+    if(!groupId) return;
+    let vivo=true;
+    supabase.from("groups").select("invite_code").eq("id",groupId).maybeSingle()
+      .then(({data})=>{ if(vivo&&data?.invite_code) setCode(data.invite_code); },()=>{});
+    return ()=>{ vivo=false; };
+  },[groupId]);
+  if(!code) return null;
+  const href=`https://wa.me/?text=${encodeURIComponent(inviteMessage(code,groupName))}`;
+  return (
+    <div className="grupo-vazio" style={{margin:"12px 0",padding:"14px 16px",borderRadius:14,background:"rgba(212,175,55,0.08)",border:"1px solid rgba(212,175,55,0.35)"}}>
+      <div style={{fontWeight:800,color:"#fff",fontSize:15}}>O teu grupo ainda está vazio</div>
+      <div style={{color:"#aab3a3",fontSize:13,marginTop:4}}>Envia o convite no grupo do WhatsApp para a malta começar a responder.</div>
+      <a href={href} target="_blank" rel="noopener noreferrer" style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 14px",borderRadius:10,background:"#25D366",color:"#0a0b08",fontWeight:800,textDecoration:"none"}}>
+        <WhatsAppIcon size={18}/> Enviar convite no WhatsApp
+      </a>
+    </div>
+  );
+}
+
 function ConvidarParaGrupo({groupId, groupName}) {
   const [code,setCode]=useState(null);
   useEffect(()=>{
@@ -5918,6 +5942,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,naoVao=[],guests,spo
           <span className="topbar-name"><Icon name="shield" size={13}/> <strong>{currentUser.name}</strong> · Admin</span>
           <button className="icon-ghost" aria-label="Sair da conta" title="Sair da conta" onClick={async()=>{ if(await askConfirm("Sair da tua conta neste telemóvel?",{confirmLabel:"Sair"})) onLogout(); }}><Icon name="logout" size={16}/></button>
         </div>
+        {!isViewingHistory&&(players||[]).filter(p=>!p.is_guest).length<=1&&<GrupoVazio groupId={gameInfo.group_id} groupName={gameInfo.app_name}/>}
 
 
 
